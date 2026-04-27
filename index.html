@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Loren</title>
+    <title>Escritorio Maestro de Loren</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         .main-container {
             max-width: 600px;
@@ -21,54 +22,71 @@
             left: 20px;
             z-index: 1000;
         }
-        .project-card {
+        .header-card {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 15px;
             padding: 20px;
             margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .section-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
             cursor: pointer;
             transition: transform 0.3s, box-shadow 0.3s;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
-        .project-card:hover {
-            transform: translateY(-5px);
+        .section-card:hover {
+            transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
         }
-        .project-icon {
-            font-size: 3rem;
-            margin-bottom: 15px;
-        }
-        .project-title {
-            font-size: 1.5rem;
-            font-weight: bold;
+        .section-icon {
+            font-size: 2rem;
             margin-bottom: 10px;
+        }
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 5px;
             color: #333;
         }
-        .project-desc {
+        .section-desc {
             color: #666;
-            margin-bottom: 10px;
+            font-size: 0.9rem;
         }
-        .file-item {
+        .sub-item {
             background: #f8f9fa;
             border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 10px;
+            padding: 12px;
+            margin-bottom: 8px;
             cursor: pointer;
             border-left: 4px solid #667eea;
         }
-        .file-item.folder {
-            border-left-color: #00ff88;
-        }
-        .file-item:hover {
+        .sub-item:hover {
             background: #e9ecef;
         }
-        .file-name {
+        .sub-name {
             font-weight: bold;
             color: #333;
+            font-size: 1rem;
         }
-        .file-type {
-            font-size: 0.8rem;
-            color: #999;
+        .quick-commands {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .command-item {
+            font-family: monospace;
+            background: #f0f0f0;
+            padding: 8px 12px;
+            border-radius: 5px;
+            margin: 5px 0;
+            font-size: 0.9rem;
         }
     </style>
 </head>
@@ -76,142 +94,194 @@
     <div class="main-container">
         <!-- Vista principal -->
         <div id="main-view">
-            <h1 class="text-center text-white mb-4">🚀 Dashboard de Loren</h1>
-            <p class="text-center text-white mb-5">Proyectos activos</p>
-            
-            <div class="project-card" onclick="showProject('abierto-fit-loren')">
-                <div class="project-icon">💪</div>
-                <div class="project-title">Abierto Fit Loren</div>
-                <div class="project-desc">Gestión de entrenamiento y fitness</div>
-                <div class="text-muted">Repositorio: Loren2026/abierto-fit-loren</div>
+            <div class="header-card">
+                <h1 class="mb-3">🖥️ Escritorio Maestro de Loren</h1>
+                <p class="text-muted">Tus 8 áreas principales</p>
             </div>
             
-            <div class="project-card" onclick="showProject('gestactas')">
-                <div class="project-icon">📋</div>
-                <div class="project-title">GestActas</div>
-                <div class="project-desc">Gestión de Juntas Carlos</div>
-                <div class="text-muted">Repositorio: Loren2026/gestactas</div>
+            <div class="section-card" onclick="showSection('1')">
+                <div class="section-icon">🔵</div>
+                <div class="section-title">1. OpenClaw y sistema</div>
+                <div class="section-desc">Acceso, modelos, seguridad, Hostinger</div>
             </div>
             
-            <div class="project-card" onclick="showProject('abierto-general')">
-                <div class="project-icon">📊</div>
-                <div class="project-title">Abierto General</div>
-                <div class="project-desc">Temas y archivos generales</div>
-                <div class="text-muted">Repositorio: Loren2026/abierto-general</div>
+            <div class="section-card" onclick="showSection('2')">
+                <div class="section-icon">🟣</div>
+                <div class="section-title">2. Voz, audio y Telegram</div>
+                <div class="section-desc">TTS, respuestas, adjuntos, MP3/OGG</div>
+            </div>
+            
+            <div class="section-card" onclick="showSection('3')">
+                <div class="section-icon">🟢</div>
+                <div class="section-title">3. Trabajo y transporte</div>
+                <div class="section-desc">Operativa, cargas, control del negocio</div>
+            </div>
+            
+            <div class="section-card" onclick="showSection('4')">
+                <div class="section-icon">🟠</div>
+                <div class="section-title">4. Automatizaciones</div>
+                <div class="section-desc">Pendientes, flujos, integraciones</div>
+            </div>
+            
+            <div class="section-card" onclick="showSection('5')">
+                <div class="section-icon">🟡</div>
+                <div class="section-title">5. Hojas de cálculo</div>
+                <div class="section-desc">Excel, rentabilidad, métricas</div>
+            </div>
+            
+            <div class="section-card" onclick="showSection('6')">
+                <div class="section-icon">🩵</div>
+                <div class="section-title">6. Apps</div>
+                <div class="section-desc">Fit Loren, Calistenia, HTML, móvil</div>
+            </div>
+            
+            <div class="section-card" onclick="showSection('7')">
+                <div class="section-icon">❤️</div>
+                <div class="section-title">7. Personal y familia</div>
+                <div class="section-desc">Alba, Laura, Belén, David</div>
+            </div>
+            
+            <div class="section-card" onclick="showSection('8')">
+                <div class="section-icon">⏳</div>
+                <div class="section-title">8. Pendientes y bloqueos</div>
+                <div class="section-desc">Audio perfecto, voz, acceso web</div>
+            </div>
+            
+            <div class="quick-commands">
+                <h6 class="mb-3">⚡ USO RÁPIDO</h6>
+                <div class="command-item">"vamos a 6"</div>
+                <div class="command-item">"abre 6.1"</div>
+                <div class="command-item">"entra en 2.3"</div>
+                <div class="command-item">"baja a 8.5"</div>
+                <div class="command-item">"volvemos al escritorio"</div>
             </div>
         </div>
         
-        <!-- Vista de proyecto -->
-        <div id="project-view" style="display: none;">
+        <!-- Vista de sección -->
+        <div id="section-view" style="display: none;">
             <button class="btn btn-secondary back-btn" onclick="goBack()">
                 <i class="fas fa-arrow-left"></i> Volver
             </button>
-            <h1 class="text-center text-white mb-3" id="project-title"></h1>
-            <div class="project-card">
-                <div id="project-info"></div>
+            <div class="header-card">
+                <h2 class="mb-2" id="section-title"></h2>
+                <p class="text-muted" id="section-desc"></p>
             </div>
-            <div class="text-white mb-3">Contenido:</div>
-            <div id="file-list"></div>
+            <div id="sub-items"></div>
         </div>
     </div>
 
     <script>
-        const GITHUB_TOKEN = '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';
-        
-        const projects = {
-            'abierto-fit-loren': {
-                name: '💪 Abierto Fit Loren',
-                desc: 'Gestión de entrenamiento y fitness'
+        const sections = {
+            '1': {
+                title: '🔵 1. OpenClaw y sistema',
+                desc: 'Gestión del sistema OpenClaw',
+                items: [
+                    { id: '1.1', name: 'Acceso web y móvil', desc: 'Interfaces y conectividad' },
+                    { id: '1.2', name: 'Modelos, cuotas y errores', desc: 'IA y limitaciones' },
+                    { id: '1.3', name: 'Seguridad y permisos', desc: 'Tokens y accesos' },
+                    { id: '1.4', name: 'Hostinger y acceso remoto', desc: 'VPS y Docker' }
+                ]
             },
-            'gestactas': {
-                name: '📋 GestActas',
-                desc: 'Gestión de Juntas Carlos'
+            '2': {
+                title: '🟣 2. Voz, audio y Telegram',
+                desc: 'Comunicación por voz',
+                items: [
+                    { id: '2.1', name: 'Voz TTS por defecto', desc: 'Text-to-speech activo' },
+                    { id: '2.2', name: 'Respuestas por audio', desc: 'Audio como respuesta principal' },
+                    { id: '2.3', name: 'Adjuntos y descargas', desc: 'Gestión de archivos' },
+                    { id: '2.4', name: 'Formatos MP3 / OGG', desc: 'Compatibilidad de audio' },
+                    { id: '2.5', name: 'Presentaciones de audio', desc: 'Cómo se entrega el audio' },
+                    { id: '2.6', name: 'Mejoras pendientes de voz', desc: 'Afinado y calidad' }
+                ]
             },
-            'abierto-general': {
-                name: '📊 Abierto General',
-                desc: 'Temas y archivos generales'
+            '3': {
+                title: '🟢 3. Trabajo y transporte',
+                desc: 'Tu negocio como transportista',
+                items: [
+                    { id: '3.1', name: 'Operativa diaria', desc: 'Rutina y rutas' },
+                    { id: '3.2', name: 'Organización del trabajo', desc: 'Planificación semanal' },
+                    { id: '3.3', name: 'Gestión de cargas', desc: 'Wtransnet y agencias' },
+                    { id: '3.4', name: 'Control del negocio', desc: 'Rentabilidad y métricas' }
+                ]
+            },
+            '4': {
+                title: '🟠 4. Automatizaciones',
+                desc: 'Tareas automatizadas',
+                items: [
+                    { id: '4.1', name: 'Automatizaciones pendientes', desc: 'Por implementar' },
+                    { id: '4.2', name: 'Flujos repetitivos', desc: 'Procesos recurrentes' },
+                    { id: '4.3', name: 'Integraciones futuras', desc: 'Conexiones planificadas' }
+                ]
+            },
+            '5': {
+                title: '🟡 5. Hojas de cálculo',
+                desc: 'Excel profesional',
+                items: [
+                    { id: '5.1', name: 'Excel profesional', desc: 'Hojas maestras' },
+                    { id: '5.2', name: 'Rentabilidad', desc: 'Análisis de beneficios' },
+                    { id: '5.3', name: 'Métricas y seguimiento', desc: 'KPIs y datos' },
+                    { id: '5.4', name: 'Automatización de datos', desc: 'Integración con sistemas' }
+                ]
+            },
+            '6': {
+                title: '🩵 6. Apps',
+                desc: 'Aplicaciones desarrolladas',
+                items: [
+                    { id: '6.1', name: 'Fit Loren', desc: 'Gestión de entrenamiento' },
+                    { id: '6.2', name: 'Calistenia', desc: 'Rutinas de ejercicio' },
+                    { id: '6.3', name: 'Borradores HTML', desc: 'Prototipos en desarrollo' },
+                    { id: '6.4', name: 'Publicación estable para móvil', desc: 'Versiones desplegadas' }
+                ]
+            },
+            '7': {
+                title: '❤️ 7. Personal y familia',
+                desc: 'Tu círculo cercano',
+                items: [
+                    { id: '7.1', name: 'Alba y Laura', desc: 'Hijas' },
+                    { id: '7.2', name: 'Belén', desc: 'Pareja' },
+                    { id: '7.3', name: 'David', desc: 'Otro familiar cercano' },
+                    { id: '7.4', name: 'Mensajes y presentaciones', desc: 'Comunicación personal' }
+                ]
+            },
+            '8': {
+                title: '⏳ 8. Pendientes y bloqueos',
+                desc: 'Tareas por completar',
+                items: [
+                    { id: '8.1', name: 'Solo audio sin texto', desc: 'Respuestas puramente de audio' },
+                    { id: '8.2', name: 'Entrega perfecta en Telegram', desc: 'Formato ideal de mensajes' },
+                    { id: '8.3', name: 'Afinado fino de voz', desc: 'Calidad perfecta de TTS' },
+                    { id: '8.4', name: 'Acceso web cómodo', desc: 'UI/UX mejorada' },
+                    { id: '8.5', name: 'HTML de Fit visibles sin caducidad', desc: 'Enlaces permanentes' }
+                ]
             }
         };
 
-        async function showProject(repo) {
+        function showSection(sectionId) {
             document.getElementById('main-view').style.display = 'none';
-            document.getElementById('project-view').style.display = 'block';
+            document.getElementById('section-view').style.display = 'block';
             
-            document.getElementById('project-title').textContent = projects[repo].name;
-            document.getElementById('project-info').textContent = projects[repo].desc;
+            const section = sections[sectionId];
+            document.getElementById('section-title').textContent = section.title;
+            document.getElementById('section-desc').textContent = section.desc;
             
-            await loadFiles(repo, '');
+            const subItems = document.getElementById('sub-items');
+            subItems.innerHTML = '';
+            
+            section.items.forEach(item => {
+                const subItem = document.createElement('div');
+                subItem.className = 'sub-item';
+                subItem.innerHTML = `
+                    <div class="sub-name">${item.id} ${item.name}</div>
+                    <div class="text-muted" style="font-size: 0.85rem;">${item.desc}</div>
+                `;
+                subItems.appendChild(subItem);
+            });
         }
 
         function goBack() {
-            document.getElementById('project-view').style.display = 'none';
+            document.getElementById('section-view').style.display = 'none';
             document.getElementById('main-view').style.display = 'block';
-        }
-
-        async function loadFiles(repo, path) {
-            const fileList = document.getElementById('file-list');
-            fileList.innerHTML = '<div class="text-white">Cargando...</div>';
-            
-            try {
-                const response = await fetch(
-                    `https://api.github.com/repos/Loren2026/${repo}/contents/${path}`,
-                    {
-                        headers: {
-                            'Authorization': `token ${GITHUB_TOKEN}`
-                        }
-                    }
-                );
-                
-                const files = await response.json();
-                
-                if (!Array.isArray(files)) {
-                    fileList.innerHTML = '<div class="text-white">No hay archivos</div>';
-                    return;
-                }
-                
-                fileList.innerHTML = '';
-                
-                files.forEach(file => {
-                    const isFolder = file.type === 'dir';
-                    const icon = isFolder ? '📁' : '📄';
-                    const type = isFolder ? 'Carpeta' : getFileType(file.name);
-                    
-                    const fileItem = document.createElement('div');
-                    fileItem.className = `file-item ${isFolder ? 'folder' : ''}`;
-                    fileItem.innerHTML = `
-                        <div class="file-name">${icon} ${file.name}</div>
-                        <div class="file-type">${type}</div>
-                    `;
-                    
-                    if (isFolder) {
-                        fileItem.onclick = () => loadFiles(repo, file.path);
-                    } else if (file.name.endsWith('.html')) {
-                        fileItem.onclick = () => {
-                            window.open(file.html_url, '_blank');
-                        };
-                    }
-                    
-                    fileList.appendChild(fileItem);
-                });
-            } catch (error) {
-                fileList.innerHTML = '<div class="text-white">Error al cargar archivos</div>';
-                console.error(error);
-            }
-        }
-
-        function getFileType(filename) {
-            const ext = filename.split('.').pop().toLowerCase();
-            const types = {
-                'html': 'Página web',
-                'js': 'JavaScript',
-                'css': 'Estilos',
-                'json': 'JSON',
-                'md': 'Markdown',
-                'txt': 'Texto'
-            };
-            return types[ext] || 'Archivo';
         }
     </script>
 </body>
 </html>
-
