@@ -1,28 +1,32 @@
 # GestActas — Propuesta actual
 
 ## Paso en curso
-Implementar el primer flujo funcional de datos para comunidades y propietarios, sustituyendo el contenido estático por lectura/escritura real en IndexedDB.
+Crear y subir al repo `Loren2026/gestactas` la estructura base de la arquitectura modular antes de implementar los repositorios funcionales.
 
 ## Qué propongo hacer
-He revisado la estructura actual de GestActas y la base ya está preparada para arrancar: existe bootstrap, router, store, esquema de IndexedDB y módulos separados para comunidades y propietarios. Sin embargo, los módulos de comunidades y propietarios siguen como placeholders y la UI de `index.html` todavía muestra datos fijos.
+Propongo ejecutar el Bloque 1 en el orden correcto, que debe ser este:
 
-Propongo que el siguiente paso de desarrollo sea convertir ese bloque en un primer vertical slice funcional, concretamente:
-1. Implementar los repositorios de comunidades y propietarios para listar, crear y consultar datos en IndexedDB.
-2. Añadir servicios mínimos para inicializar datos de ejemplo controlados o gestionar altas básicas.
-3. Conectar la UI de comunidades para renderizar el listado real y preparar el alta de una comunidad con sus propietarios.
-4. Dejar enlazada la navegación comunidad -> detalle con datos persistidos, sin tocar todavía juntas, grabación ni generación de actas.
+1. Crear y subir al repo `Loren2026/gestactas` la estructura de carpetas y archivos base de la arquitectura modular.
+2. Dejar publicada esa base mínima para que el repositorio remoto ya contenga la nueva estructura técnica real.
+3. Solo después de eso, implementar los repositorios de comunidades y propietarios sobre esa base.
 
-Con este paso tendríamos una base real sobre la que seguir construyendo, evitando avanzar sobre pantallas puramente estáticas.
+En este primer paso únicamente se subirían los archivos base de arquitectura, sin entrar todavía en la lógica funcional de repositorios.
+
+Archivos base a crear y subir en este paso:
+- `src/core/bootstrap.js`
+- `src/core/router.js`
+- `src/core/store.js`
+- `src/db/database.js`
+- `src/db/schema.js`
+
+Una vez eso esté realmente en el repo remoto `gestactas`, el siguiente paso ya sería implementar los repositorios de comunidades y propietarios.
 
 ## Archivos afectados
-- gestactas/src/modules/comunidades/comunidades.repository.js
-- gestactas/src/modules/comunidades/comunidades.service.js
-- gestactas/src/modules/comunidades/comunidades.ui.js
-- gestactas/src/modules/propietarios/propietarios.repository.js
-- gestactas/src/modules/propietarios/propietarios.service.js
-- gestactas/src/modules/propietarios/propietarios.ui.js
-- gestactas/index.html
-- gestactas/src/core/bootstrap.js
+- `Loren2026/gestactas/src/core/bootstrap.js`
+- `Loren2026/gestactas/src/core/router.js`
+- `Loren2026/gestactas/src/core/store.js`
+- `Loren2026/gestactas/src/db/database.js`
+- `Loren2026/gestactas/src/db/schema.js`
 
 ## Esperando autorización
 SÍ
