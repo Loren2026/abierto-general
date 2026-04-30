@@ -1,211 +1,255 @@
-# Propuesta técnica de desarrollo, Bloque 2, Fit Loren
+# Propuesta técnica de desarrollo, Bloque 3, Fit Loren
 
 ## Objetivo
-Desarrollar el onboarding completo de Fit Loren con una base técnica sólida en Flutter, de forma que el usuario pueda configurar su perfil inicial mediante un flujo guiado, con persistencia local robusta, navegación centralizada y una arquitectura preparada para crecer en siguientes bloques.
+Desarrollar la pantalla de Inicio completa de Fit Loren como panel principal de estado del usuario, mostrando de forma clara su situación diaria, el próximo entrenamiento, la rutina activa, la racha de constancia y la planificación semanal, todo ello sobre una base técnica coherente con los Bloques 1 y 2.
 
-## Enfoque técnico del Bloque 2
-Este bloque no se plantea solo como una secuencia de pantallas, sino como la base estructural del perfil inicial del usuario dentro de la app. Por ello, además del flujo visual, se definirá el modelo de datos, la persistencia local, la gestión de estado y la organización de archivos necesarias para que el onboarding sea mantenible y escalable.
+## Enfoque técnico del Bloque 3
+Este bloque debe consolidar la pantalla de `Inicio` como centro operativo de la app. No se plantea solo como una pantalla visual, sino como una capa de consulta y presentación de datos ya preparados para evolucionar más adelante hacia planes, rutinas, histórico y seguimiento de progreso.
 
-## Alcance del Bloque 2
-
-### 1. Tarea inicial de limpieza obligatoria
-Antes de crear cualquier archivo Flutter nuevo dentro del repositorio `abierto-fit-loren`, deberá ejecutarse una limpieza inicial del material anterior no válido para esta fase.
-
-#### Archivos a eliminar del repo `abierto-fit-loren`
-- `index.html`
-- `entrenamiento.html`
-- `ficha-ejercicio.html`
-- `manifest.json`
-- `service-worker.js`
-- `vercel.json`
-
-#### Condición de ejecución
-Esta limpieza deberá realizarse obligatoriamente antes de crear nuevos archivos Flutter del Bloque 2, para evitar mezclar restos de la versión web anterior con la nueva estructura móvil de la app.
-
-### 2. Pantalla de bienvenida
-Se desarrollará una pantalla inicial de onboarding con:
-- Logo de Fit Loren
-- Botón `Comenzar`
-
-Esta pantalla actuará como punto de entrada al flujo de configuración inicial.
-
-## 3. Modelo de datos `UserProfile`
-Se definirá un modelo central `UserProfile` que contendrá todos los datos recopilados en el onboarding.
-
-### Campos del modelo
-#### Datos obligatorios
-- nombre o apodo
-- sexo
-- fecha de nacimiento
-- altura
-- peso
-- objetivo físico principal
-- nivel de experiencia
-- días disponibles por semana
-- duración media de sesión
-- entorno de entrenamiento
-
-#### Datos opcionales
-- lesiones o limitaciones físicas
-- material disponible en casa
-
-### Enums requeridos
-Se crearán enums para evitar strings dispersos y mejorar el tipado del proyecto:
-- `Sex`
-- `FitnessGoal`
-- `ExperienceLevel`
-- `TrainingEnvironment`
-
-Esto facilitará validaciones, mantenimiento, persistencia y futura evolución del perfil.
-
-## 4. Persistencia local con Hive
-La decisión técnica para este bloque será usar `Hive` como sistema de persistencia local.
-
-### Motivos de la elección
-- Ligero y rápido
-- Adecuado para Flutter móvil
-- Más escalable que guardar todo en preferencias simples
-- Conveniente para almacenar el perfil completo del usuario de forma estructurada
-
-### Uso previsto de Hive
-Se definirá almacenamiento local para:
-- datos completos de `UserProfile`
-- estado de finalización del onboarding
-- futura reutilización de datos desde otras secciones de la app, como `Perfil`
-
-### Servicio de persistencia
-Se implementará un servicio dedicado:
-- `lib/services/local_storage_service.dart`
-
-Este servicio será responsable de:
-- inicializar Hive
-- guardar `UserProfile`
-- leer `UserProfile`
-- guardar el flag de onboarding completado
-- consultar si el onboarding debe mostrarse o no al iniciar la app
-
-## 5. Gestión de estado con Provider
-La gestión del flujo del onboarding se realizará con `Provider` y `ChangeNotifier`.
-
-### Decisión técnica
-- Se usará `ChangeNotifier` para representar el estado del onboarding
-- Se usará `Provider` para exponer ese estado a las pantallas y widgets del flujo
-- No se usará `setState` como mecanismo principal de control del onboarding
-
-### Ventajas
-- mejor separación entre UI y lógica
-- flujo más limpio y mantenible
-- facilidad para validar pasos, guardar datos parciales y controlar navegación
-- base adecuada para futuras ampliaciones
-
-## 6. Flujo guiado paso a paso con agrupación lógica
-No se usará un diseño de un único campo por pantalla, porque penaliza la experiencia de uso. En su lugar, los datos se agruparán en pasos lógicos.
-
-### Propuesta de agrupación de pasos
-1. Bienvenida
-   - logo
-   - botón `Comenzar`
-
-2. Identidad básica
-   - nombre o apodo
-   - sexo
-
-3. Datos físicos
-   - fecha de nacimiento
-   - altura
-   - peso
-
-4. Objetivo y nivel
-   - objetivo físico principal
-   - nivel de experiencia
-
-5. Disponibilidad
-   - días disponibles por semana
-   - duración media de sesión
-
-6. Entorno de entrenamiento
-   - gimnasio
-   - casa
-   - mixto
-
-7. Datos opcionales
-   - lesiones o limitaciones físicas
-   - material disponible en casa
-   - posibilidad de saltar este paso
-
-8. Resumen final
-   - revisión de todos los datos introducidos
-   - confirmación final antes de guardar
-
-## 7. UX/UI mejorada del onboarding
-El onboarding mantendrá el tema base de Fit Loren:
-- Fondo: `#1a1a1a`
-- Acento: `#E8732A`
-- Texto: blanco
-
-Además, se incorporarán las siguientes mejoras de experiencia de usuario:
-
-### Elementos UX/UI requeridos
-- barra de progreso visible durante todo el flujo
-- progreso real basado en pasos, no en pantallas arbitrarias
-- navegación clara entre pasos
-- validación de campos obligatorios antes de avanzar
-- posibilidad de saltar únicamente los campos opcionales
-- teclado numérico para altura y peso
-- selector de fecha para la fecha de nacimiento
-- tarjetas, selectores o controles cerrados para opciones como objetivo, nivel, sexo y entorno
-- pantalla de resumen final antes de guardar
-
-### Mejora funcional importante
-Se dejará preparado el modelo y la persistencia para que estos datos puedan editarse más adelante desde la sección `Perfil`, aunque esa edición no forme parte de este bloque.
-
-## 8. Navegación centralizada
-La lógica que decide si se muestra el onboarding o la pantalla principal no debe quedar repartida entre pantallas.
-
-### Decisión técnica
-Se implementará un punto de arranque centralizado que:
-- consulte si el onboarding ya fue completado
-- redirija al onboarding si es la primera apertura
-- redirija a `Inicio` si el usuario ya completó la configuración inicial
-
-### Comportamiento esperado
-- al completar el onboarding se guardará el estado de finalización
-- al terminar, el usuario será enviado claramente a la pantalla `Inicio`
-- el onboarding no volverá a mostrarse automáticamente en siguientes aperturas
-
-## 9. Estructura de archivos propuesta
-Para este bloque se propone la siguiente estructura mínima:
-
-- `lib/models/user_profile.dart`
-- `lib/models/enums.dart`
-- `lib/services/local_storage_service.dart`
-- `lib/screens/onboarding/welcome_screen.dart`
-- `lib/screens/onboarding/onboarding_shell.dart`
-- `lib/screens/onboarding/summary_screen.dart`
-- `lib/widgets/onboarding/progress_header.dart`
-- `lib/widgets/onboarding/option_card.dart`
-- `lib/widgets/onboarding/step_scaffold.dart`
-
-Si durante el desarrollo hiciera falta dividir pasos concretos en archivos adicionales dentro de `lib/screens/onboarding/`, se mantendrá esta misma organización modular.
-
-## 10. Resultado esperado
-Al finalizar este bloque, Fit Loren quedará con:
-- pantalla de bienvenida operativa
-- flujo completo de onboarding estructurado por pasos lógicos
-- modelo `UserProfile` definido
-- enums tipados para opciones cerradas
-- persistencia local con Hive
-- servicio `LocalStorageService` para lectura y escritura local
+Por coherencia con la arquitectura ya planteada, este bloque mantendrá:
+- Flutter como base única del proyecto
+- persistencia local con `Hive`
 - gestión de estado con `Provider` y `ChangeNotifier`
-- barra de progreso real durante todo el flujo
-- validación de datos obligatorios
-- campos opcionales saltables
-- selector de fecha y entradas numéricas donde corresponda
-- pantalla de resumen final antes de guardar
-- redirección a `Inicio` al completar el proceso
-- bloqueo automático del onboarding tras la primera configuración completada
-- base preparada para futura edición del perfil desde `Perfil`
+- estructura modular de archivos
+- tema visual oscuro con acento naranja
+
+## Alcance del Bloque 3
+
+### 1. Resumen del día
+La pantalla de Inicio mostrará un bloque superior con el estado actual del día.
+
+#### Información a mostrar
+- si el usuario ha entrenado hoy o no
+- resumen breve de la actividad del día
+- mensaje contextual según estado del día
+
+#### Objetivo funcional
+Dar al usuario una lectura inmediata de su situación actual nada más abrir la app.
+
+### 2. Próximo entrenamiento
+Se incluirá una tarjeta específica con el próximo entrenamiento programado.
+
+#### Información prevista
+- nombre o tipo de entrenamiento
+- duración estimada
+- fecha o día previsto
+- estado de disponibilidad
+
+#### Objetivo funcional
+Permitir al usuario saber rápidamente qué le toca después, sin tener que navegar a otras secciones.
+
+### 3. Acceso rápido a rutina activa
+La pantalla de Inicio tendrá un acceso directo destacado para iniciar la rutina activa del día.
+
+#### Comportamiento esperado
+- botón principal visible
+- acceso rápido al entrenamiento activo
+- preparado para enlazar con el flujo de entrenamiento en bloques posteriores
+
+#### Objetivo funcional
+Reducir fricción y convertir la pantalla de Inicio en punto de arranque real del uso diario.
+
+### 4. Días de racha seguidos
+Se mostrará un contador de días consecutivos entrenando.
+
+#### Información prevista
+- número actual de días de racha
+- componente visual motivacional
+- mensaje de refuerzo asociado a la constancia
+
+#### Objetivo funcional
+Aumentar motivación y sensación de progreso continuo.
+
+### 5. Calendario semanal de entrenamientos
+Se implementará una vista semanal compacta dentro de Inicio.
+
+#### Información a representar
+- semana actual
+- días con entrenamientos programados
+- estado de cada día:
+  - completado
+  - pendiente
+  - omitido
+
+#### Objetivo funcional
+Dar una visión rápida y útil de la semana sin convertir la pantalla de Inicio en un calendario complejo.
+
+## Modelo de datos propuesto
+Para este bloque conviene introducir modelos específicos de planificación y estado diario.
+
+### Modelos recomendados
+- `DailyActivitySummary`
+- `WorkoutPlan`
+- `WeeklyTrainingDay`
+- `WeeklyTrainingOverview`
+- `StreakStatus`
+
+### Responsabilidad de cada modelo
+#### `DailyActivitySummary`
+Representará:
+- fecha
+- si hubo entrenamiento completado o no
+- texto resumen del día
+- estado diario
+
+#### `WorkoutPlan`
+Representará:
+- identificador
+- nombre del entrenamiento
+- tipo
+- duración estimada
+- fecha programada
+- si es la rutina activa
+
+#### `WeeklyTrainingDay`
+Representará:
+- fecha
+- entrenamiento asignado o no
+- estado del día
+
+#### `WeeklyTrainingOverview`
+Representará:
+- rango de semana actual
+- lista de días de la semana
+
+#### `StreakStatus`
+Representará:
+- racha actual
+- mejor racha futura si se desea ampliar
+- mensaje motivacional calculado
+
+### Enums recomendados
+- `DayTrainingStatus` con valores como:
+  - `completed`
+  - `pending`
+  - `skipped`
+  - `rest`
+- `WorkoutType` si se quiere tipar desde ya el tipo de entrenamiento
+
+## Persistencia local con Hive
+Este bloque seguirá usando `Hive` como base de persistencia local.
+
+### Datos a guardar
+- resumen de actividad del día
+- planificación semanal actual
+- próximo entrenamiento
+- rutina activa
+- estado de racha
+
+### Objetivo de persistencia
+Permitir que la pantalla de Inicio pueda abrirse rápidamente con datos locales, incluso antes de que existan integraciones más complejas o sincronización futura.
+
+## Servicio de almacenamiento y consulta
+Se recomienda ampliar la capa de servicios existente con un servicio específico para Inicio.
+
+### Servicio recomendado
+- `HomeDataService`
+
+### Responsabilidades del servicio
+- leer datos necesarios para la pantalla Inicio
+- calcular el estado diario
+- obtener el próximo entrenamiento
+- calcular la racha actual
+- construir la vista semanal de entrenamientos
+- servir datos listos para la capa visual
+
+Esto evita meter lógica de negocio dentro de los widgets.
+
+## Gestión de estado con Provider
+Se mantendrá el mismo criterio técnico del Bloque 2.
+
+### Decisión técnica
+- usar `ChangeNotifier`
+- exponer el estado de Inicio mediante `Provider`
+- evitar lógica principal repartida con `setState`
+
+### Provider recomendado
+- `HomeProvider`
+
+### Responsabilidades de `HomeProvider`
+- cargar datos locales al abrir Inicio
+- exponer resumen del día
+- exponer próximo entrenamiento
+- exponer rutina activa
+- exponer estado de racha
+- exponer estado del calendario semanal
+- notificar cambios a la interfaz cuando haya actualizaciones
+
+## UX/UI de la pantalla Inicio
+La pantalla debe ser visualmente limpia, rápida de entender y útil en pocos segundos.
+
+### Orden visual recomendado
+1. saludo o encabezado breve
+2. resumen del día
+3. tarjeta de próximo entrenamiento
+4. botón de rutina activa
+5. bloque de racha
+6. calendario semanal
+
+### Criterios de diseño
+- jerarquía visual clara
+- tarjetas compactas y legibles
+- uso moderado del color naranja para destacar acciones y estados clave
+- fondo `#1a1a1a`
+- texto blanco
+- estados secundarios en tonos suaves
+
+### Consideraciones UX
+- no saturar Inicio con exceso de texto
+- mostrar mensajes cortos y accionables
+- permitir entender el día actual de un vistazo
+- hacer muy visible el acceso a entrenar
+- representar la racha sin caer en elementos infantiles o excesivos
+- hacer el calendario semanal simple, no un calendario mensual complejo
+
+## Componentes UI recomendados
+Para mantener orden y reutilización, conviene dividir Inicio en widgets específicos.
+
+### Widgets sugeridos
+- `daily_summary_card.dart`
+- `next_workout_card.dart`
+- `active_routine_button.dart`
+- `streak_card.dart`
+- `weekly_calendar_card.dart`
+- `week_day_status_chip.dart`
+
+## Estructura de archivos propuesta
+Por coherencia con la estructura actual, se propone añadir como mínimo:
+
+- `lib/models/daily_activity_summary.dart`
+- `lib/models/workout_plan.dart`
+- `lib/models/weekly_training_day.dart`
+- `lib/models/weekly_training_overview.dart`
+- `lib/models/streak_status.dart`
+- `lib/models/home_enums.dart`
+- `lib/services/home_data_service.dart`
+- `lib/services/home_provider.dart`
+- `lib/widgets/home/daily_summary_card.dart`
+- `lib/widgets/home/next_workout_card.dart`
+- `lib/widgets/home/active_routine_button.dart`
+- `lib/widgets/home/streak_card.dart`
+- `lib/widgets/home/weekly_calendar_card.dart`
+- `lib/widgets/home/week_day_status_chip.dart`
+- actualización de `lib/screens/home_screen.dart`
+
+## Navegación e integración con bloques anteriores
+La pantalla de Inicio deberá respetar la lógica ya creada en el Bloque 2:
+- si el onboarding no está completado, el usuario no debe llegar aquí como flujo inicial
+- una vez completado el onboarding, Inicio se convierte en la primera pantalla funcional real
+- el acceso rápido a rutina activa quedará preparado para enlazar con futuras pantallas de entrenamiento
+
+## Resultado esperado
+Al finalizar este bloque, Fit Loren debería quedar con:
+- pantalla de Inicio completa y funcional
+- resumen del día visible
+- próximo entrenamiento mostrado claramente
+- acceso directo a la rutina activa
+- contador de racha visible y motivacional
+- calendario semanal compacto con estados de cada día
+- datos persistidos localmente con Hive
+- lógica de Inicio gestionada con `Provider`
+- arquitectura lista para ampliar con rutinas reales y seguimiento posterior
 
 ## Observación importante
-Esta propuesta solo define el trabajo técnico del Bloque 2.
+Esta propuesta solo define el trabajo técnico del Bloque 3.
 No se ejecutará ningún desarrollo ni se realizarán cambios en el proyecto hasta recibir autorización expresa de Lorenzo.
