@@ -1,390 +1,335 @@
-# Propuesta técnica de desarrollo, Bloque 3, Fit Loren
+# Propuesta técnica de desarrollo, Bloque 4, Fit Loren
 
 ## Objetivo
-Desarrollar la pantalla de Inicio completa de Fit Loren como panel principal de estado del usuario, mostrando de forma clara su situación diaria, el próximo entrenamiento, la rutina activa, la racha de constancia y la planificación semanal, todo ello sobre una base técnica coherente con los Bloques 1 y 2.
+Desarrollar la biblioteca completa de ejercicios de Fit Loren para que el usuario pueda localizar, filtrar, consultar y entender cada ejercicio de forma rápida, visual y útil, manteniendo una arquitectura Flutter coherente con los Bloques 1, 2 y 3.
 
-## Enfoque técnico del Bloque 3
-Este bloque debe consolidar la pantalla de `Inicio` como centro operativo de la app. No se plantea solo como una pantalla visual, sino como una capa de consulta y presentación de datos ya preparados para evolucionar más adelante hacia planes, rutinas, histórico y seguimiento de progreso.
+## Enfoque técnico del Bloque 4
+Este bloque convertirá la sección `Ejercicios` en una biblioteca real de consulta, no solo en una lista estática. La implementación deberá permitir búsqueda rápida, filtros combinables, navegación a ficha detallada y una base de datos de ejercicios preparada para crecer más adelante.
 
-Por coherencia con la arquitectura ya planteada, este bloque mantendrá:
+Por coherencia con los bloques anteriores, este bloque mantendrá:
 - Flutter como base única del proyecto
 - persistencia local con `Hive`
 - gestión de estado con `Provider` y `ChangeNotifier`
 - estructura modular de archivos
 - tema visual oscuro con acento naranja
 
-## Alcance del Bloque 3
+## Alcance del Bloque 4
 
-### 1. Saludo personalizado por hora
-La pantalla de Inicio mostrará un saludo dinámico usando el nombre del usuario guardado en su perfil.
+### 1. Buscador por nombre
+La biblioteca incluirá un campo de búsqueda para localizar ejercicios por nombre.
 
-#### Comportamiento esperado
-Se implementará una función que devuelva el saludo según la hora del día:
-- `Buenos días`, antes de las 12:00
-- `Buenas tardes`, entre las 12:00 y las 18:00
-- `Buenas noches`, después de las 18:00
-
-El saludo deberá usar el nombre o apodo del usuario del perfil para personalizar la experiencia.
+#### Requisitos funcionales
+- búsqueda en tiempo real mientras el usuario escribe
+- búsqueda por coincidencia parcial
+- búsqueda aproximada tipo fuzzy search
 
 #### Objetivo funcional
-Hacer que la pantalla de Inicio se sienta viva, cercana y contextual desde el primer vistazo.
+Permitir encontrar ejercicios rápidamente aunque el usuario no escriba el nombre exacto.
 
-### 2. Resumen del día
-La pantalla de Inicio mostrará un bloque superior con el estado actual del día.
+### 2. Filtros por músculo
+La biblioteca permitirá filtrar ejercicios por grupo muscular.
 
-#### Información a mostrar
-- si el usuario ha entrenado hoy o no
-- resumen breve de la actividad del día
-- mensaje contextual según estado del día
-
-#### Objetivo funcional
-Dar al usuario una lectura inmediata de su situación actual nada más abrir la app.
-
-### 3. Próximo entrenamiento
-Se incluirá una tarjeta específica con el próximo entrenamiento programado.
-
-#### Información prevista
-- nombre o tipo de entrenamiento
-- duración estimada
-- fecha o día previsto
-- estado de disponibilidad
+#### Requisitos funcionales
+- filtro por músculo principal
+- posibilidad de incluir músculos secundarios
+- selección múltiple de músculos
 
 #### Objetivo funcional
-Permitir al usuario saber rápidamente qué le toca después, sin tener que navegar a otras secciones.
+Dar al usuario una forma práctica de localizar ejercicios según la zona corporal que quiera trabajar.
 
-### 4. Acceso rápido a rutina activa
-La pantalla de Inicio tendrá un acceso directo destacado para iniciar la rutina activa del día.
+### 3. Filtros por tipo de equipo
+Se implementarán filtros por el equipo necesario para realizar el ejercicio.
 
-#### Comportamiento esperado
-- botón principal visible
-- acceso rápido al entrenamiento activo
-- preparado para enlazar con el flujo de entrenamiento en bloques posteriores
-
-#### Objetivo funcional
-Reducir fricción y convertir la pantalla de Inicio en punto de arranque real del uso diario.
-
-### 5. Días de racha seguidos
-Se mostrará un contador de días consecutivos entrenando.
-
-#### Información prevista
-- número actual de días de racha
-- componente visual motivacional
-- mensaje de refuerzo asociado a la constancia
+#### Opciones mínimas
+- cuerpo libre (`bodyweight`)
+- pesas manuales (`dumbbells`)
+- barras (`barbell`)
+- máquinas (`machines`)
+- bandas elásticas (`resistance bands`)
+- otros
 
 #### Objetivo funcional
-Aumentar motivación y sensación de progreso continuo.
+Facilitar la búsqueda de ejercicios adaptados al material disponible del usuario.
 
-### 6. Calendario semanal de entrenamientos
-Se implementará una vista semanal compacta dentro de Inicio.
+### 4. Filtros por dificultad
+La biblioteca incluirá filtro por nivel de dificultad.
 
-#### Información a representar
-- semana actual
-- días con entrenamientos programados
-- estado de cada día:
-  - completado
-  - pendiente
-  - omitido
-  - descanso
+#### Niveles
+- principiante
+- intermedio
+- avanzado
 
 #### Objetivo funcional
-Dar una visión rápida y útil de la semana sin convertir la pantalla de Inicio en un calendario complejo.
+Permitir al usuario consultar ejercicios adecuados a su nivel actual.
 
-### 7. Estado vacío para primer uso
-Se diseñará un estado vacío específico para cuando todavía no existan entrenamientos programados.
+### 5. Listado de ejercicios
+Se desarrollará una vista de listado para mostrar los ejercicios disponibles.
 
-#### Elementos del estado vacío
-- icono representativo
-- mensaje motivacional
-- botón para comenzar o configurar el siguiente paso
+#### Información visible por ítem
+- imagen del ejercicio
+- nombre del ejercicio
+- músculo principal
+- nivel de dificultad con indicación visual
 
-#### Objetivo funcional
-Mejorar la experiencia de primer uso y evitar una pantalla vacía o fría cuando aún no hay datos suficientes.
+#### Navegación de resultados
+La propuesta contempla una de estas dos estrategias:
+- scroll infinito
+- paginación
 
-### 8. Manejo de errores unificado
-Se definirá un patrón consistente para errores en toda la pantalla de Inicio.
-
-#### Elementos del widget de error
-- icono de error
-- mensaje principal
-- detalle opcional
-- botón `Reintentar`
+### Recomendación técnica
+Para este bloque, se recomienda empezar con paginación o carga por lotes simples, porque es más fácil de controlar y suficiente para una primera biblioteca local. Si más adelante el volumen de ejercicios crece mucho, podrá evolucionarse a scroll infinito.
 
 #### Objetivo funcional
-Mantener coherencia visual y funcional cuando falle una carga o un cálculo de datos.
+Mantener la lista ágil, ordenada y escalable sin saturar la interfaz.
 
-### 9. Mensajes motivacionales personalizados durante el entrenamiento
-Aunque el flujo completo de entrenamiento pertenezca a bloques posteriores, este bloque dejará definida la base técnica de mensajes motivacionales personalizados.
+### 6. Ficha completa de ejercicio
+Al pulsar un ejercicio, se abrirá su ficha completa.
 
-#### Momentos contemplados
-- antes de empezar el entrenamiento
-- entre series
-- durante el descanso
-- al completar el entrenamiento
-
-#### Características del sistema
-- listas de mensajes por contexto
-- selección aleatoria para evitar repetición constante
-- uso del nombre del usuario en todos los mensajes
-- mensajes de hidratación durante descansos cuando corresponda
+#### Información de la ficha
+- nombre del ejercicio
+- músculos principales
+- músculos secundarios
+- descripción técnica detallada
+- nivel de dificultad
+- alternativas para el mismo músculo
+- imágenes o vídeos del ejercicio, si aplica
+- pasos para ejecutarlo correctamente
+- errores comunes a evitar
 
 #### Objetivo funcional
-Preparar una experiencia más humana, motivadora y personalizada para las sesiones de entrenamiento futuras.
+Ofrecer una ficha realmente útil, no solo descriptiva, para ayudar al usuario a ejecutar bien cada ejercicio.
 
 ## Modelo de datos propuesto
-Para este bloque conviene introducir modelos específicos de planificación, estado diario y presentación de Inicio.
+Este bloque requiere una base de datos de ejercicios bien estructurada.
 
 ### Modelos recomendados
-- `TrainingDay`
-- `WorkoutPlan`
-- `WeeklyTrainingOverview`
-- `StreakStatus`
-- `MotivationalMessageSet`
+- `Exercise`
+- `ExerciseMedia`
+- `ExerciseExecutionStep`
+- `ExerciseAlternative`
+- `ExerciseFilters`
+- `ExerciseSearchResult`
 
-### Fusión de modelos aprobada
-Se fusionarán los conceptos de `WeeklyTrainingDay` y `DailyActivitySummary` en un único modelo `TrainingDay`.
-
-#### `TrainingDay` representará
-- fecha
-- si existe entrenamiento programado
-- entrenamiento asociado si aplica
-- estado del día
-- resumen breve del día
-- si el entrenamiento fue completado o no
-- información suficiente para alimentar tanto el resumen diario como el calendario semanal
-
-#### `WorkoutPlan` representará
+### Responsabilidad de cada modelo
+#### `Exercise`
+Representará el ejercicio principal con:
 - identificador
-- nombre del entrenamiento
-- tipo
-- duración estimada
-- fecha programada
-- si es la rutina activa
+- nombre
+- músculo principal
+- lista de músculos secundarios
+- tipo de equipo
+- nivel de dificultad
+- descripción técnica
+- lista de pasos de ejecución
+- lista de errores comunes
+- lista de alternativas
+- media asociada
 
-#### `WeeklyTrainingOverview` representará
-- rango de semana actual
-- lista de `TrainingDay`
+#### `ExerciseMedia`
+Representará recursos visuales:
+- imagen principal
+- imágenes adicionales si existen
+- vídeo o referencia de vídeo si aplica
 
-#### `StreakStatus` representará
-- racha actual
-- posible mejor racha futura si se amplía más adelante
-- mensaje motivacional calculado
+#### `ExerciseExecutionStep`
+Representará cada paso de ejecución:
+- orden
+- texto del paso
 
-#### `MotivationalMessageSet` representará
-- listas de mensajes para antes de entrenar
-- listas de mensajes entre series
-- listas de mensajes durante descansos
-- listas de mensajes al completar entrenamiento
+#### `ExerciseAlternative`
+Representará ejercicios alternativos relacionados:
+- id del ejercicio alternativo
+- nombre visible
+- relación con mismo músculo o patrón similar
 
-### Enums recomendados
-- `DayTrainingStatus` con valores como:
-  - `completed`
-  - `pending`
-  - `skipped`
-  - `rest`
-- `WorkoutType`
-- `HomeLoadState` para gestionar estados visuales de carga, vacío, listo y error
+#### `ExerciseFilters`
+Representará el estado actual de búsqueda y filtrado:
+- texto de búsqueda
+- músculos seleccionados
+- inclusión de músculos secundarios o no
+- equipos seleccionados
+- dificultades seleccionadas
+
+#### `ExerciseSearchResult`
+Servirá para devolver resultados procesados de búsqueda y paginación:
+- lista de ejercicios filtrados
+- total de resultados
+- página o lote actual
+- indicador de más resultados disponibles
+
+## Enums recomendados
+Se recomienda tipar toda la biblioteca con enums claros.
+
+### Enums mínimos
+- `MuscleGroup`
+- `EquipmentType`
+- `ExerciseDifficulty`
+- `MediaType`
+- `ExerciseListLoadState`
 
 ## Persistencia local con Hive
-Este bloque seguirá usando `Hive` como base de persistencia local.
-
-### TypeAdapters obligatorios
-Se implementarán `TypeAdapters` para todos los modelos del Bloque 3 con `typeId` específicos.
-
-### Modelos a adaptar
-- `TrainingDay`
-- `WorkoutPlan`
-- `WeeklyTrainingOverview`
-- `StreakStatus`
-- cualquier enum persistido del Bloque 3
-
-### Ventajas
-- mejor rendimiento de lectura y escritura
-- persistencia más tipada
-- menos transformación manual de datos
-- base más robusta para crecimiento posterior
+Este bloque seguirá la misma línea técnica de persistencia local con `Hive`.
 
 ### Datos a guardar
-- resumen y estado del día actual
-- planificación semanal actual
-- próximo entrenamiento
-- rutina activa
-- estado de racha
-- datos de apoyo para mensajes motivacionales si se necesitan más adelante
+- catálogo local de ejercicios
+- metadatos de búsqueda si interesa conservar estado entre sesiones
+- filtros usados recientemente, si se decide mejorar UX
+
+### TypeAdapters requeridos
+Se implementarán `TypeAdapters` para todos los modelos persistidos del Bloque 4 con `typeId` específicos.
 
 ### Objetivo de persistencia
-Permitir que la pantalla de Inicio pueda abrirse rápidamente con datos locales, incluso antes de que existan integraciones más complejas o sincronización futura.
+Permitir que la biblioteca cargue rápido, funcione sin dependencia externa y quede preparada para ampliarse con más ejercicios en el futuro.
 
-## Servicio de almacenamiento y consulta
-Se recomienda ampliar la capa de servicios existente con un servicio específico para Inicio.
+## Estrategia de búsqueda
+La búsqueda debe ser rápida, tolerante y útil.
+
+### Requisitos técnicos
+- normalización de texto
+- búsqueda no sensible a mayúsculas o minúsculas
+- coincidencia parcial por nombre
+- fuzzy search básica para errores leves de escritura
+
+### Recomendación técnica
+Para este bloque, conviene implementar un fuzzy search local sencillo, por ejemplo con:
+- normalización de strings
+- coincidencia por contains
+- puntuación simple por similitud
+
+No hace falta un motor complejo en esta fase si la biblioteca inicial será local y de tamaño controlado.
+
+## Estructura de filtros
+Los filtros deben poder combinarse entre sí sin confundir al usuario.
+
+### Comportamiento esperado
+- búsqueda y filtros activos al mismo tiempo
+- chips o botones visuales para filtros seleccionados
+- opción clara para limpiar filtros
+- actualización del listado sin necesidad de pantallas separadas
+
+### Lógica de filtrado recomendada
+1. aplicar texto de búsqueda
+2. aplicar músculos seleccionados
+3. aplicar equipo
+4. aplicar dificultad
+5. paginar o limitar resultados visibles
+
+## Servicio de datos recomendado
+Se recomienda crear una capa específica para la biblioteca.
 
 ### Servicio recomendado
-- `HomeDataService`
-
-### Responsabilidades del servicio
-- leer datos necesarios para la pantalla Inicio
-- calcular el saludo personalizado según hora y nombre del usuario
-- calcular el estado diario
-- obtener el próximo entrenamiento
-- calcular la racha actual
-- construir la vista semanal de entrenamientos
-- decidir cuándo mostrar estado vacío
-- devolver errores estructurados para el widget unificado de error
-- servir datos listos para la capa visual
-
-### Estrategia de caché aprobada
-`HomeDataService` incorporará una estrategia de caché con duración de 5 minutos.
-
-#### Objetivo de la caché
-- reducir cargas repetidas de datos
-- evitar recomputaciones innecesarias al volver a Inicio varias veces en pocos minutos
-- mantener buena sensación de fluidez
-
-#### Criterio de uso
-- si los datos en caché siguen dentro de la ventana de 5 minutos, reutilizarlos
-- si la caché ha caducado, recalcular o recargar desde persistencia
-- permitir invalidación manual cuando haya cambios relevantes, por ejemplo al completar un entrenamiento
-
-Esto evita meter lógica de negocio dentro de los widgets.
-
-## Gestión de estado con Provider
-Se mantendrá el mismo criterio técnico del Bloque 2.
-
-### Decisión técnica
-- usar `ChangeNotifier`
-- exponer el estado de Inicio mediante `Provider`
-- evitar lógica principal repartida con `setState`
-
-### Provider recomendado
-- `HomeProvider`
-
-### Responsabilidades de `HomeProvider`
-- cargar datos locales al abrir Inicio
-- exponer el saludo personalizado
-- exponer resumen del día
-- exponer próximo entrenamiento
-- exponer rutina activa
-- exponer estado de racha
-- exponer estado del calendario semanal
-- exponer estado vacío si no hay entrenamientos
-- exponer estado de error unificado si falla algo
-- invalidar caché cuando sea necesario
-- notificar cambios a la interfaz cuando haya actualizaciones
-
-## UX/UI de la pantalla Inicio
-La pantalla debe ser visualmente limpia, rápida de entender y útil en pocos segundos.
-
-### Orden visual recomendado
-1. saludo personalizado
-2. resumen del día
-3. tarjeta de próximo entrenamiento
-4. botón de rutina activa
-5. bloque de racha
-6. calendario semanal
-7. estado vacío o error cuando corresponda
-
-### Criterios de diseño
-- jerarquía visual clara
-- tarjetas compactas y legibles
-- uso moderado del color naranja para destacar acciones y estados clave
-- fondo `#1a1a1a`
-- texto blanco
-- estados secundarios en tonos suaves
-
-### Consideraciones UX
-- no saturar Inicio con exceso de texto
-- mostrar mensajes cortos y accionables
-- permitir entender el día actual de un vistazo
-- hacer muy visible el acceso a entrenar
-- representar la racha sin caer en elementos infantiles o excesivos
-- hacer el calendario semanal simple, no un calendario mensual complejo
-- dar una buena experiencia tanto si hay datos como si todavía no los hay
-- mostrar errores de forma clara, sin tecnicismos innecesarios al usuario
-
-## Componentes UI recomendados
-Para mantener orden y reutilización, conviene dividir Inicio en widgets específicos.
-
-### Widgets sugeridos
-- `greeting_header.dart`
-- `daily_summary_card.dart`
-- `next_workout_card.dart`
-- `active_routine_button.dart`
-- `streak_card.dart`
-- `weekly_calendar_card.dart`
-- `week_day_status_chip.dart`
-- `empty_home_state.dart`
-- `home_error_state.dart`
-
-## Sistema de mensajes motivacionales
-Se recomienda centralizar esta lógica para facilitar mantenimiento y variedad.
-
-### Servicio o helper recomendado
-- `motivational_message_service.dart`
+- `ExerciseLibraryService`
 
 ### Responsabilidades
-- almacenar listas de mensajes por contexto
-- interpolar el nombre del usuario
-- seleccionar mensajes aleatorios
-- evitar repeticiones inmediatas cuando sea posible
+- cargar catálogo local de ejercicios
+- aplicar búsqueda
+- aplicar filtros
+- resolver paginación o lotes
+- obtener ficha completa de un ejercicio
+- obtener alternativas del mismo músculo
 
-### Contextos de mensajes
-- pre entrenamiento
-- entre series
-- descanso
-- fin de entrenamiento
+## Gestión de estado con Provider
+Se mantendrá el patrón ya usado en bloques anteriores.
+
+### Provider recomendado
+- `ExerciseLibraryProvider`
+- opcionalmente `ExerciseDetailProvider` si se quiere separar la ficha del listado
+
+### Responsabilidades de `ExerciseLibraryProvider`
+- cargar ejercicios
+- gestionar texto de búsqueda
+- gestionar filtros activos
+- exponer resultados filtrados
+- controlar estados de carga, vacío y error
+- gestionar paginación o carga incremental
+
+### Responsabilidades de `ExerciseDetailProvider` si se usa
+- cargar detalle completo de un ejercicio
+- resolver alternativas
+- gestionar media asociada
+
+## UX/UI de la biblioteca
+La biblioteca debe ser muy cómoda de usar desde móvil.
+
+### Principios UX
+- búsqueda visible desde arriba
+- filtros accesibles sin ocupar demasiado espacio
+- resultados legibles y rápidos de recorrer
+- ficha clara, técnica y visual
+- buena experiencia tanto con pocos como con muchos resultados
+
+### Elementos UI recomendados para el listado
+- campo de búsqueda superior
+- fila o panel de filtros
+- contador de resultados
+- tarjetas o filas de ejercicios
+- indicador de carga de más resultados
+- estado vacío cuando no haya coincidencias
+- estado de error consistente con Bloque 3
+
+### Elementos UI recomendados para la ficha
+- cabecera con imagen y nombre
+- bloque de músculos principales y secundarios
+- badge visual de dificultad
+- bloque de descripción técnica
+- pasos de ejecución en formato claro
+- bloque de errores comunes
+- bloque de alternativas
+- media visual si existe
 
 ## Estructura de archivos propuesta
 Por coherencia con la estructura actual, se propone añadir como mínimo:
 
-- `lib/models/training_day.dart`
-- `lib/models/workout_plan.dart`
-- `lib/models/weekly_training_overview.dart`
-- `lib/models/streak_status.dart`
-- `lib/models/motivational_message_set.dart`
-- `lib/models/home_enums.dart`
-- `lib/services/home_data_service.dart`
-- `lib/services/home_provider.dart`
-- `lib/services/motivational_message_service.dart`
-- `lib/widgets/home/greeting_header.dart`
-- `lib/widgets/home/daily_summary_card.dart`
-- `lib/widgets/home/next_workout_card.dart`
-- `lib/widgets/home/active_routine_button.dart`
-- `lib/widgets/home/streak_card.dart`
-- `lib/widgets/home/weekly_calendar_card.dart`
-- `lib/widgets/home/week_day_status_chip.dart`
-- `lib/widgets/home/empty_home_state.dart`
-- `lib/widgets/home/home_error_state.dart`
-- actualización de `lib/screens/home_screen.dart`
-
-## Mejoras descartadas en esta fase
-Se deja constancia de que, por ahora, no se incorporarán en este bloque:
-- `StateNotifier`
-- lazy loading del calendario
-- estrategia de pruebas específica
+- `lib/models/exercise.dart`
+- `lib/models/exercise_media.dart`
+- `lib/models/exercise_execution_step.dart`
+- `lib/models/exercise_alternative.dart`
+- `lib/models/exercise_filters.dart`
+- `lib/models/exercise_search_result.dart`
+- `lib/models/exercise_enums.dart`
+- `lib/services/exercise_library_service.dart`
+- `lib/services/exercise_library_provider.dart`
+- `lib/services/exercise_detail_provider.dart`
+- `lib/widgets/exercises/exercise_search_bar.dart`
+- `lib/widgets/exercises/filter_section.dart`
+- `lib/widgets/exercises/filter_chip_group.dart`
+- `lib/widgets/exercises/exercise_list_item.dart`
+- `lib/widgets/exercises/exercise_difficulty_badge.dart`
+- `lib/widgets/exercises/exercise_empty_state.dart`
+- `lib/widgets/exercises/exercise_error_state.dart`
+- `lib/widgets/exercises/exercise_detail_header.dart`
+- `lib/widgets/exercises/exercise_step_list.dart`
+- `lib/widgets/exercises/exercise_common_errors_card.dart`
+- `lib/widgets/exercises/exercise_alternatives_section.dart`
+- actualización de `lib/screens/exercises_screen.dart`
+- nueva pantalla de detalle, por ejemplo `lib/screens/exercise_detail_screen.dart`
 
 ## Navegación e integración con bloques anteriores
-La pantalla de Inicio deberá respetar la lógica ya creada en el Bloque 2:
-- si el onboarding no está completado, el usuario no debe llegar aquí como flujo inicial
-- una vez completado el onboarding, Inicio se convierte en la primera pantalla funcional real
-- el acceso rápido a rutina activa quedará preparado para enlazar con futuras pantallas de entrenamiento
-- el nombre del usuario para saludo y mensajes motivacionales se obtendrá del perfil creado en el onboarding
+La biblioteca debe integrarse con lo ya construido:
+- mantener el tema visual de los Bloques 1, 2 y 3
+- reutilizar el patrón de estados visuales vacío y error ya establecido
+- permitir que futuros bloques enlacen ejercicios desde entrenamientos, rutinas e Inicio
+- quedar preparada para que las alternativas de ejercicio puedan usarse después en rutinas personalizadas
+
+## Decisiones técnicas recomendadas
+- usar `Hive` como catálogo local inicial
+- usar `Provider` para listado y detalle
+- implementar paginación simple por lotes en vez de scroll infinito complejo en esta fase
+- mantener búsqueda local optimizada antes de plantear soluciones más avanzadas
+- diseñar fichas de ejercicio con estructura muy clara para consulta en móvil
 
 ## Resultado esperado
 Al finalizar este bloque, Fit Loren debería quedar con:
-- pantalla de Inicio completa y funcional
-- saludo personalizado por hora usando el nombre del usuario
-- resumen del día visible
-- próximo entrenamiento mostrado claramente
-- acceso directo a la rutina activa
-- contador de racha visible y motivacional
-- calendario semanal compacto con estados de cada día
-- estado vacío cuidado para primer uso
-- manejo de errores unificado
-- datos persistidos localmente con Hive usando `TypeAdapters`
-- caché de 5 minutos en `HomeDataService`
-- lógica de Inicio gestionada con `Provider`
-- base técnica preparada para mensajes motivacionales personalizados durante entrenamientos futuros
-- arquitectura lista para ampliar con rutinas reales y seguimiento posterior
+- biblioteca de ejercicios funcional
+- buscador por nombre en tiempo real
+- búsqueda aproximada básica
+- filtros por músculo, equipo y dificultad
+- listado visual de ejercicios
+- sistema de carga incremental o paginación
+- ficha completa por ejercicio
+- alternativas para el mismo músculo
+- arquitectura preparada para crecer con más ejercicios y futuras rutinas
 
 ## Observación importante
-Esta propuesta solo define el trabajo técnico del Bloque 3.
+Esta propuesta solo define el trabajo técnico del Bloque 4.
 No se ejecutará ningún desarrollo ni se realizarán cambios en el proyecto hasta recibir autorización expresa de Lorenzo.
