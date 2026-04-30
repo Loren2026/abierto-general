@@ -8,14 +8,28 @@ Este bloque no se plantea solo como una secuencia de pantallas, sino como la bas
 
 ## Alcance del Bloque 2
 
-### 1. Pantalla de bienvenida
+### 1. Tarea inicial de limpieza obligatoria
+Antes de crear cualquier archivo Flutter nuevo dentro del repositorio `abierto-fit-loren`, deberá ejecutarse una limpieza inicial del material anterior no válido para esta fase.
+
+#### Archivos a eliminar del repo `abierto-fit-loren`
+- `index.html`
+- `entrenamiento.html`
+- `ficha-ejercicio.html`
+- `manifest.json`
+- `service-worker.js`
+- `vercel.json`
+
+#### Condición de ejecución
+Esta limpieza deberá realizarse obligatoriamente antes de crear nuevos archivos Flutter del Bloque 2, para evitar mezclar restos de la versión web anterior con la nueva estructura móvil de la app.
+
+### 2. Pantalla de bienvenida
 Se desarrollará una pantalla inicial de onboarding con:
 - Logo de Fit Loren
 - Botón `Comenzar`
 
 Esta pantalla actuará como punto de entrada al flujo de configuración inicial.
 
-## 2. Modelo de datos `UserProfile`
+## 3. Modelo de datos `UserProfile`
 Se definirá un modelo central `UserProfile` que contendrá todos los datos recopilados en el onboarding.
 
 ### Campos del modelo
@@ -44,7 +58,7 @@ Se crearán enums para evitar strings dispersos y mejorar el tipado del proyecto
 
 Esto facilitará validaciones, mantenimiento, persistencia y futura evolución del perfil.
 
-## 3. Persistencia local con Hive
+## 4. Persistencia local con Hive
 La decisión técnica para este bloque será usar `Hive` como sistema de persistencia local.
 
 ### Motivos de la elección
@@ -70,7 +84,7 @@ Este servicio será responsable de:
 - guardar el flag de onboarding completado
 - consultar si el onboarding debe mostrarse o no al iniciar la app
 
-## 4. Gestión de estado con Provider
+## 5. Gestión de estado con Provider
 La gestión del flujo del onboarding se realizará con `Provider` y `ChangeNotifier`.
 
 ### Decisión técnica
@@ -84,7 +98,7 @@ La gestión del flujo del onboarding se realizará con `Provider` y `ChangeNotif
 - facilidad para validar pasos, guardar datos parciales y controlar navegación
 - base adecuada para futuras ampliaciones
 
-## 5. Flujo guiado paso a paso con agrupación lógica
+## 6. Flujo guiado paso a paso con agrupación lógica
 No se usará un diseño de un único campo por pantalla, porque penaliza la experiencia de uso. En su lugar, los datos se agruparán en pasos lógicos.
 
 ### Propuesta de agrupación de pasos
@@ -123,7 +137,7 @@ No se usará un diseño de un único campo por pantalla, porque penaliza la expe
    - revisión de todos los datos introducidos
    - confirmación final antes de guardar
 
-## 6. UX/UI mejorada del onboarding
+## 7. UX/UI mejorada del onboarding
 El onboarding mantendrá el tema base de Fit Loren:
 - Fondo: `#1a1a1a`
 - Acento: `#E8732A`
@@ -145,7 +159,7 @@ Además, se incorporarán las siguientes mejoras de experiencia de usuario:
 ### Mejora funcional importante
 Se dejará preparado el modelo y la persistencia para que estos datos puedan editarse más adelante desde la sección `Perfil`, aunque esa edición no forme parte de este bloque.
 
-## 7. Navegación centralizada
+## 8. Navegación centralizada
 La lógica que decide si se muestra el onboarding o la pantalla principal no debe quedar repartida entre pantallas.
 
 ### Decisión técnica
@@ -159,7 +173,7 @@ Se implementará un punto de arranque centralizado que:
 - al terminar, el usuario será enviado claramente a la pantalla `Inicio`
 - el onboarding no volverá a mostrarse automáticamente en siguientes aperturas
 
-## 8. Estructura de archivos propuesta
+## 9. Estructura de archivos propuesta
 Para este bloque se propone la siguiente estructura mínima:
 
 - `lib/models/user_profile.dart`
@@ -174,7 +188,7 @@ Para este bloque se propone la siguiente estructura mínima:
 
 Si durante el desarrollo hiciera falta dividir pasos concretos en archivos adicionales dentro de `lib/screens/onboarding/`, se mantendrá esta misma organización modular.
 
-## 9. Resultado esperado
+## 10. Resultado esperado
 Al finalizar este bloque, Fit Loren quedará con:
 - pantalla de bienvenida operativa
 - flujo completo de onboarding estructurado por pasos lógicos
