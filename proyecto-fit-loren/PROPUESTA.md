@@ -22,6 +22,7 @@ La biblioteca incluirá un campo de búsqueda para localizar ejercicios por nomb
 - búsqueda en tiempo real mientras el usuario escribe
 - búsqueda por coincidencia parcial
 - búsqueda aproximada tipo fuzzy search
+- búsqueda con algoritmo de similitud para tolerar errores de escritura
 
 #### Objetivo funcional
 Permitir encontrar ejercicios rápidamente aunque el usuario no escriba el nombre exacto.
@@ -33,6 +34,7 @@ La biblioteca permitirá filtrar ejercicios por grupo muscular.
 - filtro por músculo principal
 - posibilidad de incluir músculos secundarios
 - selección múltiple de músculos
+- lógica OR entre músculos seleccionados
 
 #### Objetivo funcional
 Dar al usuario una forma práctica de localizar ejercicios según la zona corporal que quiera trabajar.
@@ -47,6 +49,10 @@ Se implementarán filtros por el equipo necesario para realizar el ejercicio.
 - máquinas (`machines`)
 - bandas elásticas (`resistance bands`)
 - otros
+
+#### Requisitos funcionales
+- selección múltiple de equipos
+- lógica OR entre equipos seleccionados
 
 #### Objetivo funcional
 Facilitar la búsqueda de ejercicios adaptados al material disponible del usuario.
@@ -70,6 +76,13 @@ Se desarrollará una vista de listado para mostrar los ejercicios disponibles.
 - nombre del ejercicio
 - músculo principal
 - nivel de dificultad con indicación visual
+- botón de favorito
+
+#### Badges visuales de dificultad
+Se implementarán badges visuales con colores consistentes:
+- principiante: verde (`lightGreen`)
+- intermedio: naranja (`orange` o `deepOrange`)
+- avanzado: rojo (`red` o `redAccent`)
 
 #### Navegación de resultados
 La propuesta contempla una de estas dos estrategias:
@@ -95,9 +108,34 @@ Al pulsar un ejercicio, se abrirá su ficha completa.
 - imágenes o vídeos del ejercicio, si aplica
 - pasos para ejecutarlo correctamente
 - errores comunes a evitar
+- indicador de si el ejercicio es compuesto
+- tags adicionales si existen
 
 #### Objetivo funcional
 Ofrecer una ficha realmente útil, no solo descriptiva, para ayudar al usuario a ejecutar bien cada ejercicio.
+
+### 7. Sistema de favoritos
+Se incorporará un sistema de favoritos de ejercicios dentro de la biblioteca.
+
+#### Funcionalidades mínimas
+- modelo `UserFavorites`
+- botón de favorito en cada ejercicio
+- posibilidad de marcar y desmarcar ejercicios rápidamente
+- gestión de favoritos desde la propia biblioteca
+
+#### Objetivo funcional
+Permitir al usuario guardar ejercicios de referencia para volver a ellos con rapidez.
+
+### 8. Carga diferida de imágenes
+Se implementará una estrategia de carga diferida de imágenes para mejorar rendimiento y experiencia.
+
+#### Requisitos funcionales
+- placeholder de carga
+- carga bajo demanda
+- manejo de errores de carga
+
+#### Objetivo funcional
+Evitar bloqueos visuales y mejorar la fluidez del listado y de la ficha de ejercicio.
 
 ## Modelo de datos propuesto
 Este bloque requiere una base de datos de ejercicios bien estructurada.
@@ -109,6 +147,7 @@ Este bloque requiere una base de datos de ejercicios bien estructurada.
 - `ExerciseAlternative`
 - `ExerciseFilters`
 - `ExerciseSearchResult`
+- `UserFavorites`
 
 ### Responsabilidad de cada modelo
 #### `Exercise`
@@ -124,6 +163,9 @@ Representará el ejercicio principal con:
 - lista de errores comunes
 - lista de alternativas
 - media asociada
+- `videoUrl?`
+- `isCompound?`
+- `tags?`
 
 #### `ExerciseMedia`
 Representará recursos visuales:
@@ -157,6 +199,11 @@ Servirá para devolver resultados procesados de búsqueda y paginación:
 - página o lote actual
 - indicador de más resultados disponibles
 
+#### `UserFavorites`
+Representará la colección de favoritos del usuario:
+- lista de ids de ejercicios favoritos
+- operaciones de añadir y quitar favoritos
+
 ## Enums recomendados
 Se recomienda tipar toda la biblioteca con enums claros.
 
@@ -172,6 +219,7 @@ Este bloque seguirá la misma línea técnica de persistencia local con `Hive`.
 
 ### Datos a guardar
 - catálogo local de ejercicios
+- favoritos del usuario
 - metadatos de búsqueda si interesa conservar estado entre sesiones
 - filtros usados recientemente, si se decide mejorar UX
 
@@ -189,12 +237,14 @@ La búsqueda debe ser rápida, tolerante y útil.
 - búsqueda no sensible a mayúsculas o minúsculas
 - coincidencia parcial por nombre
 - fuzzy search básica para errores leves de escritura
+- cálculo de similitud para encontrar coincidencias aunque haya fallos tipográficos
 
 ### Recomendación técnica
-Para este bloque, conviene implementar un fuzzy search local sencillo, por ejemplo con:
+Para este bloque, conviene implementar un fuzzy search local con una lógica de similitud sencilla pero real, por ejemplo combinando:
 - normalización de strings
 - coincidencia por contains
 - puntuación simple por similitud
+- umbral mínimo para aceptar resultados aproximados
 
 No hace falta un motor complejo en esta fase si la biblioteca inicial será local y de tamaño controlado.
 
@@ -206,11 +256,14 @@ Los filtros deben poder combinarse entre sí sin confundir al usuario.
 - chips o botones visuales para filtros seleccionados
 - opción clara para limpiar filtros
 - actualización del listado sin necesidad de pantallas separadas
+- selección múltiple en músculos y equipos
+- lógica OR entre músculos seleccionados
+- lógica OR entre equipos seleccionados
 
 ### Lógica de filtrado recomendada
 1. aplicar texto de búsqueda
-2. aplicar músculos seleccionados
-3. aplicar equipo
+2. aplicar músculos seleccionados con lógica OR
+3. aplicar equipo con lógica OR
 4. aplicar dificultad
 5. paginar o limitar resultados visibles
 
@@ -227,6 +280,8 @@ Se recomienda crear una capa específica para la biblioteca.
 - resolver paginación o lotes
 - obtener ficha completa de un ejercicio
 - obtener alternativas del mismo músculo
+- gestionar favoritos
+- resolver carga de media de forma eficiente
 
 ## Gestión de estado con Provider
 Se mantendrá el patrón ya usado en bloques anteriores.
@@ -234,6 +289,7 @@ Se mantendrá el patrón ya usado en bloques anteriores.
 ### Provider recomendado
 - `ExerciseLibraryProvider`
 - opcionalmente `ExerciseDetailProvider` si se quiere separar la ficha del listado
+- opcionalmente `FavoritesProvider` si se quiere desacoplar la capa de favoritos
 
 ### Responsabilidades de `ExerciseLibraryProvider`
 - cargar ejercicios
@@ -242,11 +298,13 @@ Se mantendrá el patrón ya usado en bloques anteriores.
 - exponer resultados filtrados
 - controlar estados de carga, vacío y error
 - gestionar paginación o carga incremental
+- coordinar estado de favoritos en el listado
 
 ### Responsabilidades de `ExerciseDetailProvider` si se usa
 - cargar detalle completo de un ejercicio
 - resolver alternativas
 - gestionar media asociada
+- reflejar estado de favorito en la ficha
 
 ## UX/UI de la biblioteca
 La biblioteca debe ser muy cómoda de usar desde móvil.
@@ -263,9 +321,12 @@ La biblioteca debe ser muy cómoda de usar desde móvil.
 - fila o panel de filtros
 - contador de resultados
 - tarjetas o filas de ejercicios
+- badge visual de dificultad por color
+- botón de favorito por ejercicio
 - indicador de carga de más resultados
 - estado vacío cuando no haya coincidencias
 - estado de error consistente con Bloque 3
+- placeholder visual mientras se cargan imágenes
 
 ### Elementos UI recomendados para la ficha
 - cabecera con imagen y nombre
@@ -276,6 +337,7 @@ La biblioteca debe ser muy cómoda de usar desde móvil.
 - bloque de errores comunes
 - bloque de alternativas
 - media visual si existe
+- estado de carga o error para imagen y vídeo si fallan
 
 ## Estructura de archivos propuesta
 Por coherencia con la estructura actual, se propone añadir como mínimo:
@@ -287,14 +349,18 @@ Por coherencia con la estructura actual, se propone añadir como mínimo:
 - `lib/models/exercise_filters.dart`
 - `lib/models/exercise_search_result.dart`
 - `lib/models/exercise_enums.dart`
+- `lib/models/user_favorites.dart`
 - `lib/services/exercise_library_service.dart`
 - `lib/services/exercise_library_provider.dart`
 - `lib/services/exercise_detail_provider.dart`
+- `lib/services/favorites_service.dart`
 - `lib/widgets/exercises/exercise_search_bar.dart`
 - `lib/widgets/exercises/filter_section.dart`
 - `lib/widgets/exercises/filter_chip_group.dart`
 - `lib/widgets/exercises/exercise_list_item.dart`
 - `lib/widgets/exercises/exercise_difficulty_badge.dart`
+- `lib/widgets/exercises/exercise_favorite_button.dart`
+- `lib/widgets/exercises/exercise_image_view.dart`
 - `lib/widgets/exercises/exercise_empty_state.dart`
 - `lib/widgets/exercises/exercise_error_state.dart`
 - `lib/widgets/exercises/exercise_detail_header.dart`
@@ -310,21 +376,33 @@ La biblioteca debe integrarse con lo ya construido:
 - reutilizar el patrón de estados visuales vacío y error ya establecido
 - permitir que futuros bloques enlacen ejercicios desde entrenamientos, rutinas e Inicio
 - quedar preparada para que las alternativas de ejercicio puedan usarse después en rutinas personalizadas
+- permitir que los favoritos puedan aprovecharse después en rutinas, sugerencias o accesos rápidos
 
 ## Decisiones técnicas recomendadas
 - usar `Hive` como catálogo local inicial
 - usar `Provider` para listado y detalle
 - implementar paginación simple por lotes en vez de scroll infinito complejo en esta fase
-- mantener búsqueda local optimizada antes de plantear soluciones más avanzadas
+- aplicar fuzzy search con puntuación de similitud
+- mantener lógica OR en filtros múltiples de músculos y equipos
 - diseñar fichas de ejercicio con estructura muy clara para consulta en móvil
+- usar carga diferida de imágenes con placeholder y control de error
+
+## Mejoras descartadas por ahora
+No se incorporarán en este bloque, por ahora:
+- búsqueda por popularidad
+- historial de búsquedas
 
 ## Resultado esperado
 Al finalizar este bloque, Fit Loren debería quedar con:
 - biblioteca de ejercicios funcional
 - buscador por nombre en tiempo real
-- búsqueda aproximada básica
+- búsqueda aproximada con similitud
 - filtros por músculo, equipo y dificultad
+- lógica OR en filtros múltiples de músculos y equipos
 - listado visual de ejercicios
+- badges visuales de dificultad por color
+- sistema de favoritos
+- carga diferida de imágenes
 - sistema de carga incremental o paginación
 - ficha completa por ejercicio
 - alternativas para el mismo músculo
