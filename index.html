@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Notas Loren">
+<meta name="theme-color" content="#1e3a5c">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<title>Notas Loren</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#1e3a5c;--bg-deep:#162d4a;--bg-warm:#2a4d72;--surface:rgba(255,255,255,0.2);--surface-solid:rgba(255,255,255,0.25);--border:rgba(255,255,255,0.3);--orange:#f0a030;--orange-soft:rgba(240,160,48,0.25);--green:#6cc070;--green-soft:rgba(108,192,112,0.25);--red:#e07070;--yellow:#f0d060;--pink:#e8a0b8;--text:#fff;--text-sub:rgba(255,255,255,0.82);--text-done:rgba(255,255,255,0.38);--title-color:#ffdd44;--date-color:#70f0a0;--badge-pending:#ffcc33;--badge-shop:#55ee77;--cat-name:#ffcc44;--item-pending:#fff;--item-bought:rgba(255,255,255,0.35);--filter-text:#c8e8ff;--placeholder:rgba(255,255,255,0.55)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow-x:hidden;font-family:'Nunito',sans-serif;background:linear-gradient(160deg,var(--bg-warm) 0%,var(--bg) 40%,var(--bg-deep) 100%);background-attachment:fixed;color:var(--text);-webkit-tap-highlight-color:transparent}
+.container{max-width:540px;margin:0 auto;padding:0 18px 80px;min-height:100vh}
+.tab-bar{position:fixed;bottom:0;left:0;right:0;z-index:100;background:rgba(22,45,74,0.95);backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,0.15);display:flex;justify-content:center;padding:6px 0 env(safe-area-inset-bottom,8px)}
+.tab-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 40px;border:none;background:none;color:rgba(255,255,255,0.65);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:color 0.2s}
+.tab-item.active{color:#fff;text-shadow:0 1px 8px rgba(255,255,255,0.3)}
+.page{display:none}.page.active{display:block}
+.header{padding:44px 0 22px}
+.header-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.title{font-size:28px;font-weight:800;color:var(--title-color);letter-spacing:-0.3px;text-shadow:0 2px 12px rgba(0,0,0,0.12)}
+.badge{font-size:15px;font-weight:800;color:var(--badge-pending);background:rgba(255,255,255,0.18);padding:7px 16px;border-radius:22px;white-space:nowrap}
+.subtitle{font-size:17px;color:var(--date-color);margin-top:8px;text-transform:capitalize;font-weight:600}
+.input-row{display:flex;gap:10px;margin-bottom:18px}
+.input-row input{flex:1;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.3);border-radius:14px;padding:14px 18px;font-size:18px;color:#fff;outline:none;font-family:inherit;font-weight:600;cursor:pointer}
+.input-row input:focus{border-color:var(--orange);background:rgba(255,255,255,0.25)}
+.input-row input::placeholder{color:var(--placeholder);font-weight:500}
+.add-btn{width:52px;height:52px;border-radius:14px;border:none;background:var(--orange);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 16px rgba(245,166,35,0.4);transition:opacity 0.2s,transform 0.1s}
+.add-btn:active{transform:scale(0.92)}
+.filter-row{display:flex;gap:8px;margin-bottom:22px}
+.filter-btn{flex:1;padding:11px 0;border:2px solid rgba(255,255,255,0.25);border-radius:12px;background:rgba(255,255,255,0.12);color:var(--filter-text);font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px;transition:all 0.2s}
+.filter-btn.active{background:var(--orange-soft);border-color:var(--orange);color:var(--badge-pending)}
+.filter-count{font-size:14px;font-weight:800;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.8);border-radius:9px;padding:2px 9px;min-width:24px;text-align:center}
+.filter-btn.active .filter-count{background:rgba(245,166,35,0.35);color:#fff}
+.list{display:flex;flex-direction:column;gap:10px}
+.empty{text-align:center;padding:52px 20px}
+.empty-icon{font-size:48px;margin-bottom:14px;opacity:0.6}
+.empty-text{font-size:18px;color:rgba(255,255,255,0.75);font-weight:600}
+.note-card{background:rgba(255,255,255,0.15);border-radius:16px;padding:5px 8px;border:1.5px solid rgba(255,255,255,0.22);animation:fadeSlideIn 0.3s ease both;backdrop-filter:blur(10px)}
+.note-card.dragging{opacity:0.5}
+.note-content{display:flex;align-items:flex-start;gap:12px;padding:10px 6px}
+.color-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:11px}
+.cb-btn{background:none;border:none;cursor:pointer;padding:2px;margin-top:1px;flex-shrink:0}
+.cb-inner{width:30px;height:30px;border-radius:8px;border:2.5px solid rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.cb-inner.chk{background:var(--orange);border-color:var(--orange);box-shadow:0 2px 10px rgba(245,166,35,0.3)}
+.cb-inner svg{display:none}.cb-inner.chk svg{display:block}
+.note-text{flex:1;font-size:19px;line-height:1.55;color:#fff;cursor:pointer;padding-top:3px;word-break:break-word;font-weight:600;white-space:pre-wrap}
+.note-text.done{text-decoration:line-through;color:var(--text-done);cursor:default}
+.n-actions{display:flex;gap:2px;flex-shrink:0;margin-top:2px}
+.act-btn{background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;padding:7px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+.act-btn:active{background:rgba(255,255,255,0.1)}
+.drag-handle{cursor:grab;padding:4px 2px;margin-top:3px;flex-shrink:0;color:rgba(255,255,255,0.3);display:flex;align-items:center;touch-action:none}
+/* MODAL EDITOR */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);z-index:200;display:none;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto}
+.modal-backdrop.open{display:flex}
+.modal-box{width:100%;max-width:540px;background:linear-gradient(160deg,#345580 0%,#2b4a6e 60%,#1e3a5c 100%);border-radius:20px;border:1.5px solid rgba(255,255,255,0.22);padding:20px 18px;box-shadow:0 20px 60px rgba(0,0,0,0.5);margin-top:40px;margin-bottom:20px;animation:fadeSlideIn 0.25s ease both}
+.modal-title{font-size:20px;font-weight:800;color:var(--title-color);margin-bottom:14px}
+.modal-textarea{width:100%;min-height:260px;background:rgba(0,0,0,0.2);border:2px solid rgba(255,255,255,0.28);border-radius:14px;padding:16px 18px;font-size:18px;color:#fff;outline:none;font-family:inherit;font-weight:500;line-height:1.5;resize:vertical}
+.modal-textarea:focus{border-color:var(--orange);background:rgba(0,0,0,0.28)}
+.modal-textarea::placeholder{color:var(--placeholder);font-weight:500}
+.modal-actions{display:flex;gap:10px;margin-top:16px;justify-content:flex-end}
+.modal-btn{padding:13px 22px;border-radius:12px;font-size:17px;font-weight:800;font-family:inherit;cursor:pointer;border:none;display:flex;align-items:center;gap:8px}
+.modal-btn.cancel{background:rgba(255,255,255,0.12);color:#fff;border:2px solid rgba(255,255,255,0.25)}
+.modal-btn.save{background:var(--green);color:#fff;box-shadow:0 4px 16px rgba(108,192,112,0.4)}
+.modal-btn:active{transform:scale(0.96)}
+.note-date{display:block;font-size:12px;font-weight:600;color:rgba(255,255,255,0.4);margin-top:6px;letter-spacing:0.3px}
+
+/* BACKUP BTN HEADER */
+.backup-header-btn{background:rgba(108,192,112,0.25);border:1.5px solid var(--green);color:var(--green);font-family:inherit;font-size:15px;font-weight:800;padding:8px 16px;border-radius:22px;cursor:pointer;white-space:nowrap;transition:all 0.2s}
+.backup-header-btn:active{transform:scale(0.94);background:rgba(108,192,112,0.4)}
+.edit-row{display:flex;gap:8px;padding:8px;align-items:center}
+.edit-input{flex:1;background:rgba(0,0,0,0.15);border:2px solid var(--orange);border-radius:12px;padding:12px 16px;font-size:18px;color:#fff;outline:none;font-family:inherit;font-weight:600}
+.sv-btn{width:42px;height:42px;border-radius:11px;border:none;background:var(--green);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cn-btn{width:42px;height:42px;border-radius:11px;border:2px solid rgba(255,255,255,0.25);background:transparent;color:rgba(255,255,255,0.7);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.shop-cat{background:rgba(255,255,255,0.15);border-radius:16px;border:1.5px solid rgba(255,255,255,0.22);margin-bottom:12px;overflow:hidden;backdrop-filter:blur(10px);animation:fadeSlideIn 0.3s ease both}
+.sc-hdr{display:flex;align-items:center;padding:16px 16px;cursor:pointer;gap:12px}
+.sc-hdr:active{background:rgba(255,255,255,0.08)}
+.sc-arrow{transition:transform 0.25s;color:rgba(255,255,255,0.7);flex-shrink:0}
+.sc-arrow.open{transform:rotate(90deg)}
+.sc-name{flex:1;font-size:20px;font-weight:800;color:var(--cat-name);text-shadow:0 1px 4px rgba(0,0,0,0.08)}
+.sc-badge{font-size:14px;font-weight:800;padding:4px 12px;border-radius:12px;background:rgba(108,192,112,0.25);color:var(--badge-shop)}
+.sc-body{padding:0 16px 14px;display:none}.sc-body.open{display:block}
+.si{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.1)}
+.si:last-of-type{border-bottom:none}
+.si-text{flex:1;font-size:19px;font-weight:600;color:var(--item-pending)}
+.si-text.bought{text-decoration:line-through;color:rgba(255,255,255,0.7)}
+.si-input{display:flex;gap:8px;padding:10px 0;margin-top:4px}
+.si-input input{flex:1;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.25);border-radius:10px;padding:12px 16px;font-size:17px;color:#fff;outline:none;font-family:inherit;font-weight:600}
+.si-input input:focus{border-color:var(--green);background:rgba(255,255,255,0.2)}
+.si-input input::placeholder{color:var(--placeholder);font-weight:500}
+.si-input button{width:42px;height:42px;border-radius:10px;border:none;background:var(--green);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sac{display:flex;gap:10px;margin-bottom:22px}
+.sac input{flex:1;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.3);border-radius:14px;padding:14px 18px;font-size:18px;color:#fff;outline:none;font-family:inherit;font-weight:600}
+.sac input:focus{border-color:var(--green);background:rgba(255,255,255,0.25)}
+.sac input::placeholder{color:var(--placeholder);font-weight:500}
+.sac button{width:52px;height:52px;border-radius:14px;border:none;background:var(--green);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 16px rgba(126,203,130,0.4)}
+.sac button:disabled{opacity:0.35;box-shadow:none}
+.sc-edit{display:flex;gap:8px;padding:10px 16px;align-items:center}
+.sc-edit input{flex:1;background:rgba(0,0,0,0.15);border:2px solid var(--orange);border-radius:10px;padding:12px 14px;font-size:18px;color:#fff;outline:none;font-family:inherit;font-weight:600}
+@keyframes fadeSlideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.2);border-radius:4px}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="page active" id="page-recuerdos">
+<div class="header"><div class="header-top"><h1 class="title">Notas Loren</h1><button class="backup-header-btn" onclick="hacerBackup()">☁️ Backup</button></div><p class="subtitle" id="dl"></p></div>
+
+<div class="input-row"><input type="text" id="ni" placeholder="Añadir nuevo recuerdo..." autocomplete="off" readonly><button class="add-btn" id="ab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div>
+<div class="filter-row"><button class="filter-btn active" data-filter="pending">Pendientes <span class="filter-count" id="cp">0</span></button><button class="filter-btn" data-filter="done">Hechos <span class="filter-count" id="cd">0</span></button></div>
+<div class="list" id="nl"></div>
+</div>
+
+<div class="page" id="page-compras">
+<div class="header"><div class="header-top"><h1 class="title">Notas Loren</h1><div class="badge" id="sb"></div></div><p class="subtitle" id="sd"></p></div>
+<div class="sac"><input type="text" id="nci" placeholder="Nueva categoría..." autocomplete="off"><button id="acb" disabled><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div>
+<div id="sl"></div>
+</div>
+</div>
+
+<!-- MODAL EDITOR -->
+<div class="modal-backdrop" id="mbd">
+  <div class="modal-box">
+    <div class="modal-title" id="mtitle">Nuevo recuerdo</div>
+    <textarea class="modal-textarea" id="mtxt" placeholder="Escribe tu recuerdo... puedes usar varios párrafos."></textarea>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" id="mcancel">Cancelar</button>
+      <button class="modal-btn save" id="msave">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="tab-bar">
+<button class="tab-item active" data-page="recuerdos"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Recordar</button>
+</div>
+
+<script>
+document.querySelectorAll('.tab-item').forEach(t=>{t.addEventListener('click',()=>{document.querySelectorAll('.tab-item').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.getElementById('page-'+t.dataset.page).classList.add('active')})});
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function esc(s){const d=document.createElement("div");d.textContent=s;return d.innerHTML}
+function fmtDate(){return new Date().toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
+const COLORS=["#ffcc33","#55ee77","#ff88bb","#ffee55","#ff7777"];
+const TEXT_COLORS=["#ffdd55","#66ff99","#ffaacc","#fff066","#ff9999"];
+const SVG_CHECK='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+const SVG_EDIT='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+const SVG_DEL='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+const SVG_X='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+const SVG_OK='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+const SVG_PLUS='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+const SVG_DRAG='<svg width="16" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.8"/><circle cx="15" cy="5" r="1.8"/><circle cx="9" cy="12" r="1.8"/><circle cx="15" cy="12" r="1.8"/><circle cx="9" cy="19" r="1.8"/><circle cx="15" cy="19" r="1.8"/></svg>';
+
+// ===== BACKUP =====
+const BACKUP_KEY='notas-loren-last-backup';
+
+function hacerBackup(){
+  const notes=JSON.parse(localStorage.getItem('recuerdos-app-v3')||'[]');
+  const cats=JSON.parse(localStorage.getItem('recuerdos-shop-v1')||'[]');
+  const backupData={
+    fecha:new Date().toISOString(),
+    fechaLegible:new Date().toLocaleString('es-ES'),
+    notas:notes,
+    compras:cats
+  };
+  const json=JSON.stringify(backupData,null,2);
+  const fecha=new Date().toISOString().slice(0,10);
+  const nombreArchivo='backup_notasloren_'+fecha+'.json';
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=nombreArchivo;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  localStorage.setItem(BACKUP_KEY,Date.now().toString());
+}
+
+function comprobarBackup(){
+  const ultimo=parseInt(localStorage.getItem(BACKUP_KEY)||'0');
+  const diasMs=BACKUP_DIAS*24*60*60*1000;
+  if(Date.now()-ultimo>=diasMs){
+    document.getElementById('bkBanner').classList.add('show');
+  }
+}
+
+// ===== RECUERDOS =====
+let notes=[],filter="pending",editingId=null,dragSrcIndex=null;
+function rS(){localStorage.setItem("recuerdos-app-v3",JSON.stringify(notes))}
+function rL(){try{notes=JSON.parse(localStorage.getItem("recuerdos-app-v3"))||[]}catch(e){notes=[]}}
+function rR(){
+const p=notes.filter(n=>!n.done).length,d=notes.filter(n=>n.done).length;
+document.getElementById("dl").textContent=fmtDate();
+document.getElementById("cp").textContent=p;
+document.getElementById("cd").textContent=d;
+const f=notes.filter(n=>{if(filter==="pending")return!n.done;if(filter==="done")return n.done;return true});
+const l=document.getElementById("nl");
+if(!f.length){
+const ic=filter==="done"?"✓":"🎉";
+const ms=filter==="done"?"Ningún recuerdo completado":"¡Todo al día!";
+l.innerHTML=`<div class="empty"><div class="empty-icon">${ic}</div><p class="empty-text">${ms}</p></div>`;
+}else{
+l.innerHTML=f.map((n,i)=>{
+const gi=notes.indexOf(n),c=COLORS[gi%5],tc=TEXT_COLORS[gi%5];
+const fechaNota=n.created?new Date(n.created).toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'2-digit'}):'';
+return`<div class="note-card" data-id="${n.id}" draggable="true" style="animation-delay:${i*25}ms"><div class="note-content"><div class="drag-handle">${SVG_DRAG}</div><div class="color-dot" style="background:${c}"></div><button class="cb-btn" onclick="tN('${n.id}')"><div class="cb-inner${n.done?' chk':''}">${SVG_CHECK}</div></button><span class="note-text${n.done?' done':''}" style="${n.done?'':`color:${tc}`}" ${n.done?'':`onclick="oM('${n.id}')"`}>${esc(n.text)}${fechaNota?`<span class="note-date">${fechaNota}</span>`:''}</span><div class="n-actions">${!n.done?`<button class="act-btn" onclick="oM('${n.id}')">${SVG_EDIT}</button>`:''}<button class="act-btn" onclick="dN('${n.id}')">${SVG_DEL}</button></div></div></div>`;
+}).join("");
+}
+setupDD();
+}
+
+function oM(id){
+editingId=id||null;
+const mbd=document.getElementById("mbd"),mt=document.getElementById("mtitle"),mx=document.getElementById("mtxt");
+if(id){const n=notes.find(x=>x.id===id);mt.textContent="Editar recuerdo";mx.value=n?n.text:""}
+else{mt.textContent="Nuevo recuerdo";mx.value=""}
+mbd.classList.add("open");
+setTimeout(()=>{mx.focus();if(id)mx.setSelectionRange(mx.value.length,mx.value.length)},50);
+}
+function cM(){document.getElementById("mbd").classList.remove("open");editingId=null}
+function saveM(){
+const mx=document.getElementById("mtxt"),t=mx.value.trim();
+if(!t){cM();return}
+if(editingId){const n=notes.find(x=>x.id===editingId);if(n)n.text=t}
+else{notes.unshift({id:uid(),text:t,done:false,created:Date.now()})}
+rS();cM();rR();
+}
+function tN(id){const n=notes.find(x=>x.id===id);if(n)n.done=!n.done;rS();rR()}
+function dN(id){notes=notes.filter(x=>x.id!==id);rS();rR()}
+document.querySelectorAll(".filter-btn").forEach(b=>{b.addEventListener("click",()=>{filter=b.dataset.filter;document.querySelectorAll(".filter-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");rR()})});
+const ni=document.getElementById("ni"),ab=document.getElementById("ab");
+ni.addEventListener("click",()=>oM(null));
+ab.addEventListener("click",()=>oM(null));
+document.getElementById("msave").addEventListener("click",saveM);
+document.getElementById("mcancel").addEventListener("click",cM);
+document.getElementById("mbd").addEventListener("click",e=>{if(e.target.id==="mbd")cM()});
+document.addEventListener("keydown",e=>{if(document.getElementById("mbd").classList.contains("open")&&e.key==="Escape")cM()});
+function gI(id){return notes.findIndex(n=>n.id===id)}
+function setupDD(){document.querySelectorAll(".note-card[draggable]").forEach(c=>{c.addEventListener("dragstart",e=>{dragSrcIndex=gI(c.dataset.id);c.classList.add("dragging");e.dataTransfer.effectAllowed="move"});c.addEventListener("dragover",e=>e.preventDefault());c.addEventListener("drop",e=>{e.preventDefault();const ti=gI(c.dataset.id);if(dragSrcIndex!==null&&dragSrcIndex!==ti){const[m]=notes.splice(dragSrcIndex,1);notes.splice(ti,0,m);rS();rR()}});c.addEventListener("dragend",()=>{c.classList.remove("dragging");dragSrcIndex=null})})}
+let tSrc=null;
+document.addEventListener("touchstart",e=>{const h=e.target.closest(".drag-handle");if(!h)return;const c=h.closest(".note-card");if(!c)return;tSrc=c.dataset.id;c.style.opacity="0.5"},{passive:true});
+document.addEventListener("touchmove",e=>{if(!tSrc)return;e.preventDefault();const t=e.touches[0],el=document.elementFromPoint(t.clientX,t.clientY);if(el){const tc=el.closest(".note-card");if(tc&&tc.dataset.id!==tSrc){const fi=gI(tSrc),ti=gI(tc.dataset.id);if(fi!==-1&&ti!==-1){const[m]=notes.splice(fi,1);notes.splice(ti,0,m);rS();rR()}}}},{passive:false});
+document.addEventListener("touchend",()=>{if(tSrc){const c=document.querySelector(`.note-card[data-id="${tSrc}"]`);if(c)c.style.opacity="1";tSrc=null}});
+
+// ===== SHOPPING =====
+let cats=[],eCatId=null;
+function sS(){localStorage.setItem("recuerdos-shop-v1",JSON.stringify(cats))}
+function sL(){try{cats=JSON.parse(localStorage.getItem("recuerdos-shop-v1"))||[]}catch(e){cats=[]}}
+function sR(){
+document.getElementById("sd").textContent=fmtDate();
+const tot=cats.reduce((a,c)=>a+c.items.length,0);
+const bou=cats.reduce((a,c)=>a+c.items.filter(i=>i.bought).length,0);
+document.getElementById("sb").textContent=(tot-bou)+" por comprar";
+const l=document.getElementById("sl");
+if(!cats.length){l.innerHTML='<div class="empty"><div class="empty-icon">🛒</div><p class="empty-text">Añade tu primera categoría</p></div>';return}
+l.innerHTML=cats.map((cat,ci)=>{
+const pen=cat.items.filter(i=>!i.bought).length,tot2=cat.items.length;
+const catColor=TEXT_COLORS[ci%5];
+const catDot=COLORS[ci%5];
+if(eCatId===cat.id)return`<div class="shop-cat"><div class="sc-edit"><input id="ecf" value="${esc(cat.name)}"><button class="sv-btn" onclick="sCE('${cat.id}')">${SVG_OK}</button><button class="cn-btn" onclick="eCatId=null;sR()">${SVG_X}</button></div></div>`;
+const op=cat.open!==false;
+return`<div class="shop-cat" style="animation-delay:${ci*30}ms">
+<div class="sc-hdr" onclick="tC('${cat.id}')">
+<svg class="sc-arrow${op?' open':''}" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+<span class="sc-name" style="color:${catColor}">${esc(cat.name)}</span>
+${tot2?`<span class="sc-badge" style="background:${catDot}33;color:${catColor}">${pen}/${tot2}</span>`:''}
+<div style="display:flex;gap:2px">
+<button class="act-btn" onclick="event.stopPropagation();sCEd('${cat.id}')">${SVG_EDIT}</button>
+<button class="act-btn" onclick="event.stopPropagation();dC('${cat.id}')">${SVG_DEL}</button>
+</div>
+</div>
+<div class="sc-body${op?' open':''}">
+${[...cat.items].sort((a,b)=>{if(a.bought!==b.bought)return a.bought?1:-1;return a.name.localeCompare(b.name,'es')}).map(it=>`<div class="si">
+<button class="cb-btn" onclick="tI('${cat.id}','${it.id}')"><div class="cb-inner${it.bought?' chk':''}">${SVG_CHECK}</div></button>
+<span class="si-text${it.bought?' bought':''}" ${it.bought?'':`style="color:${catColor}"`}>${esc(it.name)}</span>
+<button class="act-btn" onclick="dI('${cat.id}','${it.id}')">${SVG_X}</button>
+</div>`).join("")}
+<div class="si-input">
+<input placeholder="Añadir artículo..." id="ii-${cat.id}" onkeydown="if(event.key==='Enter')aI('${cat.id}')">
+<button onclick="aI('${cat.id}')">${SVG_PLUS}</button>
+</div>
+</div>
+</div>`;
+}).join("");
+if(eCatId){const e=document.getElementById("ecf");if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length)}}
+}
+function aC(){const i=document.getElementById("nci"),n=i.value.trim();if(!n)return;cats.push({id:uid(),name:n,items:[],open:true});i.value="";document.getElementById("acb").disabled=true;sS();sR()}
+function dC(id){cats=cats.filter(c=>c.id!==id);sS();sR()}
+function tC(id){const c=cats.find(x=>x.id===id);if(c)c.open=c.open===false;sS();sR()}
+function sCEd(id){eCatId=id;sR()}
+function sCE(id){const e=document.getElementById("ecf"),n=e?e.value.trim():"";if(!n)return;const c=cats.find(x=>x.id===id);if(c)c.name=n;eCatId=null;sS();sR()}
+function aI(cid){const i=document.getElementById("ii-"+cid),n=i?i.value.trim():"";if(!n)return;const c=cats.find(x=>x.id===cid);if(c){c.items.push({id:uid(),name:n,bought:false});c.open=true}sS();sR();setTimeout(()=>{const x=document.getElementById("ii-"+cid);if(x){x.value="";x.focus()}},50)}
+function tI(cid,iid){const c=cats.find(x=>x.id===cid);if(!c)return;const i=c.items.find(x=>x.id===iid);if(i)i.bought=!i.bought;sS();sR()}
+function dI(cid,iid){const c=cats.find(x=>x.id===cid);if(!c)return;c.items=c.items.filter(x=>x.id!==iid);sS();sR()}
+const nci=document.getElementById("nci"),acb=document.getElementById("acb");
+nci.addEventListener("input",()=>{acb.disabled=!nci.value.trim()});
+nci.addEventListener("keydown",e=>{if(e.key==="Enter")aC()});
+acb.addEventListener("click",aC);
+
+function precargaCasa(){
+if(localStorage.getItem("recuerdos-precarga-v1"))return;
+sL();
+const casa=cats.find(c=>c.name==="Casa");
+if(!casa)return;
+const pendientes=["Agua","Agua pequeña","Crema de labios","Escobilla baño de Alba","Galletas reglero","Huevos","Huevos cocidos","Mercadona cremas faciales","Revuelto de verduras para freidora","Yogur"];
+const comprados=["Agua oxigenada","Aguacate","Ajos","Alcohol","Aloe vera 100%","Ambientador nenuco","Arroz blanco hecho","Azúcar","Bastoncillos","Biakal","Bicarbonato limpieza Mercadona","Bolsitas anti polillas","Bonito","Café Nespresso intenso","Calderito pequeño","Cebollas","Cepillo de dientes","Cereales","Champú timotei","Clara de huevo","Conejo","Crema corporal Mercadona repara","Detergente Marsella","Esponja ducha","Esponja mágica","Estropajo","Exprai ambientador Mercadona","Exprai mata moscas","Fajitas Mercadona","Filetes de melva en aceite de oliva","Gambitas congeladas","Gel","Gomina","Gramola Mercadona para desayunar","Guisantes en lata","Hilo dental","Infusiones jenjibre, manzanilla, dormir","Jabón chimbo","Jabón platos","Jamón de untar","Jamón serrano","Kh 7","Kh7 de ropa","Latas de conservas","Lejía para ropa","Lidl Aceite de trufa","Lidl ambientador entrada","Lidl Cerveza estrella en lata","Lidl crema de modena","Lidl gambas cocida","Lidl Vino blanco","Limpia cristales","Lomo","Macalan 18","Macedonia","Maíz","Mandarinas","Manzanas","Mayonesa en sobres","Melón","Mercado o Lidl pan de pipas","Mercadona Bombonas ambientador para el baño de 15ml","Mercadona caja pañuelos de papel","Mercadona Crema de manos","Mermelada","Nueces","Palomitas","Pan","Pan de tostadas","Panecillos integrales","Pañuelos clinex paqu"];
+pendientes.forEach(n=>casa.items.push({id:uid(),name:n,bought:false}));
+comprados.forEach(n=>casa.items.push({id:uid(),name:n,bought:true}));
+const camion=cats.find(c=>c.name==="Camión");
+if(camion){
+const pCam=["Agua","Cereales","Chiclés","Huevos cocidos","Kéfir","Leche","Lidl frutos secos","Pañuelos de papel","Pavo","Plátanos"];
+const cCam=["Alcohol de romero","Anillas y pulpo para sujetar tambor de aire","Bayetas nuevas","Bolsas de basura","Cable conector multiple","Cepillo de dientes","Cerveza","Chubasquero","Cinta vulcanizada","Clips grandes","Combucha","Crema de manos","Cremas de la cara","Desodorante","Embutidos","Expray limpia gafas","Expray para nariz","Galletas","Jabón de manos","Jamón","Lidl Caramelos","Lidl Fuet","Locutorio","Matamoscas","Mercadona macedonia","Mercadona toallitas cara y manos","Pan de pipas","Papel de cocina","Pasta de dientes","Pastillas cabeza","Pastillas Opiren","Pastillas Voltaren","Pilas AA","Red bult","Spray ambientador","Súper glut de brocha","Trincas para puertas traseras","W 40","Yogurt"];
+pCam.forEach(n=>camion.items.push({id:uid(),name:n,bought:false}));
+cCam.forEach(n=>camion.items.push({id:uid(),name:n,bought:true}));
+}
+sS();
+localStorage.setItem("recuerdos-precarga-v1","1");
+}
+
+// INIT
+rL();rR();sL();precargaCasa();sL();sR();
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{})}
+</script>
+</body>
+</html>
