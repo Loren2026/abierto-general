@@ -1,0 +1,37 @@
+{
+  "proyecto": "Escritorio Maestro",
+  "slug": "escritorio-maestro",
+  "fecha_inicio": "2026-05-03",
+  "estado_general": "en_preparacion",
+  "fase_actual": "fase-0-coordinacion",
+  "bloque_actual": "bloque-1-estructura-base-y-control",
+  "responsable_decision": "Loren",
+  "arquitecto": "Claude",
+  "ejecutor": "OpenClaw",
+  "ultimo_resumen": "Bloque 1 iniciado. Se crea la estructura de coordinación en VPS y la documentación base del proyecto.",
+  "siguiente_accion": "Diseñar la arquitectura técnica inicial del panel de coordinación y del Escritorio Maestro.",
+  "ultima_actualizacion": "2026-05-03T01:54:00+02:00",
+  "ruta_vps": "/data/.openclaw/workspace/proyectos/escritorio-maestro",
+  "github_uso": "versiones_estables_y_respaldo_estructural",
+  "proyectos_iniciales": [
+    "GestActas",
+    "Fit Loren",
+    "Escritorio Maestro"
+  ],
+  "repos_relacionados": [
+    "Loren2026/gestactas",
+    "Loren2026/abierto-fit-loren",
+    "Loren2026/abierto-general"
+  ],
+  "riesgos_actuales": [
+    "Fricción de coordinación entre varias IAs sin hub común",
+    "Exceso de dependencia del chat para contexto operativo",
+    "Riesgo de dispersión documental si no se centraliza el control"
+  ],
+  "bloqueos": [],
+  "pendientes_inmediatos": [
+    "Completar Bloque 1 con arquitectura del panel",
+    "Definir stack técnico del panel de coordinación",
+    "Diseñar modelo de datos multi-proyecto"
+  ]
+}
