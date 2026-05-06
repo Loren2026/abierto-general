@@ -13,6 +13,9 @@ dotenv.config();
 // Punto 3: Helmet y headers de seguridad
 const app = express();
 
+// Necesario detrás de Traefik / proxy para que rate-limit use la IP real
+app.set('trust proxy', 1);
+
 // Aplicar helmet (punto 3)
 app.use(helmet({
   contentSecurityPolicy: {
