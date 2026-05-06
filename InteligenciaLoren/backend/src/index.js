@@ -8,8 +8,9 @@ import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 
-// En producción, usar las variables del contenedor/host y no depender de /app/.env
-if (process.env.NODE_ENV !== 'production') {
+// Solo cargar .env en desarrollo local. En producción, jamás leer /app/.env interno.
+const isProduction = process.env.NODE_ENV === 'production';
+if (!isProduction) {
   dotenv.config();
 }
 
