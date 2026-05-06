@@ -8,7 +8,10 @@ import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 
-dotenv.config();
+// En producción, usar las variables del contenedor/host y no depender de /app/.env
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
 
 // Punto 3: Helmet y headers de seguridad
 const app = express();
