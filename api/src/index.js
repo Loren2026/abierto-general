@@ -7,6 +7,12 @@ import bcrypt from 'bcryptjs';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
+import adminProjectsRoutes from './routes/admin/projects.js';
+import adminAccessRoutes from './routes/admin/accesses.js';
+import adminDeviceRoutes from './routes/admin/devices.js';
+import publicProjectRoutes from './routes/public/projects.js';
+import publicDownloadRoutes from './routes/public/downloads.js';
+import { requireAdminSession } from './middleware/requireAdminSession.js';
 
 // Solo cargar .env en desarrollo local. En producción, jamás leer /app/.env interno.
 const isProduction = process.env.NODE_ENV === 'production';
