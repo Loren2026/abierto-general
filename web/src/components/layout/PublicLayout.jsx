@@ -1,3 +1,10 @@
+import Header from './Header'
+
 export default function PublicLayout({ children }) {
-  return children ?? null
+  return (
+    <div className="public-layout">
+      <Header />
+      {children}
+    </div>
+  )
 }
