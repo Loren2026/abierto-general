@@ -200,3 +200,13 @@ button {
     padding: 20px;
   }
 }
+
+
+html, body {
+  overflow-x: hidden;
+}
+
+img, svg, video, canvas {
+  max-width: 100%;
+  height: auto;
+}

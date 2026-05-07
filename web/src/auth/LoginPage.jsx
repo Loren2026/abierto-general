@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/useAuthStore';
 import './LoginPage.css';
 
@@ -6,8 +7,16 @@ function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  
-  const { login, isLoading } = useAuthStore();
+
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login, isLoading, user } = useAuthStore();
+
+  useEffect(() => {
+    if (user) {
+      navigate('/admin', { replace: true })
+    }
+  }, [user, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,10 +28,14 @@ function LoginPage() {
     }
 
     const result = await login(email, password);
-    
+
     if (!result.success) {
       setError(result.error);
+      return;
     }
+
+    const nextPath = location.state?.from || '/admin'
+    navigate(nextPath, { replace: true })
   };
 
   return (

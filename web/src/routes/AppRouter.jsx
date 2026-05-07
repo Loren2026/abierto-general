@@ -1,11 +1,9 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import HomePage from '../public/HomePage'
 import LoginPage from '../auth/LoginPage'
+import RequireAuth from '../auth/RequireAuth'
 import AdminPage from '../admin/AdminPage'
-
-function AgentsPlaceholder() {
-  return <Navigate to="/admin" replace />
-}
+import AgentsPage from '../admin/AgentsPage'
 
 export default function AppRouter() {
   return (
@@ -13,8 +11,23 @@ export default function AppRouter() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="/admin/agentes" element={<AgentsPlaceholder />} />
+        <Route
+          path="/admin"
+          element={
+            <RequireAuth>
+              <AdminPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/agentes"
+          element={
+            <RequireAuth>
+              <AgentsPage />
+            </RequireAuth>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )

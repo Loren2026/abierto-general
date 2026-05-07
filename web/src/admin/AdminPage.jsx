@@ -1,6 +1,7 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import useAuthStore from '../store/useAuthStore';
-import './Dashboard.css';
+import '../pages/Dashboard.css';
 
 function AdminPage() {
   const { user, logout } = useAuthStore();
@@ -16,9 +17,14 @@ function AdminPage() {
           <h1 className="dashboard-title">InteligenciaLoren</h1>
           <span className="dashboard-subtitle">Panel de Administración</span>
         </div>
-        <button className="logout-button" onClick={handleLogout}>
-          Cerrar Sesión
-        </button>
+        <div className="admin-nav-actions">
+          <Link className="secondary-nav-button" to="/admin/agentes">
+            Agentes
+          </Link>
+          <button className="logout-button" onClick={handleLogout}>
+            Cerrar Sesión
+          </button>
+        </div>
       </div>
 
       <div className="dashboard-content">
