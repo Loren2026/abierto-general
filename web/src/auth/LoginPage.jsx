@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import useAuthStore from '../store/useAuthStore';
-import './Login.css';
+import './LoginPage.css';
 
-function Login() {
+function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -83,4 +83,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default LoginPage;

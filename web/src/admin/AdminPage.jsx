@@ -2,7 +2,7 @@ import React from 'react';
 import useAuthStore from '../store/useAuthStore';
 import './Dashboard.css';
 
-function Dashboard() {
+function AdminPage() {
   const { user, logout } = useAuthStore();
 
   const handleLogout = async () => {
@@ -81,4 +81,4 @@ function Dashboard() {
   );
 }
 
-export default Dashboard;
+export default AdminPage;
