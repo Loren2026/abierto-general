@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Propuesta visual 02 · Color block dinámico</title>
+<style>
+:root{--bg:#fffaf3;--text:#152033;--muted:#5d6f84;--blue:#89aeea;--orange:#f0b36b;--green:#95d1a8;--yellow:#f5dc87;--red:#eea0a0;--ink:#162132}*{box-sizing:border-box;margin:0;padding:0}body{font-family:Space Grotesk,Inter,system-ui,sans-serif;background:linear-gradient(180deg,#fffaf3 0%,#f7f1e6 100%);color:var(--text);min-height:100vh;padding:24px} .wrap{max-width:1180px;margin:0 auto}.top{display:flex;justify-content:space-between;align-items:center;gap:16px}.logo{font-size:1rem;font-weight:900;letter-spacing:.12em}.login{background:var(--blue);padding:12px 16px;border-radius:14px;font-weight:800;color:#17345c}.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:24px;margin-top:24px}.left{display:grid;grid-template-rows:auto auto;gap:18px}.hero{background:var(--orange);padding:42px;border-radius:34px;position:relative;overflow:hidden;min-height:420px}.hero:after{content:"";position:absolute;right:-50px;bottom:-50px;width:220px;height:220px;border-radius:40px;background:rgba(255,255,255,.2);transform:rotate(18deg)}.badge{display:inline-block;background:rgba(255,255,255,.7);padding:8px 12px;border-radius:999px;font-size:.78rem;font-weight:900;letter-spacing:.08em}.title{font-size:clamp(2.6rem,5.8vw,5rem);line-height:.94;margin-top:24px;max-width:9ch}.subtitle{margin-top:12px;font-size:1.35rem;color:#7a4b10;font-weight:700}.text{margin-top:18px;max-width:48ch;line-height:1.8;color:#4b3a23;font-size:1rem}.download{margin-top:26px;background:var(--green);color:#103525;padding:16px 24px;border:none;border-radius:18px;font-weight:900;font-size:1rem}.mini{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.tile{border-radius:22px;padding:20px;min-height:120px}.t1{background:var(--blue)}.t2{background:var(--yellow)}.t3{background:var(--red)}.tile strong{display:block;font-size:.82rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}.tile span{font-size:.96rem;line-height:1.5;color:#243247}.right{background:#fff;border:1px solid rgba(21,32,51,.08);border-radius:34px;padding:28px;box-shadow:0 18px 40px rgba(21,32,51,.06)}.right h2{font-size:1.2rem;margin-bottom:10px}.right p{color:var(--muted);line-height:1.8}.legend{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}.pill{padding:12px 14px;border-radius:16px;font-weight:700}.p1{background:rgba(137,174,234,.24)}.p2{background:rgba(149,209,168,.24)}.p3{background:rgba(245,220,135,.26)}.p4{background:rgba(238,160,160,.26)} @media (max-width:900px){.grid{grid-template-columns:1fr}.mini{grid-template-columns:1fr}.top{flex-direction:column;align-items:flex-start}} @media (max-width:640px){body{padding:14px}.hero,.right{padding:24px;border-radius:26px}.login,.download{width:100%;text-align:center}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="logo">INTELIGENCIA LOREN</div>
+    <div class="login">Acceso Loren</div>
+  </div>
+  <div class="grid">
+    <div class="left">
+      <section class="hero">
+        <div class="badge">EN CONSTRUCCIÓN</div>
+        <h1 class="title">Lorenzo Santiago Iglesias</h1>
+        <div class="subtitle">Recorba</div>
+        <p class="text">Una plataforma en evolución para organizar proyectos, accesos y trabajo coordinado desde un único lugar.</p>
+        <button class="download">Descargar</button>
+      </section>
+      <div class="mini">
+        <div class="tile t1"><strong>Azul</strong><span>Estructura, navegación y sensación de tecnología.</span></div>
+        <div class="tile t2"><strong>Amarillo</strong><span>Energía ligera y atención suave.</span></div>
+        <div class="tile t3"><strong>Rojo</strong><span>Tensión controlada y carácter juvenil.</span></div>
+      </div>
+    </div>
+    <aside class="right">
+      <h2>Proyectos públicos</h2>
+      <p>Aún no hay proyectos públicos disponibles.</p>
+      <div class="legend">
+        <div class="pill p1">Tecnología avanzada</div>
+        <div class="pill p2">Botón verde protagonista</div>
+        <div class="pill p3">Interfaz viva y modular</div>
+        <div class="pill p4">Sensación juvenil y dinámica</div>
+      </div>
+    </aside>
+  </div>
+</div>
+</body>
+</html>

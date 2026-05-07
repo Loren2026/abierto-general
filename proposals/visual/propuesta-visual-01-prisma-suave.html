@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Propuesta visual 01 · Prisma suave</title>
+<style>
+:root{--bg:#f6f8fc;--bg2:#eaf1fb;--text:#182233;--muted:#607086;--line:rgba(96,112,134,.18);--blue:#7ea8ea;--orange:#e9ae74;--green:#9ed7b0;--yellow:#f3d785;--red:#ea9b9b;--card:rgba(255,255,255,.78)}
+*{box-sizing:border-box;margin:0;padding:0} body{font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at top left, rgba(126,168,234,.32), transparent 28%),radial-gradient(circle at bottom right, rgba(158,215,176,.24), transparent 24%),linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%);color:var(--text);min-height:100vh;padding:24px} .shell{max-width:1180px;margin:0 auto} .header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 18px;border:1px solid var(--line);border-radius:24px;background:rgba(255,255,255,.66);backdrop-filter:blur(18px);box-shadow:0 20px 50px rgba(24,34,51,.08)} .brand{font-weight:900;letter-spacing:.08em;font-size:.92rem}.access{padding:12px 18px;border-radius:999px;background:rgba(126,168,234,.2);border:1px solid rgba(126,168,234,.28);font-weight:800}.hero{display:grid;grid-template-columns:1.35fr .8fr;gap:24px;align-items:stretch;margin-top:26px}.hero-card,.aside{border:1px solid var(--line);border-radius:32px;background:var(--card);backdrop-filter:blur(16px);box-shadow:0 24px 60px rgba(24,34,51,.08)} .hero-card{padding:54px 42px;position:relative;overflow:hidden} .hero-card:before{content:"";position:absolute;inset:auto -10% -20% auto;width:260px;height:260px;background:radial-gradient(circle, rgba(233,174,116,.34), transparent 66%)} .badge{display:inline-flex;padding:8px 14px;border-radius:999px;background:rgba(233,174,116,.18);border:1px solid rgba(233,174,116,.24);font-size:.78rem;font-weight:900;letter-spacing:.08em;margin-bottom:20px}.title{font-size:clamp(2.8rem,6vw,5.2rem);line-height:.96;letter-spacing:-.05em;max-width:10ch}.subtitle{font-size:clamp(1.15rem,2.2vw,1.7rem);margin-top:14px;color:#7a5a2e}.copy{margin-top:22px;max-width:56ch;color:var(--muted);line-height:1.8;font-size:1.02rem}.download{margin-top:28px;padding:16px 24px;border:none;border-radius:18px;background:linear-gradient(135deg,var(--green),#c5ebce);color:#123528;font-weight:900;font-size:1rem;box-shadow:0 18px 36px rgba(158,215,176,.3)} .aside{padding:24px;background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(243,215,133,.25))} .aside h2{font-size:1.1rem;margin-bottom:10px}.aside p{color:var(--muted);line-height:1.75}.palette{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.sw{width:42px;height:42px;border-radius:14px;border:1px solid rgba(255,255,255,.45)} .b{background:var(--blue)} .o{background:var(--orange)} .g{background:var(--green)} .y{background:var(--yellow)} .r{background:var(--red)} @media (max-width:900px){.hero{grid-template-columns:1fr}.header{flex-direction:column;align-items:flex-start}} @media (max-width:640px){body{padding:14px}.hero-card{padding:34px 22px}.aside{padding:20px}.access,.download{width:100%;text-align:center}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="header">
+    <div class="brand">INTELIGENCIA LOREN</div>
+    <div class="access">Acceso Loren</div>
+  </header>
+  <main class="hero">
+    <section class="hero-card">
+      <div class="badge">EN CONSTRUCCIÓN</div>
+      <h1 class="title">Lorenzo Santiago Iglesias</h1>
+      <p class="subtitle">Recorba</p>
+      <p class="copy">Una plataforma en evolución para organizar proyectos, accesos y trabajo coordinado desde un único lugar.</p>
+      <button class="download">Descargar</button>
+    </section>
+    <aside class="aside">
+      <h2>Proyectos públicos</h2>
+      <p>Aún no hay proyectos públicos disponibles.</p>
+      <div class="palette"><div class="sw b"></div><div class="sw o"></div><div class="sw g"></div><div class="sw y"></div><div class="sw r"></div></div>
+    </aside>
+  </main>
+</div>
+</body>
+</html>
