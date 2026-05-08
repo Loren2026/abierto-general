@@ -1,0 +1,9 @@
+{
+  "lastCheckedAt": null,
+  "currentPreferredModel": "openai-codex/gpt-5.4",
+  "fallbackLevel": 1,
+  "lastNotifiedModel": null,
+  "lastChangeReason": null,
+  "notificationPending": false,
+  "notificationMessage": null
+}
