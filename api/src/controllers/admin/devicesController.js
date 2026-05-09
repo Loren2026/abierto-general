@@ -145,7 +145,7 @@ export async function reassignAccessDevice(req, res) {
         project_id: access.project_id,
         project_access_id: access.id,
         project_device_id: activeDevice.id,
-        revocation_type: 'device_reassignment',
+        revocation_type: 'device',
         notes,
       })
 
