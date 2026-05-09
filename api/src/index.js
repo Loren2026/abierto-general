@@ -276,6 +276,13 @@ app.post('/api/admin/example', verifySession, csrfProtection, async (req, res) =
   }
 });
 
+// Rutas Fase 4B
+app.use('/api/admin', requireAdminSession, adminProjectsRoutes);
+app.use('/api/admin', requireAdminSession, adminAccessRoutes);
+app.use('/api/admin', requireAdminSession, adminDeviceRoutes);
+app.use('/api', publicProjectRoutes);
+app.use('/api', publicDownloadRoutes);
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Ruta no encontrada' });
