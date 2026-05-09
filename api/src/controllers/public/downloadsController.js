@@ -83,7 +83,8 @@ export async function requestDownload(req, res) {
         project_id: project.id,
         project_access_id: access.id,
         project_device_id: device.id,
-        status: 'authorized',
+        action_type: 'request_download',
+        result: 'authorized',
       })
       .select('id')
       .single()
@@ -131,11 +132,13 @@ export async function downloadByToken(req, res) {
 
     await supabaseAdmin
       .from('download_logs')
-      .update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
+      .insert({
+        project_id: payload.projectId,
+        project_access_id: payload.accessId,
+        project_device_id: payload.deviceId,
+        action_type: 'download',
+        result: 'completed',
       })
-      .eq('id', payload.logId)
 
     res.setHeader('Content-Type', contentType)
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
@@ -144,11 +147,13 @@ export async function downloadByToken(req, res) {
     if (payload?.logId) {
       await supabaseAdmin
         .from('download_logs')
-        .update({
-          status: 'failed',
-          completed_at: new Date().toISOString(),
+        .insert({
+          project_id: payload.projectId,
+          project_access_id: payload.accessId,
+          project_device_id: payload.deviceId,
+          action_type: 'download',
+          result: 'failed',
         })
-        .eq('id', payload.logId)
     }
 
     return res.status(500).json({ error: error.message || 'Internal server error' })
