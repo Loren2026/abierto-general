@@ -65,6 +65,7 @@ export default function HomePage() {
   const [formData, setFormData] = useState(initialForm)
   const [status, setStatus] = useState({ type: 'idle', message: '' })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
   const emailJsConfig = useMemo(getEmailJsConfig, [])
 
   function updateField(field, value) {
@@ -88,6 +89,10 @@ export default function HomePage() {
   async function handleSubmit(event) {
     event.preventDefault()
     setStatus({ type: 'idle', message: '' })
+
+    if (isSubmitted) {
+      return
+    }
 
     if (!hasFullNameAndSurname(formData.fullName)) {
       setStatus({ type: 'error', message: 'Introduce tu nombre y tu primer apellido.' })
@@ -145,12 +150,9 @@ export default function HomePage() {
         },
       )
 
-      setStatus({
-        type: 'success',
-        message:
-          'Solicitud enviada correctamente. Loren revisará tu petición y, si procede, te enviará una invitación.',
-      })
+      setStatus({ type: 'idle', message: '' })
       setFormData(initialForm)
+      setIsSubmitted(true)
     } catch (error) {
       console.error('Error enviando solicitud de invitación', error)
       setStatus({
@@ -351,12 +353,16 @@ export default function HomePage() {
                   <span>Acepto la política de privacidad y el uso de estos datos para revisar mi solicitud.</span>
                 </label>
 
-                {status.type !== 'idle' ? (
+                {status.type === 'error' ? (
                   <div className={`form-status form-status--${status.type}`}>{status.message}</div>
                 ) : null}
 
-                <button className="cta-button cta-button--invite cta-button--full" type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Enviando solicitud...' : 'Enviar solicitud'}
+                <button
+                  className={`cta-button ${isSubmitted ? 'cta-button--success' : 'cta-button--invite'} cta-button--full`}
+                  type="submit"
+                  disabled={isSubmitting || isSubmitted}
+                >
+                  {isSubmitted ? 'Solicitud enviada' : isSubmitting ? 'Enviando solicitud...' : 'Enviar solicitud'}
                 </button>
               </form>
             </div>

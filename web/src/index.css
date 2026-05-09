@@ -288,6 +288,12 @@ canvas {
   box-shadow: 0 18px 40px rgba(243, 166, 72, 0.24);
 }
 
+.cta-button--success {
+  background: linear-gradient(135deg, #91c7aa, #b9dfb7);
+  color: #14362b;
+  box-shadow: 0 18px 40px rgba(145, 199, 170, 0.22);
+}
+
 .cta-button--full {
   width: 100%;
 }
