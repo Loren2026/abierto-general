@@ -30,6 +30,8 @@ const featureCards = [
   },
 ]
 
+const publishedProjects = []
+
 const flowSteps = [
   {
     title: 'Recibes tu invitación o tu código',
@@ -78,12 +80,35 @@ export default function HomePage() {
     setIsInviteOpen(false)
   }
 
+  function hasFullNameAndSurname(value) {
+    const parts = value.trim().split(/\s+/).filter(Boolean)
+    return parts.length >= 2
+  }
+
   async function handleSubmit(event) {
     event.preventDefault()
     setStatus({ type: 'idle', message: '' })
 
-    if (!formData.fullName.trim() || !formData.email.trim() || !formData.interest.trim()) {
-      setStatus({ type: 'error', message: 'Completa nombre, correo y motivo de interés.' })
+    if (!hasFullNameAndSurname(formData.fullName)) {
+      setStatus({ type: 'error', message: 'Introduce tu nombre y tu primer apellido.' })
+      return
+    }
+
+    if (!formData.email.trim()) {
+      setStatus({ type: 'error', message: 'El correo electrónico es obligatorio.' })
+      return
+    }
+
+    if (!formData.phone.trim()) {
+      setStatus({ type: 'error', message: 'El teléfono o WhatsApp es obligatorio.' })
+      return
+    }
+
+    if (formData.interest.trim() && !publishedProjects.includes(formData.interest.trim())) {
+      setStatus({
+        type: 'error',
+        message: 'Si indicas un proyecto, debe coincidir exactamente con uno de los proyectos publicados disponibles.',
+      })
       return
     }
 
@@ -291,7 +316,8 @@ export default function HomePage() {
                     type="text"
                     value={formData.phone}
                     onChange={(event) => updateField('phone', event.target.value)}
-                    placeholder="Opcional"
+                    placeholder="Obligatorio"
+                    required
                   />
                 </label>
 
@@ -301,8 +327,7 @@ export default function HomePage() {
                     type="text"
                     value={formData.interest}
                     onChange={(event) => updateField('interest', event.target.value)}
-                    placeholder="Qué te interesa y para qué"
-                    required
+                    placeholder="Opcional. Si lo rellenas, debe coincidir exactamente con un proyecto publicado"
                   />
                 </label>
 
