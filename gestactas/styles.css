@@ -177,5 +177,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg-deep);color:var(--text
 .swipe-hint{display:flex;justify-content:center;gap:6px;margin-bottom:12px}
 .swipe-dot{width:6px;height:6px;border-radius:50%;background:var(--border);transition:var(--transition)}
 .swipe-dot.active{background:var(--accent);width:18px;border-radius:3px}
+.state-card{background:var(--bg-card);border:1px dashed var(--border);border-radius:var(--radius);padding:18px;margin-bottom:12px;cursor:default}
+.state-title{font-size:16px;font-weight:600;margin-bottom:8px}
+.state-body{font-size:14px;color:var(--text-muted);line-height:1.6;margin-bottom:12px}
+.state-empty .state-title{color:var(--text-secondary)}
+.state-warning{border-color:rgba(245,158,11,0.45);background:var(--warning-bg)}
+.state-warning .state-title{color:var(--warning)}
+.state-error{border-color:rgba(239,68,68,0.45);background:var(--danger-bg)}
+.state-error .state-title{color:var(--danger)}
+button[disabled]{opacity:.55;cursor:not-allowed}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 @media(min-width:768px){.app-container{border-radius:20px;margin:20px auto;min-height:calc(100vh - 40px);overflow:hidden}}
