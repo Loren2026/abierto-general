@@ -84,7 +84,6 @@ export async function requestDownload(req, res) {
         project_access_id: access.id,
         project_device_id: device.id,
         status: 'authorized',
-        notes: 'Download authorized',
       })
       .select('id')
       .single()
@@ -135,7 +134,6 @@ export async function downloadByToken(req, res) {
       .update({
         status: 'completed',
         completed_at: new Date().toISOString(),
-        notes: 'Download completed',
       })
       .eq('id', payload.logId)
 
@@ -149,7 +147,6 @@ export async function downloadByToken(req, res) {
         .update({
           status: 'failed',
           completed_at: new Date().toISOString(),
-          notes: error.message || 'Download failed',
         })
         .eq('id', payload.logId)
     }
