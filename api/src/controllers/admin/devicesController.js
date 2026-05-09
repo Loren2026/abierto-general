@@ -26,7 +26,7 @@ async function getActiveDevice(accessId) {
     .select('*')
     .eq('project_access_id', accessId)
     .eq('status', 'active')
-    .order('created_at', { ascending: false })
+    .order('last_seen_at', { ascending: false })
     .limit(1)
     .maybeSingle()
 
@@ -44,7 +44,7 @@ export async function listAccessDevices(req, res) {
     .from('project_devices')
     .select('*')
     .eq('project_access_id', accessId)
-    .order('created_at', { ascending: false })
+    .order('last_seen_at', { ascending: false })
 
   if (handleSupabaseError(error, res)) return
 
@@ -72,16 +72,17 @@ export async function createAccessDevice(req, res) {
     return res.status(409).json({ error: 'access already has an active device' })
   }
 
+  const now = new Date().toISOString()
+
   const { data, error } = await supabaseAdmin
     .from('project_devices')
     .insert({
       project_access_id: accessId,
       device_id: req.body.deviceId.trim(),
-      device_name: req.body.deviceName.trim(),
-      platform: req.body.platform?.toString().trim() || null,
-      notes: req.body.notes?.toString().trim() || null,
+      device_label: req.body.deviceName.trim(),
       status: 'active',
-      activated_at: new Date().toISOString(),
+      first_seen_at: now,
+      last_seen_at: now,
     })
     .select('*')
     .single()
@@ -132,7 +133,7 @@ export async function reassignAccessDevice(req, res) {
       .update({
         status: 'revoked',
         revoked_at: reassignedAt,
-        notes: notes || activeDevice.notes,
+        last_seen_at: reassignedAt,
       })
       .eq('id', activeDevice.id)
 
@@ -156,11 +157,10 @@ export async function reassignAccessDevice(req, res) {
     .insert({
       project_access_id: accessId,
       device_id: req.body.deviceId.trim(),
-      device_name: req.body.deviceName.trim(),
-      platform: req.body.platform?.toString().trim() || null,
-      notes,
+      device_label: req.body.deviceName.trim(),
       status: 'active',
-      activated_at: reassignedAt,
+      first_seen_at: reassignedAt,
+      last_seen_at: reassignedAt,
     })
     .select('*')
     .single()
@@ -192,7 +192,7 @@ export async function revokeDevice(req, res) {
     .update({
       status: 'revoked',
       revoked_at: revokedAt,
-      notes,
+      last_seen_at: revokedAt,
     })
     .eq('id', deviceId)
     .select('*')

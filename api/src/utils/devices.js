@@ -15,13 +15,10 @@ export function sanitizeDeviceRecord(record) {
     id: record.id,
     accessId: record.project_access_id,
     deviceId: record.device_id,
-    deviceName: record.device_name,
-    platform: record.platform,
+    deviceName: record.device_label,
     status: record.status,
-    notes: record.notes,
-    activatedAt: record.activated_at,
+    firstSeenAt: record.first_seen_at,
+    lastSeenAt: record.last_seen_at,
     revokedAt: record.revoked_at,
-    createdAt: record.created_at,
-    updatedAt: record.updated_at,
   }
 }
