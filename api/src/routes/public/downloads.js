@@ -1,8 +1,9 @@
 import { Router } from 'express'
-import { requestDownload } from '../../controllers/public/downloadsController.js'
+import { requestDownload, downloadByToken } from '../../controllers/public/downloadsController.js'
 
 const router = Router()
 
 router.post('/projects/:slug/request-download', requestDownload)
+router.get('/downloads/:token', downloadByToken)
 
 export default router

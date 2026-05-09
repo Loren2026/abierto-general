@@ -83,8 +83,8 @@ export async function requestDownload(req, res) {
         project_id: project.id,
         project_access_id: access.id,
         project_device_id: device.id,
-        action_type: 'request_download',
-        result: 'authorized',
+        action_type: 'initial',
+        result: 'success',
       })
       .select('id')
       .single()
@@ -136,8 +136,8 @@ export async function downloadByToken(req, res) {
         project_id: payload.projectId,
         project_access_id: payload.accessId,
         project_device_id: payload.deviceId,
-        action_type: 'download',
-        result: 'completed',
+        action_type: 'update',
+        result: 'success',
       })
 
     res.setHeader('Content-Type', contentType)
@@ -151,8 +151,8 @@ export async function downloadByToken(req, res) {
           project_id: payload.projectId,
           project_access_id: payload.accessId,
           project_device_id: payload.deviceId,
-          action_type: 'download',
-          result: 'failed',
+          action_type: 'update',
+          result: 'blocked',
         })
     }
 
