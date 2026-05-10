@@ -12,6 +12,7 @@ import adminAccessRoutes from './routes/admin/accesses.js';
 import adminDeviceRoutes from './routes/admin/devices.js';
 import publicProjectRoutes from './routes/public/projects.js';
 import publicDownloadRoutes from './routes/public/downloads.js';
+import webauthnRoutes from './routes/auth/webauthn.js';
 import { requireAdminSession } from './middleware/requireAdminSession.js';
 
 // Solo cargar .env en desarrollo local. En producción, jamás leer /app/.env interno.
@@ -54,7 +55,7 @@ app.use(helmet({
 app.use(cors({
   origin: process.env.NODE_ENV === 'development' 
     ? ['http://localhost:5173', 'http://localhost:3000']
-    : ['https://inteligencialoren.com', 'https://www.inteligencialoren.com'],
+    : ['https://inteligencialoren.com', 'https://www.inteligencialoren.com', 'https://panel.inteligencialoren.com'],
   credentials: true,
 }));
 
@@ -264,6 +265,8 @@ app.get('/api/auth/me', verifySession, async (req, res) => {
     return res.status(500).json({ error: 'Error en el servidor' });
   }
 });
+
+app.use('/api/auth/webauthn', webauthnRoutes);
 
 // Ejemplo de ruta protegida con CSRF (Punto 5)
 app.post('/api/admin/example', verifySession, csrfProtection, async (req, res) => {
