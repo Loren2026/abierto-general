@@ -168,7 +168,7 @@ function LoginPage() {
 
         <div className="login-footer">
           <p>
-            🔒 Seguridad activa: Hash bcrypt, Rate limiting, Helmet, CSRF
+            🔒 Seguridad activa: Supabase Auth, Rate limiting, Helmet y acceso rápido con passkey
           </p>
         </div>
       </div>
