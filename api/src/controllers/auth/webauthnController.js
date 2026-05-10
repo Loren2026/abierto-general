@@ -56,7 +56,17 @@ export async function createRegistrationOptions(req, res) {
 
 export async function createAuthenticationOptions(req, res) {
   try {
-    const credentials = await listActiveWebAuthnCredentialsByUserId(req.user.id);
+    const { email } = req.body ?? {};
+
+    if (!email?.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'El email es obligatorio para iniciar la autenticación WebAuthn',
+      });
+    }
+
+    const user = await getUserByEmail(email);
+    const credentials = await listActiveWebAuthnCredentialsByUserId(user.id);
 
     if (!credentials.length) {
       return res.status(400).json({
@@ -68,7 +78,7 @@ export async function createAuthenticationOptions(req, res) {
     const options = await buildAuthenticationOptions({ credentials });
 
     await createAuthenticationChallenge({
-      userId: req.user.id,
+      userId: user.id,
       challenge: options.challenge,
     });
 
@@ -78,6 +88,14 @@ export async function createAuthenticationOptions(req, res) {
     });
   } catch (error) {
     console.error('Error generando opciones WebAuthn de autenticación:', error);
+
+    if (error.message === 'USER_NOT_FOUND') {
+      return res.status(404).json({
+        success: false,
+        error: 'No existe un usuario válido para esa autenticación WebAuthn',
+      });
+    }
+
     return res.status(500).json({
       success: false,
       error: 'No se pudo iniciar la autenticación WebAuthn',
@@ -96,6 +114,26 @@ async function getUserById(userId) {
   } = await supabaseAdmin.auth.admin.getUserById(userId);
 
   if (error || !user) {
+    throw new Error('USER_NOT_FOUND');
+  }
+
+  return user;
+}
+
+async function getUserByEmail(email) {
+  const { data, error } = await supabaseAdmin.auth.admin.listUsers({
+    page: 1,
+    perPage: 100,
+  });
+
+  if (error) {
+    throw new Error('USER_LOOKUP_FAILED');
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = data.users.find((item) => item.email?.toLowerCase() === normalizedEmail);
+
+  if (!user) {
     throw new Error('USER_NOT_FOUND');
   }
 
