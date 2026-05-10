@@ -4,6 +4,8 @@ import useAuthStore from '../store/useAuthStore';
 import { browserSupportsWebAuthn } from '../utils/webauthn';
 import './LoginPage.css';
 
+const LAST_EMAIL_KEY = 'inteligencialoren.lastEmail';
+
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,6 +16,20 @@ function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, loginWithWebAuthn, isLoading, user } = useAuthStore();
+
+  useEffect(() => {
+    const savedEmail = window.localStorage.getItem(LAST_EMAIL_KEY);
+    if (savedEmail) {
+      setEmail(savedEmail);
+    }
+    setPassword('');
+  }, []);
+
+  const persistEmail = (value) => {
+    const normalized = value.trim();
+    if (!normalized) return;
+    window.localStorage.setItem(LAST_EMAIL_KEY, normalized);
+  };
 
   useEffect(() => {
     if (user) {
@@ -38,6 +54,9 @@ function LoginPage() {
       return;
     }
 
+    persistEmail(email);
+    setPassword('');
+
     const nextPath = location.state?.from || '/admin'
     navigate(nextPath, { replace: true })
   };
@@ -56,13 +75,17 @@ function LoginPage() {
       return;
     }
 
-    const result = await loginWithWebAuthn(email.trim());
+    const normalizedEmail = email.trim();
+    const result = await loginWithWebAuthn(normalizedEmail);
 
     if (!result.success) {
       const message = result.error || 'No se pudo completar la verificación con huella/passkey.';
       setWebAuthnError(message);
       return;
     }
+
+    persistEmail(normalizedEmail);
+    setPassword('');
 
     const nextPath = location.state?.from || '/admin'
     navigate(nextPath, { replace: true })
