@@ -70,6 +70,8 @@ export async function verifyRegistration(req, res) {
       });
     }
 
+    await markRegistrationChallengeAsUsed(pendingChallenge.id);
+
     const savedCredential = await createWebAuthnCredential({
       userId: req.user.id,
       credentialId: verification.credentialId,
@@ -79,8 +81,6 @@ export async function verifyRegistration(req, res) {
       transports: verification.transports,
       authenticatorAttachment: verification.authenticatorAttachment,
     });
-
-    await markRegistrationChallengeAsUsed(pendingChallenge.id);
 
     return res.json({
       success: true,
