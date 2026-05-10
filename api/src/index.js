@@ -114,7 +114,9 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Punto 5: CSRF básico
+// Token antiforgery opcional para el cliente. No hay protección CSRF general activa
+// mientras el panel siga usando principalmente Authorization Bearer en vez de
+// una sesión server-side tradicional.
 function generateCSRFToken() {
   return crypto.randomBytes(32).toString('hex');
 }
@@ -178,9 +180,11 @@ app.get('/api/health', (req, res) => {
     security: {
       helmet: 'enabled',
       rateLimit: 'enabled',
-      csrf: 'enabled',
-      bcrypt: 'enabled',
-      sessionExpiry: '24h'
+      csrf: 'partial_example_only',
+      authentication: 'supabase_auth_delegated',
+      passwordHashing: 'bcrypt_used_in_project_but_not_in_login_route',
+      sessionAccessToken: 'short_lived',
+      sessionRefreshToken: 'long_lived'
     }
   });
 });
@@ -207,10 +211,10 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
     // Punto 5: Generar y guardar token CSRF
     const csrfToken = generateCSRFToken();
     
-    // Punto 4: Sesión con expiración de 24 horas (configurado en Supabase)
-    // Supabase maneja la expiración automáticamente:
-    // - Access token: 15 minutos (auto-refresh)
-    // - Refresh token: 30 días
+        // La autenticación clásica está delegada a Supabase Auth.
+    // Duraciones reales en este flujo:
+    // - Access token: corta duración gestionada por Supabase
+    // - Refresh token: duración más larga gestionada por Supabase
     
     return res.json({ 
       success: true,
@@ -301,11 +305,12 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
   console.log(`🔒 Seguridad activa:`);
-  console.log(`   ✅ Hash de contraseña (bcrypt, salt rounds: ${SALT_ROUNDS})`);
+  console.log(`   ✅ Autenticación clásica delegada a Supabase Auth`);
+  console.log(`   ✅ bcrypt disponible en el proyecto (salt rounds: ${SALT_ROUNDS}), no en la ruta real de login`);
   console.log(`   ✅ Rate limiting (login: 5/15m, API: 100/1h, Admin: 50/1h)`);
   console.log(`   ✅ Helmet y headers de seguridad`);
-  console.log(`   ✅ Sesiones con expiración (24h)`);
-  console.log(`   ✅ CSRF básico`);
+  console.log(`   ✅ Tokens de sesión de acceso corto y refresh de mayor duración`);
+  console.log(`   ⚠️ CSRF no está activo de forma general, solo hay base parcial de ejemplo`);
 });
 
 export default app;
