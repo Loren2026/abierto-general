@@ -1,4 +1,5 @@
 import {
+  generateAuthenticationOptions,
   generateRegistrationOptions,
   verifyRegistrationResponse,
 } from '@simplewebauthn/server';
@@ -33,6 +34,15 @@ export async function buildRegistrationOptions({ user, credentials }) {
   });
 
   return options;
+}
+
+export async function buildAuthenticationOptions({ credentials }) {
+  return generateAuthenticationOptions({
+    rpID,
+    timeout: 60000,
+    allowCredentials: credentials,
+    userVerification: 'preferred',
+  });
 }
 
 export async function verifyRegistrationCredential({ credential, expectedChallenge }) {

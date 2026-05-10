@@ -1,8 +1,13 @@
-import { buildRegistrationOptions, verifyRegistrationCredential } from '../../services/webauthn/webauthnService.js';
+import {
+  buildAuthenticationOptions,
+  buildRegistrationOptions,
+  verifyRegistrationCredential,
+} from '../../services/webauthn/webauthnService.js';
 import {
   createWebAuthnCredential,
   listActiveWebAuthnCredentialsByUserId,
 } from '../../utils/webauthnCredentials.js';
+import { createAuthenticationChallenge } from '../../utils/webauthnAuthenticationChallenges.js';
 import {
   createRegistrationChallenge,
   getPendingRegistrationChallengeByUserId,
@@ -34,6 +39,37 @@ export async function createRegistrationOptions(req, res) {
     return res.status(500).json({
       success: false,
       error: 'No se pudieron generar las opciones de registro WebAuthn',
+    });
+  }
+}
+
+export async function createAuthenticationOptions(req, res) {
+  try {
+    const credentials = await listActiveWebAuthnCredentialsByUserId(req.user.id);
+
+    if (!credentials.length) {
+      return res.status(400).json({
+        success: false,
+        error: 'No hay credenciales WebAuthn activas para este usuario',
+      });
+    }
+
+    const options = await buildAuthenticationOptions({ credentials });
+
+    await createAuthenticationChallenge({
+      userId: req.user.id,
+      challenge: options.challenge,
+    });
+
+    return res.json({
+      success: true,
+      options,
+    });
+  } catch (error) {
+    console.error('Error generando opciones WebAuthn de autenticación:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'No se pudo iniciar la autenticación WebAuthn',
     });
   }
 }
