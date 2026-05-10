@@ -39,6 +39,46 @@ export async function listActiveWebAuthnCredentialsByUserId(userId) {
   }));
 }
 
+export async function getActiveWebAuthnCredentialByCredentialId(credentialId) {
+  const { data, error } = await supabaseAdmin
+    .from('webauthn_credentials')
+    .select('id, user_id, credential_id, public_key, counter, transports, revoked_at')
+    .eq('credential_id', credentialId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`No se pudo cargar la credencial WebAuthn: ${error.message}`);
+  }
+
+  if (!data || data.revoked_at) {
+    return null;
+  }
+
+  return {
+    id: data.id,
+    userId: data.user_id,
+    credentialId: data.credential_id,
+    publicKey: Buffer.from(data.public_key, 'base64url'),
+    counter: data.counter,
+    transports: normalizeTransports(data.transports),
+  };
+}
+
+export async function updateWebAuthnCredentialUsage({ credentialId, counter }) {
+  const { error } = await supabaseAdmin
+    .from('webauthn_credentials')
+    .update({
+      counter,
+      last_used_at: new Date().toISOString(),
+    })
+    .eq('credential_id', credentialId)
+    .is('revoked_at', null);
+
+  if (error) {
+    throw new Error(`No se pudo actualizar el uso de la credencial WebAuthn: ${error.message}`);
+  }
+}
+
 export async function createWebAuthnCredential({
   userId,
   credentialId,

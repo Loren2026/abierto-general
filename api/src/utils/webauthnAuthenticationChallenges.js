@@ -31,3 +31,35 @@ export async function createAuthenticationChallenge({ userId, challenge }) {
 
   return data;
 }
+
+export async function getPendingAuthenticationChallengeByUserId(userId) {
+  const nowIso = new Date().toISOString();
+
+  const { data, error } = await supabaseAdmin
+    .from('webauthn_authentication_challenges')
+    .select('id, challenge, expires_at, used_at')
+    .eq('user_id', userId)
+    .is('used_at', null)
+    .gt('expires_at', nowIso)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`No se pudo recuperar el challenge WebAuthn de autenticación pendiente: ${error.message}`);
+  }
+
+  return data;
+}
+
+export async function markAuthenticationChallengeAsUsed(challengeId) {
+  const { error } = await supabaseAdmin
+    .from('webauthn_authentication_challenges')
+    .update({ used_at: new Date().toISOString() })
+    .eq('id', challengeId)
+    .is('used_at', null);
+
+  if (error) {
+    throw new Error(`No se pudo marcar el challenge WebAuthn de autenticación como usado: ${error.message}`);
+  }
+}

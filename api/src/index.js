@@ -14,6 +14,7 @@ import publicProjectRoutes from './routes/public/projects.js';
 import publicDownloadRoutes from './routes/public/downloads.js';
 import webauthnRoutes from './routes/auth/webauthn.js';
 import { requireAdminSession } from './middleware/requireAdminSession.js';
+import { resolveSessionUser } from './middleware/requireSession.js';
 
 // Solo cargar .env en desarrollo local. En producción, jamás leer /app/.env interno.
 const isProduction = process.env.NODE_ENV === 'production';
@@ -152,23 +153,19 @@ async function verifyPassword(plainPassword, hashedPassword) {
 // Middleware para verificar sesión (Punto 4)
 async function verifySession(req, res, next) {
   const accessToken = req.headers.authorization?.replace('Bearer ', '');
-  
+
   if (!accessToken) {
     return res.status(401).json({ error: 'No access token' });
   }
-  
-  try {
-    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
-    
-    if (error || !user) {
-      return res.status(401).json({ error: 'Invalid token' });
-    }
-    
-    req.user = user;
-    next();
-  } catch (error) {
-    return res.status(401).json({ error: 'Authentication failed' });
+
+  const user = await resolveSessionUser(accessToken);
+
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid token' });
   }
+
+  req.user = user;
+  next();
 }
 
 // Routes

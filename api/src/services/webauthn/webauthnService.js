@@ -1,6 +1,7 @@
 import {
   generateAuthenticationOptions,
   generateRegistrationOptions,
+  verifyAuthenticationResponse,
   verifyRegistrationResponse,
 } from '@simplewebauthn/server';
 
@@ -43,6 +44,39 @@ export async function buildAuthenticationOptions({ credentials }) {
     allowCredentials: credentials,
     userVerification: 'preferred',
   });
+}
+
+export async function verifyAuthenticationCredential({ credential, expectedChallenge, authenticator }) {
+  try {
+    const verification = await verifyAuthenticationResponse({
+      response: credential,
+      expectedChallenge,
+      expectedOrigin,
+      expectedRPID: rpID,
+      credential: {
+        id: authenticator.credentialId,
+        publicKey: authenticator.publicKey,
+        counter: authenticator.counter,
+        transports: authenticator.transports,
+      },
+      requireUserVerification: true,
+    });
+
+    if (!verification.verified || !verification.authenticationInfo) {
+      return { verified: false };
+    }
+
+    return {
+      verified: true,
+      credentialId: verification.authenticationInfo.credentialID,
+      newCounter: verification.authenticationInfo.newCounter,
+    };
+  } catch (error) {
+    return {
+      verified: false,
+      error: error instanceof Error ? error.message : 'WEB_AUTHN_AUTHENTICATION_FAILED',
+    };
+  }
 }
 
 export async function verifyRegistrationCredential({ credential, expectedChallenge }) {
