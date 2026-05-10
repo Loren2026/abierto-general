@@ -1,16 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/useAuthStore';
+import { browserSupportsWebAuthn } from '../utils/webauthn';
 import './LoginPage.css';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [webAuthnError, setWebAuthnError] = useState('');
+  const supportsWebAuthn = useMemo(browserSupportsWebAuthn, []);
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isLoading, user } = useAuthStore();
+  const { login, loginWithWebAuthn, isLoading, user } = useAuthStore();
 
   useEffect(() => {
     if (user) {
@@ -21,6 +24,7 @@ function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setWebAuthnError('');
 
     if (!email || !password) {
       setError('Email y contraseña son requeridos');
@@ -38,6 +42,32 @@ function LoginPage() {
     navigate(nextPath, { replace: true })
   };
 
+  const handleWebAuthnLogin = async () => {
+    setError('');
+    setWebAuthnError('');
+
+    if (!supportsWebAuthn) {
+      setWebAuthnError('Este navegador no es compatible con acceso por passkey.');
+      return;
+    }
+
+    if (!email.trim()) {
+      setWebAuthnError('Introduce tu correo para iniciar el acceso rápido.');
+      return;
+    }
+
+    const result = await loginWithWebAuthn(email.trim());
+
+    if (!result.success) {
+      const message = result.error || 'No se pudo completar la verificación con huella/passkey.';
+      setWebAuthnError(message);
+      return;
+    }
+
+    const nextPath = location.state?.from || '/admin'
+    navigate(nextPath, { replace: true })
+  }
+
   return (
     <div className="login-container">
       <div className="login-card">
@@ -47,6 +77,12 @@ function LoginPage() {
         {error && (
           <div className="error-message">
             {error}
+          </div>
+        )}
+
+        {webAuthnError && (
+          <div className="error-message error-message--secondary">
+            {webAuthnError}
           </div>
         )}
 
@@ -85,6 +121,27 @@ function LoginPage() {
             {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
           </button>
         </form>
+
+        {supportsWebAuthn ? (
+          <>
+            <div className="login-divider">
+              <span>o</span>
+            </div>
+
+            <button
+              type="button"
+              className="login-button login-button--secondary"
+              disabled={isLoading}
+              onClick={handleWebAuthnLogin}
+            >
+              {isLoading ? 'Verificando passkey...' : 'Acceso rápido con huella'}
+            </button>
+
+            <p className="login-hint">
+              Si ya registraste tu passkey, puedes entrar más rápido usando tu huella o desbloqueo del dispositivo.
+            </p>
+          </>
+        ) : null}
 
         <div className="login-footer">
           <p>
