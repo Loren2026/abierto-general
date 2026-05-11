@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import emailjs from '@emailjs/browser'
 import PublicLayout from '../components/layout/PublicLayout'
+import fitLorenHero from '../assets/fit-loren-hero.jpg'
 
 const initialForm = {
   fullName: '',
@@ -30,7 +31,20 @@ const featureCards = [
   },
 ]
 
-const publishedProjects = []
+const publishedProjects = ['Fit Loren', 'fit-loren']
+
+const featuredProjects = [
+  {
+    slug: 'fit-loren',
+    name: 'Fit Loren',
+    description:
+      'Fit Loren es tu entrenador personal en casa. Combina ejercicios con máquinas de musculación, rutinas sin equipo y calistenia en una sola app. Se registra con tus datos y preferencias, y la inteligencia artificial adapta cada entrenamiento a ti, tu nivel, tus objetivos, tu ritmo.',
+    image: fitLorenHero,
+    badge: 'Próximamente',
+    accessLabel: 'Código de invitación',
+    visibleUrl: 'fit.inteligencialoren.com',
+  },
+]
 
 const flowSteps = [
   {
@@ -238,6 +252,43 @@ export default function HomePage() {
               <article className="feature-card" key={card.title}>
                 <h3>{card.title}</h3>
                 <p>{card.copy}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="section-shell project-showcase-section">
+          <div className="section-heading">
+            <span className="section-heading__eyebrow">Proyecto destacado</span>
+            <h2>Fit Loren ya tiene espacio reservado en la plataforma</h2>
+            <p>
+              Una app pensada para entrenar en casa con acceso privado, adaptación inteligente y entrada por
+              código de invitación.
+            </p>
+          </div>
+          <div className="project-showcase-grid">
+            {featuredProjects.map((project) => (
+              <article className="project-card project-card--featured" key={project.slug}>
+                <div className="project-card__media">
+                  <img src={project.image} alt={project.name} />
+                </div>
+                <div className="project-card__body">
+                  <div className="project-card__topline">
+                    <span className="project-card__badge">{project.badge}</span>
+                    <span className="project-card__access">{project.accessLabel}</span>
+                  </div>
+                  <h3>{project.name}</h3>
+                  <p>{project.description}</p>
+                  <div className="project-card__url">{project.visibleUrl}</div>
+                  <div className="project-card__actions">
+                    <a className="cta-button cta-button--primary" href="/login">
+                      Acceder con código
+                    </a>
+                    <button className="cta-button cta-button--invite" type="button" onClick={openInvite}>
+                      Solicitar código
+                    </button>
+                  </div>
+                </div>
               </article>
             ))}
           </div>
