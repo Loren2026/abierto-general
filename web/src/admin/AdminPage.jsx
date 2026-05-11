@@ -367,7 +367,6 @@ function AdminPage() {
                           <div className="access-card__header">
                             <strong>{access.personName}</strong>
                             <div className="access-card__status-group">
-                              <span className={`project-status project-status--${access.status}`}>{access.status}</span>
                               <span className="device-status-row">
                                 <span className={`device-status-dot ${access.status === 'revoked' ? 'device-status-dot--inactive' : 'device-status-dot--active'}`} />
                                 <span className="device-status-text">{access.status === 'revoked' ? 'Revocado' : 'Activo'}</span>

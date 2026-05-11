@@ -194,6 +194,12 @@
   .access-detail-value {
     text-align: left;
     flex: 1 1 auto;
+    width: auto;
+    max-width: none;
+    word-break: normal;
+    overflow-wrap: normal;
+    white-space: normal;
+    writing-mode: horizontal-tb;
   }
 
   .access-actions,
@@ -425,6 +431,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(260px, 1fr);
   gap: 16px;
+  width: 100%;
 }
 
 .access-detail-list {
@@ -442,6 +449,7 @@
   gap: 16px;
   padding: 10px 0;
   border-bottom: 1px solid #e6ebf2;
+  width: 100%;
 }
 
 .access-detail-row:last-child {
@@ -462,6 +470,12 @@
   text-align: right;
   flex: 1 1 auto;
   min-width: 0;
+  width: auto;
+  max-width: none;
+  word-break: normal;
+  overflow-wrap: normal;
+  white-space: normal;
+  writing-mode: horizontal-tb;
 }
 
 .device-panel {
@@ -469,6 +483,7 @@
   border: 1px solid rgba(91, 141, 239, 0.12);
   border-radius: 14px;
   padding: 14px;
+  width: 100%;
 }
 
 .device-status-row {
