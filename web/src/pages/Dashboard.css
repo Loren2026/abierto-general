@@ -182,13 +182,18 @@
   }
 
   .access-detail-row {
-    grid-template-columns: 1fr;
-    gap: 6px;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .access-detail-label {
+    min-width: 120px;
+    flex: 0 0 120px;
   }
 
   .access-detail-value {
     text-align: left;
-    justify-self: start;
+    flex: 1 1 auto;
   }
 
   .access-actions,
@@ -249,7 +254,7 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .project-card__meta {
@@ -432,8 +437,7 @@
 }
 
 .access-detail-row {
-  display: grid;
-  grid-template-columns: minmax(110px, max-content) minmax(0, 1fr);
+  display: flex;
   align-items: center;
   gap: 16px;
   padding: 10px 0;
@@ -448,15 +452,16 @@
   font-size: 13px;
   font-weight: 800;
   color: #64748b;
-  min-width: 110px;
+  min-width: 120px;
+  flex: 0 0 120px;
 }
 
 .access-detail-value {
   font-size: 14px;
   color: #172033;
   text-align: right;
-  word-break: break-word;
-  justify-self: end;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .device-panel {
