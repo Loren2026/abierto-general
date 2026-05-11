@@ -182,13 +182,13 @@
   }
 
   .access-detail-row {
-    flex-direction: column;
-    align-items: flex-start;
+    grid-template-columns: 1fr;
     gap: 6px;
   }
 
   .access-detail-value {
     text-align: left;
+    justify-self: start;
   }
 
   .access-actions,
@@ -243,6 +243,13 @@
   gap: 12px;
   flex-wrap: wrap;
   margin-bottom: 8px;
+}
+
+.access-card__status-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .project-card__meta {
@@ -425,9 +432,9 @@
 }
 
 .access-detail-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(110px, max-content) minmax(0, 1fr);
+  align-items: center;
   gap: 16px;
   padding: 10px 0;
   border-bottom: 1px solid #e6ebf2;
@@ -449,6 +456,7 @@
   color: #172033;
   text-align: right;
   word-break: break-word;
+  justify-self: end;
 }
 
 .device-panel {
@@ -462,6 +470,12 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
+}
+
+.device-panel__summary {
+  font-size: 14px;
+  font-weight: 700;
+  color: #21457a;
 }
 
 .device-status-dot {

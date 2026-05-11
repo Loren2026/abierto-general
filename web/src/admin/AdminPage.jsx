@@ -366,7 +366,13 @@ function AdminPage() {
                         <div key={access.id} className="access-card access-card--detailed">
                           <div className="access-card__header">
                             <strong>{access.personName}</strong>
-                            <span className={`project-status project-status--${access.status}`}>{access.status}</span>
+                            <div className="access-card__status-group">
+                              <span className={`project-status project-status--${access.status}`}>{access.status}</span>
+                              <span className="device-status-row">
+                                <span className={`device-status-dot ${access.status === 'revoked' ? 'device-status-dot--inactive' : 'device-status-dot--active'}`} />
+                                <span className="device-status-text">{access.status === 'revoked' ? 'Revocado' : 'Activo'}</span>
+                              </span>
+                            </div>
                           </div>
 
                           <div className="access-grid">
@@ -389,9 +395,8 @@ function AdminPage() {
                               </div>
                             </div>
                             <div className="device-panel">
-                              <div className="device-status-row">
-                                <span className={`device-status-dot ${activeDevice ? 'device-status-dot--active' : 'device-status-dot--inactive'}`} />
-                                <span className="device-status-text">{activeDevice ? 'Dispositivo vinculado' : 'Sin dispositivo vinculado'}</span>
+                              <div className="device-panel__summary">
+                                {activeDevice ? 'Dispositivo vinculado' : 'Sin dispositivo vinculado'}
                               </div>
                               {activeDevice ? (
                                 <div className="access-detail-list access-detail-list--compact">
