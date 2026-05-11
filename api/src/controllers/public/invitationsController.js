@@ -10,7 +10,7 @@ async function findActiveDevice(accessId) {
     .select('*')
     .eq('project_access_id', accessId)
     .eq('status', 'active')
-    .order('created_at', { ascending: false })
+    .order('activated_at', { ascending: false })
     .limit(1)
     .maybeSingle()
 
