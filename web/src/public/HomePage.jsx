@@ -3,6 +3,8 @@ import emailjs from '@emailjs/browser'
 import PublicLayout from '../components/layout/PublicLayout'
 import fitLorenHero from '../assets/fit-loren-hero.jpg'
 
+const DEVICE_ID_KEY = 'inteligencialoren.deviceId'
+
 const initialForm = {
   fullName: '',
   email: '',
@@ -43,6 +45,7 @@ const featuredProjects = [
     badge: 'Próximamente',
     accessLabel: 'Código de invitación',
     visibleUrl: 'fit.inteligencialoren.com',
+    redirectUrl: 'https://fit.inteligencialoren.com',
   },
 ]
 
@@ -74,8 +77,69 @@ function getEmailJsConfig() {
   }
 }
 
+function getOrCreateDeviceId() {
+  const existing = window.localStorage.getItem(DEVICE_ID_KEY)
+  if (existing) return existing
+
+  const generated = window.crypto?.randomUUID?.() || `device-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  window.localStorage.setItem(DEVICE_ID_KEY, generated)
+  return generated
+}
+
+function getClientPlatform() {
+  const ua = window.navigator.userAgent.toLowerCase()
+
+  if (ua.includes('android')) return 'android'
+  if (ua.includes('iphone') || ua.includes('ipad') || ua.includes('ipod')) return 'ios'
+  if (ua.includes('mac os x') || ua.includes('macintosh')) return 'macos'
+  if (ua.includes('windows')) return 'windows'
+  if (ua.includes('linux')) return 'linux'
+  return 'unknown'
+}
+
+function getClientDeviceInfo() {
+  const ua = window.navigator.userAgent
+  const platform = getClientPlatform()
+  let browser = 'Navegador'
+
+  if (ua.includes('Edg/')) browser = 'Edge'
+  else if (ua.includes('Chrome/')) browser = 'Chrome'
+  else if (ua.includes('Firefox/')) browser = 'Firefox'
+  else if (ua.includes('Safari/') && !ua.includes('Chrome/')) browser = 'Safari'
+
+  const platformLabelMap = {
+    android: 'Android',
+    ios: 'iPhone',
+    macos: 'Mac',
+    windows: 'Windows',
+    linux: 'Linux',
+    unknown: 'Dispositivo desconocido',
+  }
+
+  return {
+    platform,
+    deviceName: `${browser} en ${platformLabelMap[platform] || 'Dispositivo'}`,
+  }
+}
+
+function readApiError(data, fallback) {
+  if (!data) return fallback
+  if (data.binding === 'blocked') {
+    return 'Este código ya está vinculado a otro dispositivo activo. Pide a Loren que revoque o reasigne el acceso si necesitas moverlo.'
+  }
+  if (data.error === 'Invalid access code' || data.error === 'Invalid credentials' || data.error === 'invalid access code') {
+    return 'El código no es válido o ya no está activo para este proyecto.'
+  }
+  return data.error || fallback
+}
+
 export default function HomePage() {
   const [isInviteOpen, setIsInviteOpen] = useState(false)
+  const [isAccessModalOpen, setIsAccessModalOpen] = useState(false)
+  const [selectedProject, setSelectedProject] = useState(null)
+  const [accessCode, setAccessCode] = useState('')
+  const [accessStatus, setAccessStatus] = useState({ type: 'idle', message: '' })
+  const [isValidatingCode, setIsValidatingCode] = useState(false)
   const [formData, setFormData] = useState(initialForm)
   const [status, setStatus] = useState({ type: 'idle', message: '' })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -93,6 +157,21 @@ export default function HomePage() {
 
   function closeInvite() {
     setIsInviteOpen(false)
+  }
+
+  function openAccessModal(project) {
+    setSelectedProject(project)
+    setAccessCode('')
+    setAccessStatus({ type: 'idle', message: '' })
+    setIsAccessModalOpen(true)
+  }
+
+  function closeAccessModal() {
+    setIsAccessModalOpen(false)
+    setSelectedProject(null)
+    setAccessCode('')
+    setAccessStatus({ type: 'idle', message: '' })
+    setIsValidatingCode(false)
   }
 
   function hasFullNameAndSurname(value) {
@@ -178,6 +257,61 @@ export default function HomePage() {
     }
   }
 
+  async function handleValidateCode(event) {
+    event.preventDefault()
+
+    if (!selectedProject?.slug) {
+      setAccessStatus({ type: 'error', message: 'No se ha seleccionado ningún proyecto.' })
+      return
+    }
+
+    if (!accessCode.trim()) {
+      setAccessStatus({ type: 'error', message: 'Introduce tu código de invitación.' })
+      return
+    }
+
+    setIsValidatingCode(true)
+    setAccessStatus({ type: 'idle', message: '' })
+
+    try {
+      const deviceId = getOrCreateDeviceId()
+      const { deviceName, platform } = getClientDeviceInfo()
+
+      const response = await fetch(`/api/projects/${selectedProject.slug}/validate-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: accessCode.trim(),
+          deviceId,
+          deviceName,
+          platform,
+        }),
+      })
+
+      const data = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        setAccessStatus({
+          type: 'error',
+          message: readApiError(data, 'No se pudo validar el acceso ahora mismo. Inténtalo de nuevo en unos minutos.'),
+        })
+        return
+      }
+
+      setAccessStatus({ type: 'success', message: 'Acceso validado. Redirigiendo al proyecto…' })
+      window.location.href = selectedProject.redirectUrl
+    } catch (error) {
+      setAccessStatus({
+        type: 'error',
+        message: 'No se pudo validar el acceso ahora mismo. Inténtalo de nuevo en unos minutos.',
+      })
+    } finally {
+      setIsValidatingCode(false)
+    }
+  }
+
   return (
     <PublicLayout>
       <main className="landing-page">
@@ -191,9 +325,9 @@ export default function HomePage() {
               segura y controlada.
             </p>
             <div className="hero-panel__actions">
-              <a className="cta-button cta-button--primary" href="/login">
+              <button className="cta-button cta-button--primary" type="button" onClick={() => openAccessModal(featuredProjects[0])}>
                 Acceder con código
-              </a>
+              </button>
               <button className="cta-button cta-button--invite" type="button" onClick={openInvite}>
                 Solicitar Invitación
               </button>
@@ -281,9 +415,9 @@ export default function HomePage() {
                   <p>{project.description}</p>
                   <div className="project-card__url">{project.visibleUrl}</div>
                   <div className="project-card__actions">
-                    <a className="cta-button cta-button--primary" href="/login">
+                    <button className="cta-button cta-button--primary" type="button" onClick={() => openAccessModal(project)}>
                       Acceder con código
-                    </a>
+                    </button>
                     <button className="cta-button cta-button--invite" type="button" onClick={openInvite}>
                       Solicitar código
                     </button>
@@ -305,9 +439,9 @@ export default function HomePage() {
               </p>
             </div>
             <div className="hero-panel__actions invite-section__actions">
-              <a className="cta-button cta-button--primary" href="/login">
+              <button className="cta-button cta-button--primary" type="button" onClick={() => openAccessModal(featuredProjects[0])}>
                 Acceder con código
-              </a>
+              </button>
               <button className="cta-button cta-button--invite" type="button" onClick={openInvite}>
                 Solicitar Invitación
               </button>
@@ -320,7 +454,9 @@ export default function HomePage() {
             <strong>Inteligencia Loren</strong>
             <span>Acceso privado y gestionado</span>
             <div className="landing-footer__links">
-              <a href="/login">Acceso / Login</a>
+              <button type="button" className="landing-footer__link-button" onClick={() => openAccessModal(featuredProjects[0])}>
+                Acceso con código
+              </button>
               <a href="#privacidad">Privacidad</a>
             </div>
           </div>
@@ -414,6 +550,47 @@ export default function HomePage() {
                   disabled={isSubmitting || isSubmitted}
                 >
                   {isSubmitted ? 'Solicitud enviada' : isSubmitting ? 'Enviando solicitud...' : 'Enviar solicitud'}
+                </button>
+              </form>
+            </div>
+          </div>
+        ) : null}
+
+        {isAccessModalOpen && selectedProject ? (
+          <div className="invite-modal" role="dialog" aria-modal="true" aria-labelledby="access-modal-title">
+            <div className="invite-modal__backdrop" onClick={closeAccessModal} />
+            <div className="invite-modal__card">
+              <button className="invite-modal__close" type="button" onClick={closeAccessModal} aria-label="Cerrar acceso con código">
+                ×
+              </button>
+              <span className="section-heading__eyebrow">Acceder con código</span>
+              <h2 id="access-modal-title">{selectedProject.name}</h2>
+              <p className="invite-modal__copy">
+                Introduce tu código de invitación. El sistema validará el acceso, vinculará este dispositivo y te llevará al proyecto.
+              </p>
+
+              <form className="invite-form" onSubmit={handleValidateCode}>
+                <label>
+                  <span>Código de invitación</span>
+                  <input
+                    type="text"
+                    value={accessCode}
+                    onChange={(event) => setAccessCode(event.target.value.toUpperCase())}
+                    placeholder="Ej. ABCD1234"
+                    autoCapitalize="characters"
+                    autoComplete="one-time-code"
+                    required
+                  />
+                </label>
+
+                {accessStatus.message ? (
+                  <div className={`form-status form-status--${accessStatus.type === 'success' ? 'success' : 'error'}`}>
+                    {accessStatus.message}
+                  </div>
+                ) : null}
+
+                <button className="cta-button cta-button--primary cta-button--full" type="submit" disabled={isValidatingCode}>
+                  {isValidatingCode ? 'Validando...' : 'Validar acceso'}
                 </button>
               </form>
             </div>
