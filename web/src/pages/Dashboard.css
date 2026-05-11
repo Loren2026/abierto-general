@@ -176,9 +176,17 @@
     grid-template-columns: 1fr;
   }
 
-  .admin-inline-form,
-  .access-grid-simple {
+  .admin-inline-form {
     grid-template-columns: 1fr;
+  }
+
+  .access-card__header {
+    align-items: flex-start;
+  }
+
+  .access-card__status-group {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .access-meta-row {
@@ -416,9 +424,9 @@
   gap: 16px;
 }
 
-.access-grid-simple {
+.access-stack-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 1fr);
+  grid-template-columns: 1fr;
   gap: 16px;
   width: 100%;
 }
@@ -433,12 +441,18 @@
   margin-top: 10px;
 }
 
+.access-meta-table,
+.device-panel-simple {
+  min-width: 0;
+}
+
 .access-meta-row {
   display: grid;
   grid-template-columns: 100px minmax(0, 1fr);
   gap: 14px;
   align-items: center;
   width: 100%;
+  min-width: 0;
   padding: 10px 0;
   border-bottom: 1px solid #e6ebf2;
 }
@@ -454,9 +468,10 @@
   color: #172033;
   text-align: right;
   min-width: 0;
+  width: 100%;
   white-space: normal;
-  word-break: normal;
-  overflow-wrap: normal;
+  word-break: keep-all;
+  overflow-wrap: break-word;
   writing-mode: horizontal-tb;
 }
 
@@ -483,6 +498,13 @@
   font-weight: 700;
   color: #21457a;
   margin: 0;
+}
+
+@media (min-width: 769px) {
+  .access-stack-layout {
+    grid-template-columns: minmax(0, 1.2fr) minmax(260px, 1fr);
+    align-items: start;
+  }
 }
 
 .device-status-dot {

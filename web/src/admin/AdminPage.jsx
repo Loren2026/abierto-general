@@ -374,25 +374,7 @@ function AdminPage() {
                             </div>
                           </div>
 
-                          <div className="access-grid-simple">
-                            <div className="access-meta-table">
-                              <div className="access-meta-row">
-                                <div className="access-meta-label">Creado</div>
-                                <div className="access-meta-value access-meta-value--nowrap">{formatDate(access.createdAt)}</div>
-                              </div>
-                              <div className="access-meta-row">
-                                <div className="access-meta-label">Último código</div>
-                                <div className="access-meta-value access-meta-value--nowrap">{formatDate(access.passwordLastGeneratedAt, 'Solo el inicial')}</div>
-                              </div>
-                              <div className="access-meta-row">
-                                <div className="access-meta-label">Revocado</div>
-                                <div className="access-meta-value access-meta-value--nowrap">{formatDate(access.revokedAt, 'Activo')}</div>
-                              </div>
-                              <div className="access-meta-row">
-                                <div className="access-meta-label">Notas</div>
-                                <div className="access-meta-value">{access.notes || 'Sin notas'}</div>
-                              </div>
-                            </div>
+                          <div className="access-stack-layout">
                             <div className="device-panel-simple">
                               <p className="device-panel-simple__summary">
                                 {activeDevice ? 'Dispositivo vinculado' : 'Sin dispositivo vinculado'}
@@ -417,6 +399,25 @@ function AdminPage() {
                                   </div>
                                 </div>
                               ) : null}
+                            </div>
+
+                            <div className="access-meta-table">
+                              <div className="access-meta-row">
+                                <div className="access-meta-label">Creado</div>
+                                <div className="access-meta-value access-meta-value--nowrap">{formatDate(access.createdAt)}</div>
+                              </div>
+                              <div className="access-meta-row">
+                                <div className="access-meta-label">Último código</div>
+                                <div className="access-meta-value access-meta-value--nowrap">{formatDate(access.passwordLastGeneratedAt, 'Solo el inicial')}</div>
+                              </div>
+                              <div className="access-meta-row">
+                                <div className="access-meta-label">Revocado</div>
+                                <div className="access-meta-value access-meta-value--nowrap">{formatDate(access.revokedAt, 'Activo')}</div>
+                              </div>
+                              <div className="access-meta-row">
+                                <div className="access-meta-label">Notas</div>
+                                <div className="access-meta-value">{access.notes || 'Sin notas'}</div>
+                              </div>
                             </div>
                           </div>
 
