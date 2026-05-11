@@ -4,6 +4,7 @@ import PublicLayout from '../components/layout/PublicLayout'
 import fitLorenHero from '../assets/fit-loren-hero.jpg'
 
 const DEVICE_ID_KEY = 'inteligencialoren.deviceId'
+const PANEL_API_BASE_URL = 'https://panel.inteligencialoren.com/api'
 
 const initialForm = {
   fullName: '',
@@ -277,7 +278,7 @@ export default function HomePage() {
       const deviceId = getOrCreateDeviceId()
       const { deviceName, platform } = getClientDeviceInfo()
 
-      const response = await fetch(`/api/projects/${selectedProject.slug}/validate-code`, {
+      const response = await fetch(`${PANEL_API_BASE_URL}/projects/${selectedProject.slug}/validate-code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
