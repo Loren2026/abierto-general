@@ -181,6 +181,16 @@
     grid-template-columns: 1fr;
   }
 
+  .access-detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .access-detail-value {
+    text-align: left;
+  }
+
   .access-actions,
   .code-reveal-card {
     align-items: stretch;
@@ -401,8 +411,44 @@
 
 .access-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(240px, 1fr);
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 1fr);
   gap: 16px;
+}
+
+.access-detail-list {
+  display: grid;
+  gap: 10px;
+}
+
+.access-detail-list--compact {
+  margin-top: 12px;
+}
+
+.access-detail-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid #e6ebf2;
+}
+
+.access-detail-row:last-child {
+  border-bottom: none;
+}
+
+.access-detail-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #64748b;
+  min-width: 110px;
+}
+
+.access-detail-value {
+  font-size: 14px;
+  color: #172033;
+  text-align: right;
+  word-break: break-word;
 }
 
 .device-panel {
@@ -412,13 +458,33 @@
   padding: 14px;
 }
 
-.device-panel__title {
-  font-size: 13px;
+.device-status-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.device-status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
+.device-status-dot--active {
+  background: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.16);
+}
+
+.device-status-dot--inactive {
+  background: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.14);
+}
+
+.device-status-text {
+  font-size: 14px;
   font-weight: 800;
   color: #21457a;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .code-reveal-card {

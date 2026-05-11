@@ -370,24 +370,49 @@ function AdminPage() {
                           </div>
 
                           <div className="access-grid">
-                            <div>
-                              <div className="project-card__meta">Creado: {formatDate(access.createdAt)}</div>
-                              <div className="project-card__meta">Último código: {formatDate(access.passwordLastGeneratedAt, 'Solo el inicial')}</div>
-                              <div className="project-card__meta">Revocado: {formatDate(access.revokedAt, 'Activo')}</div>
-                              <div className="project-card__meta">Notas: {access.notes || 'Sin notas'}</div>
+                            <div className="access-detail-list">
+                              <div className="access-detail-row">
+                                <span className="access-detail-label">Creado</span>
+                                <span className="access-detail-value">{formatDate(access.createdAt)}</span>
+                              </div>
+                              <div className="access-detail-row">
+                                <span className="access-detail-label">Último código</span>
+                                <span className="access-detail-value">{formatDate(access.passwordLastGeneratedAt, 'Solo el inicial')}</span>
+                              </div>
+                              <div className="access-detail-row">
+                                <span className="access-detail-label">Revocado</span>
+                                <span className="access-detail-value">{formatDate(access.revokedAt, 'Activo')}</span>
+                              </div>
+                              <div className="access-detail-row">
+                                <span className="access-detail-label">Notas</span>
+                                <span className="access-detail-value">{access.notes || 'Sin notas'}</span>
+                              </div>
                             </div>
                             <div className="device-panel">
-                              <div className="device-panel__title">Dispositivo activo</div>
+                              <div className="device-status-row">
+                                <span className={`device-status-dot ${activeDevice ? 'device-status-dot--active' : 'device-status-dot--inactive'}`} />
+                                <span className="device-status-text">{activeDevice ? 'Dispositivo vinculado' : 'Sin dispositivo vinculado'}</span>
+                              </div>
                               {activeDevice ? (
-                                <>
-                                  <div className="project-card__meta">Nombre: {activeDevice.deviceName}</div>
-                                  <div className="project-card__meta">ID: {activeDevice.deviceId}</div>
-                                  <div className="project-card__meta">Plataforma: {activeDevice.platform || 'No indicada'}</div>
-                                  <div className="project-card__meta">Activado: {formatDate(activeDevice.activatedAt)}</div>
-                                </>
-                              ) : (
-                                <div className="project-card__meta">Todavía no hay dispositivo vinculado.</div>
-                              )}
+                                <div className="access-detail-list access-detail-list--compact">
+                                  <div className="access-detail-row">
+                                    <span className="access-detail-label">Nombre</span>
+                                    <span className="access-detail-value">{activeDevice.deviceName}</span>
+                                  </div>
+                                  <div className="access-detail-row">
+                                    <span className="access-detail-label">ID</span>
+                                    <span className="access-detail-value">{activeDevice.deviceId}</span>
+                                  </div>
+                                  <div className="access-detail-row">
+                                    <span className="access-detail-label">Plataforma</span>
+                                    <span className="access-detail-value">{activeDevice.platform || 'No indicada'}</span>
+                                  </div>
+                                  <div className="access-detail-row">
+                                    <span className="access-detail-label">Activado</span>
+                                    <span className="access-detail-value">{formatDate(activeDevice.activatedAt)}</span>
+                                  </div>
+                                </div>
+                              ) : null}
                             </div>
                           </div>
 
