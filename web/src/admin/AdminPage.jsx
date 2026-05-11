@@ -374,46 +374,46 @@ function AdminPage() {
                             </div>
                           </div>
 
-                          <div className="access-grid">
-                            <div className="access-detail-list">
-                              <div className="access-detail-row">
-                                <span className="access-detail-label">Creado</span>
-                                <span className="access-detail-value">{formatDate(access.createdAt)}</span>
+                          <div className="access-grid-simple">
+                            <div className="access-meta-table">
+                              <div className="access-meta-row">
+                                <div className="access-meta-label">Creado</div>
+                                <div className="access-meta-value access-meta-value--nowrap">{formatDate(access.createdAt)}</div>
                               </div>
-                              <div className="access-detail-row">
-                                <span className="access-detail-label">Último código</span>
-                                <span className="access-detail-value">{formatDate(access.passwordLastGeneratedAt, 'Solo el inicial')}</span>
+                              <div className="access-meta-row">
+                                <div className="access-meta-label">Último código</div>
+                                <div className="access-meta-value access-meta-value--nowrap">{formatDate(access.passwordLastGeneratedAt, 'Solo el inicial')}</div>
                               </div>
-                              <div className="access-detail-row">
-                                <span className="access-detail-label">Revocado</span>
-                                <span className="access-detail-value">{formatDate(access.revokedAt, 'Activo')}</span>
+                              <div className="access-meta-row">
+                                <div className="access-meta-label">Revocado</div>
+                                <div className="access-meta-value access-meta-value--nowrap">{formatDate(access.revokedAt, 'Activo')}</div>
                               </div>
-                              <div className="access-detail-row">
-                                <span className="access-detail-label">Notas</span>
-                                <span className="access-detail-value">{access.notes || 'Sin notas'}</span>
+                              <div className="access-meta-row">
+                                <div className="access-meta-label">Notas</div>
+                                <div className="access-meta-value">{access.notes || 'Sin notas'}</div>
                               </div>
                             </div>
-                            <div className="device-panel">
-                              <div className="device-panel__summary">
+                            <div className="device-panel-simple">
+                              <p className="device-panel-simple__summary">
                                 {activeDevice ? 'Dispositivo vinculado' : 'Sin dispositivo vinculado'}
-                              </div>
+                              </p>
                               {activeDevice ? (
-                                <div className="access-detail-list access-detail-list--compact">
-                                  <div className="access-detail-row">
-                                    <span className="access-detail-label">Nombre</span>
-                                    <span className="access-detail-value">{activeDevice.deviceName}</span>
+                                <div className="access-meta-table access-meta-table--compact">
+                                  <div className="access-meta-row">
+                                    <div className="access-meta-label">Nombre</div>
+                                    <div className="access-meta-value">{activeDevice.deviceName}</div>
                                   </div>
-                                  <div className="access-detail-row">
-                                    <span className="access-detail-label">ID</span>
-                                    <span className="access-detail-value">{activeDevice.deviceId}</span>
+                                  <div className="access-meta-row">
+                                    <div className="access-meta-label">ID</div>
+                                    <div className="access-meta-value">{activeDevice.deviceId}</div>
                                   </div>
-                                  <div className="access-detail-row">
-                                    <span className="access-detail-label">Plataforma</span>
-                                    <span className="access-detail-value">{activeDevice.platform || 'No indicada'}</span>
+                                  <div className="access-meta-row">
+                                    <div className="access-meta-label">Plataforma</div>
+                                    <div className="access-meta-value">{activeDevice.platform || 'No indicada'}</div>
                                   </div>
-                                  <div className="access-detail-row">
-                                    <span className="access-detail-label">Activado</span>
-                                    <span className="access-detail-value">{formatDate(activeDevice.activatedAt)}</span>
+                                  <div className="access-meta-row">
+                                    <div className="access-meta-label">Activado</div>
+                                    <div className="access-meta-value access-meta-value--nowrap">{formatDate(activeDevice.activatedAt)}</div>
                                   </div>
                                 </div>
                               ) : null}

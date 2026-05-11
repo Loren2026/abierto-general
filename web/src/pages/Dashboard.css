@@ -177,29 +177,18 @@
   }
 
   .admin-inline-form,
-  .access-grid {
+  .access-grid-simple {
     grid-template-columns: 1fr;
   }
 
-  .access-detail-row {
+  .access-meta-row {
+    grid-template-columns: 100px minmax(0, 1fr);
     gap: 12px;
-    align-items: flex-start;
+    align-items: start;
   }
 
-  .access-detail-label {
-    min-width: 120px;
-    flex: 0 0 120px;
-  }
-
-  .access-detail-value {
+  .access-meta-value {
     text-align: left;
-    flex: 1 1 auto;
-    width: auto;
-    max-width: none;
-    word-break: normal;
-    overflow-wrap: normal;
-    white-space: normal;
-    writing-mode: horizontal-tb;
   }
 
   .access-actions,
@@ -427,58 +416,55 @@
   gap: 16px;
 }
 
-.access-grid {
+.access-grid-simple {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(260px, 1fr);
   gap: 16px;
   width: 100%;
 }
 
-.access-detail-list {
+.access-meta-table {
   display: grid;
-  gap: 10px;
+  width: 100%;
+  border-top: 1px solid #e6ebf2;
 }
 
-.access-detail-list--compact {
-  margin-top: 12px;
+.access-meta-table--compact {
+  margin-top: 10px;
 }
 
-.access-detail-row {
-  display: flex;
+.access-meta-row {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  gap: 14px;
   align-items: center;
-  gap: 16px;
+  width: 100%;
   padding: 10px 0;
   border-bottom: 1px solid #e6ebf2;
-  width: 100%;
 }
 
-.access-detail-row:last-child {
-  border-bottom: none;
-}
-
-.access-detail-label {
+.access-meta-label {
   font-size: 13px;
   font-weight: 800;
   color: #64748b;
-  min-width: 120px;
-  flex: 0 0 120px;
 }
 
-.access-detail-value {
+.access-meta-value {
   font-size: 14px;
   color: #172033;
   text-align: right;
-  flex: 1 1 auto;
   min-width: 0;
-  width: auto;
-  max-width: none;
+  white-space: normal;
   word-break: normal;
   overflow-wrap: normal;
-  white-space: normal;
   writing-mode: horizontal-tb;
 }
 
-.device-panel {
+.access-meta-value--nowrap {
+  white-space: nowrap;
+}
+
+.device-panel-simple {
   background: rgba(91, 141, 239, 0.06);
   border: 1px solid rgba(91, 141, 239, 0.12);
   border-radius: 14px;
@@ -492,10 +478,11 @@
   gap: 10px;
 }
 
-.device-panel__summary {
+.device-panel-simple__summary {
   font-size: 14px;
   font-weight: 700;
   color: #21457a;
+  margin: 0;
 }
 
 .device-status-dot {
