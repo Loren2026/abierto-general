@@ -10,7 +10,7 @@ async function findActiveDevice(accessId) {
     .select('*')
     .eq('project_access_id', accessId)
     .eq('status', 'active')
-    .order('activated_at', { ascending: false })
+    .order('first_seen_at', { ascending: false })
     .limit(1)
     .maybeSingle()
 
@@ -18,18 +18,18 @@ async function findActiveDevice(accessId) {
   return data
 }
 
-async function bindDeviceToAccess(accessId, { deviceId, deviceName, platform }) {
-  const activatedAt = new Date().toISOString()
+async function bindDeviceToAccess(accessId, { deviceId, deviceName }) {
+  const firstSeenAt = new Date().toISOString()
 
   const { data, error } = await supabaseAdmin
     .from('project_devices')
     .insert({
       project_access_id: accessId,
       device_id: deviceId,
-      device_name: deviceName,
-      platform: platform || null,
+      device_label: deviceName,
       status: 'active',
-      activated_at: activatedAt,
+      first_seen_at: firstSeenAt,
+      last_seen_at: firstSeenAt,
     })
     .select('*')
     .single()
@@ -80,7 +80,7 @@ export async function validateProjectCode(req, res) {
     const activeDevice = await findActiveDevice(access.id)
 
     if (!activeDevice) {
-      const createdDevice = await bindDeviceToAccess(access.id, { deviceId, deviceName, platform })
+      const createdDevice = await bindDeviceToAccess(access.id, { deviceId, deviceName })
 
       return res.json({
         ok: true,
@@ -99,11 +99,18 @@ export async function validateProjectCode(req, res) {
       })
     }
 
+    const lastSeenAt = new Date().toISOString()
+
+    await supabaseAdmin
+      .from('project_devices')
+      .update({ last_seen_at: lastSeenAt })
+      .eq('id', activeDevice.id)
+
     return res.json({
       ok: true,
       project,
       access: sanitizeValidatedAccess(access),
-      device: sanitizeDeviceRecord(activeDevice),
+      device: sanitizeDeviceRecord({ ...activeDevice, last_seen_at: lastSeenAt }),
       binding: 'reused',
     })
   } catch (error) {
