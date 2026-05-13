@@ -6,17 +6,20 @@ import {
   THREAD_STATUSES,
   buildApprovalInsert,
   buildApprovalResponseUpdate,
+  buildAttachmentInsert,
   buildConsultationInsert,
   buildConsultationResponseUpdate,
   buildMessageInsert,
   buildThreadInsert,
   mapApproval,
+  mapAttachment,
   mapConsultation,
   mapMessage,
   mapThread,
   parseListParams,
   validateApprovalPayload,
   validateApprovalResponsePayload,
+  validateAttachmentPayload,
   validateConsultationPayload,
   validateConsultationResponsePayload,
   validateMessagePayload,
@@ -387,6 +390,93 @@ export async function respondApproval(req, res) {
 
     if (handleSupabaseError(error, res)) return
     return res.json({ approval: mapApproval(data) })
+  } catch (error) {
+    return handleSupabaseError(error, res)
+  }
+}
+
+export async function listThreadAttachments(req, res) {
+  const { threadId } = req.params
+  const { limit, offset } = parseListParams(req.query, 20, 100)
+
+  try {
+    const thread = await getThreadById(threadId)
+    if (!thread) return res.status(404).json({ error: 'thread not found' })
+
+    let query = supabaseAdmin
+      .from('coordination_attachments')
+      .select('*', { count: 'exact' })
+      .eq('thread_id', threadId)
+      .order('created_at', { ascending: false })
+
+    if (req.query.messageId) {
+      query = query.eq('message_id', req.query.messageId)
+    }
+
+    if (req.query.consultationId) {
+      query = query.eq('consultation_id', req.query.consultationId)
+    }
+
+    if (req.query.approvalId) {
+      query = query.eq('approval_id', req.query.approvalId)
+    }
+
+    const { data, error, count } = await query.range(offset, offset + limit - 1)
+    if (handleSupabaseError(error, res)) return
+
+    return res.json({
+      attachments: (data || []).map(mapAttachment),
+      pagination: { limit, offset, count: count || 0 },
+    })
+  } catch (error) {
+    return handleSupabaseError(error, res)
+  }
+}
+
+export async function createThreadAttachment(req, res) {
+  const { threadId } = req.params
+  const validationError = validateAttachmentPayload(req.body)
+  if (validationError) return res.status(400).json({ error: validationError })
+
+  try {
+    const thread = await getThreadById(threadId)
+    if (!thread) return res.status(404).json({ error: 'thread not found' })
+    if (thread.status === 'closed' || thread.status === 'archived') {
+      return res.status(409).json({ error: 'cannot create attachment on a closed thread' })
+    }
+
+    if (req.body.messageId) {
+      const message = await getMessageById(req.body.messageId)
+      if (!message) return res.status(400).json({ error: 'messageId not found' })
+      if (message.thread_id !== threadId) {
+        return res.status(400).json({ error: 'messageId must belong to the same thread' })
+      }
+    }
+
+    if (req.body.consultationId) {
+      const consultation = await getConsultationById(req.body.consultationId)
+      if (!consultation) return res.status(400).json({ error: 'consultationId not found' })
+      if (consultation.thread_id !== threadId) {
+        return res.status(400).json({ error: 'consultationId must belong to the same thread' })
+      }
+    }
+
+    if (req.body.approvalId) {
+      const approval = await getApprovalById(req.body.approvalId)
+      if (!approval) return res.status(400).json({ error: 'approvalId not found' })
+      if (approval.thread_id !== threadId) {
+        return res.status(400).json({ error: 'approvalId must belong to the same thread' })
+      }
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('coordination_attachments')
+      .insert(buildAttachmentInsert(threadId, req.body))
+      .select('*')
+      .single()
+
+    if (handleSupabaseError(error, res)) return
+    return res.status(201).json({ attachment: mapAttachment(data) })
   } catch (error) {
     return handleSupabaseError(error, res)
   }

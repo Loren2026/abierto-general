@@ -17,6 +17,8 @@ const APPROVAL_STATUSES = ['pending', 'approved', 'rejected', 'revoked', 'expire
 const APPROVAL_REQUESTER_ROLES = ['turin', 'claude', 'system']
 const APPROVAL_APPROVER_ROLES = ['loren']
 const RESOLVABLE_APPROVAL_STATUSES = ['approved', 'rejected', 'revoked', 'expired']
+const ATTACHMENT_TYPES = ['external_url']
+const ATTACHMENT_UPLOADER_ROLES = ['loren', 'turin', 'claude', 'system']
 
 function isUuid(value) {
   return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
@@ -38,6 +40,16 @@ function ensureAllowed(value, allowed, fieldName) {
   if (value === undefined || value === null) return null
   if (!allowed.includes(value)) return `${fieldName} is invalid`
   return null
+}
+
+function isValidUrl(value) {
+  if (typeof value !== 'string') return false
+  try {
+    const url = new URL(value)
+    return ['http:', 'https:'].includes(url.protocol)
+  } catch {
+    return false
+  }
 }
 
 export function parseListParams(query = {}, defaultLimit = 20, maxLimit = 100) {
@@ -231,6 +243,43 @@ export function buildApprovalResponseUpdate(payload = {}) {
   }
 }
 
+export function validateAttachmentPayload(payload = {}) {
+  const attachmentType = pickString(payload.attachmentType) || 'external_url'
+  const externalUrl = pickString(payload.externalUrl)
+  const uploadedByRole = pickString(payload.uploadedByRole)
+
+  if (!externalUrl) return 'externalUrl is required'
+  if (!isValidUrl(externalUrl)) return 'externalUrl must be a valid http or https URL'
+  if (!uploadedByRole) return 'uploadedByRole is required'
+
+  const checks = [
+    ensureAllowed(attachmentType, ATTACHMENT_TYPES, 'attachmentType'),
+    ensureAllowed(uploadedByRole, ATTACHMENT_UPLOADER_ROLES, 'uploadedByRole'),
+  ].filter(Boolean)
+
+  if (payload.messageId && !isUuid(payload.messageId)) return 'messageId must be a valid uuid'
+  if (payload.consultationId && !isUuid(payload.consultationId)) return 'consultationId must be a valid uuid'
+  if (payload.approvalId && !isUuid(payload.approvalId)) return 'approvalId must be a valid uuid'
+  if (checks.length) return checks[0]
+  return null
+}
+
+export function buildAttachmentInsert(threadId, payload = {}) {
+  return {
+    thread_id: threadId,
+    message_id: pickString(payload.messageId),
+    consultation_id: pickString(payload.consultationId),
+    approval_id: pickString(payload.approvalId),
+    attachment_type: pickString(payload.attachmentType) || 'external_url',
+    external_url: pickString(payload.externalUrl),
+    file_name: pickString(payload.fileName),
+    mime_type: pickString(payload.mimeType),
+    size_bytes: payload.sizeBytes ?? null,
+    uploaded_by_role: pickString(payload.uploadedByRole),
+    metadata: typeof payload.metadata === 'object' && payload.metadata !== null ? payload.metadata : {},
+  }
+}
+
 export function mapThread(row) {
   if (!row) return null
   return {
@@ -311,6 +360,29 @@ export function mapApproval(row) {
     decidedAt: row.decided_at,
     expiresAt: row.expires_at,
     revokedAt: row.revoked_at,
+    metadata: row.metadata || {},
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
+
+export function mapAttachment(row) {
+  if (!row) return null
+  return {
+    id: row.id,
+    threadId: row.thread_id,
+    messageId: row.message_id,
+    consultationId: row.consultation_id,
+    approvalId: row.approval_id,
+    attachmentType: row.attachment_type,
+    storageProvider: row.storage_provider,
+    bucketName: row.bucket_name,
+    storagePath: row.storage_path,
+    externalUrl: row.external_url,
+    fileName: row.file_name,
+    mimeType: row.mime_type,
+    sizeBytes: row.size_bytes,
+    uploadedByRole: row.uploaded_by_role,
     metadata: row.metadata || {},
     createdAt: row.created_at,
     updatedAt: row.updated_at,

@@ -2,11 +2,13 @@ import { Router } from 'express'
 import {
   createThread,
   createThreadApproval,
+  createThreadAttachment,
   createThreadConsultation,
   createThreadMessage,
   getApproval,
   getThread,
   listThreadApprovals,
+  listThreadAttachments,
   listThreadConsultations,
   listThreadMessages,
   listThreads,
@@ -28,5 +30,7 @@ router.get('/coordination/threads/:threadId/approvals', listThreadApprovals)
 router.post('/coordination/threads/:threadId/approvals', createThreadApproval)
 router.get('/coordination/approvals/:approvalId', getApproval)
 router.post('/coordination/approvals/:approvalId/respond', respondApproval)
+router.get('/coordination/threads/:threadId/attachments', listThreadAttachments)
+router.post('/coordination/threads/:threadId/attachments', createThreadAttachment)
 
 export default router
