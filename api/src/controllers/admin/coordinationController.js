@@ -1,20 +1,26 @@
 import { supabaseAdmin } from '../../config/supabase.js'
 import {
+  APPROVAL_STATUSES,
+  CONSULTATION_STATUSES,
+  THREAD_PRIORITIES,
+  THREAD_STATUSES,
+  buildApprovalInsert,
+  buildApprovalResponseUpdate,
   buildConsultationInsert,
   buildConsultationResponseUpdate,
   buildMessageInsert,
   buildThreadInsert,
+  mapApproval,
   mapConsultation,
   mapMessage,
   mapThread,
   parseListParams,
+  validateApprovalPayload,
+  validateApprovalResponsePayload,
   validateConsultationPayload,
   validateConsultationResponsePayload,
   validateMessagePayload,
   validateThreadPayload,
-  THREAD_PRIORITIES,
-  THREAD_STATUSES,
-  CONSULTATION_STATUSES,
 } from '../../utils/coordination.js'
 
 function handleSupabaseError(error, res) {
@@ -62,6 +68,17 @@ async function getConsultationById(consultationId) {
   return data
 }
 
+async function getApprovalById(approvalId) {
+  const { data, error } = await supabaseAdmin
+    .from('coordination_approvals')
+    .select('*')
+    .eq('id', approvalId)
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
+
 export async function listThreads(req, res) {
   const { limit, offset } = parseListParams(req.query, 20, 100)
 
@@ -94,32 +111,21 @@ export async function listThreads(req, res) {
 
   return res.json({
     threads: (data || []).map(mapThread),
-    pagination: {
-      limit,
-      offset,
-      count: count || 0,
-    },
+    pagination: { limit, offset, count: count || 0 },
   })
 }
 
 export async function createThread(req, res) {
   const validationError = validateThreadPayload(req.body)
-  if (validationError) {
-    return res.status(400).json({ error: validationError })
-  }
-
-  const threadToInsert = buildThreadInsert(req.body)
+  if (validationError) return res.status(400).json({ error: validationError })
 
   const { data, error } = await supabaseAdmin
     .from('coordination_threads')
-    .insert(threadToInsert)
+    .insert(buildThreadInsert(req.body))
     .select('*')
     .single()
 
-  if (error?.code === '23505') {
-    return res.status(409).json({ error: 'threadKey already exists' })
-  }
-
+  if (error?.code === '23505') return res.status(409).json({ error: 'threadKey already exists' })
   if (handleSupabaseError(error, res)) return
 
   return res.status(201).json({ thread: mapThread(data) })
@@ -154,11 +160,7 @@ export async function listThreadMessages(req, res) {
 
     return res.json({
       messages: (data || []).map(mapMessage),
-      pagination: {
-        limit,
-        offset,
-        count: count || 0,
-      },
+      pagination: { limit, offset, count: count || 0 },
     })
   } catch (error) {
     return handleSupabaseError(error, res)
@@ -168,9 +170,7 @@ export async function listThreadMessages(req, res) {
 export async function createThreadMessage(req, res) {
   const { threadId } = req.params
   const validationError = validateMessagePayload(req.body)
-  if (validationError) {
-    return res.status(400).json({ error: validationError })
-  }
+  if (validationError) return res.status(400).json({ error: validationError })
 
   try {
     const thread = await getThreadById(threadId)
@@ -184,16 +184,13 @@ export async function createThreadMessage(req, res) {
       }
     }
 
-    const messageToInsert = buildMessageInsert(threadId, req.body)
-
     const { data, error } = await supabaseAdmin
       .from('coordination_messages')
-      .insert(messageToInsert)
+      .insert(buildMessageInsert(threadId, req.body))
       .select('*')
       .single()
 
     if (handleSupabaseError(error, res)) return
-
     return res.status(201).json({ message: mapMessage(data) })
   } catch (error) {
     return handleSupabaseError(error, res)
@@ -228,11 +225,7 @@ export async function listThreadConsultations(req, res) {
 
     return res.json({
       consultations: (data || []).map(mapConsultation),
-      pagination: {
-        limit,
-        offset,
-        count: count || 0,
-      },
+      pagination: { limit, offset, count: count || 0 },
     })
   } catch (error) {
     return handleSupabaseError(error, res)
@@ -242,9 +235,7 @@ export async function listThreadConsultations(req, res) {
 export async function createThreadConsultation(req, res) {
   const { threadId } = req.params
   const validationError = validateConsultationPayload(req.body)
-  if (validationError) {
-    return res.status(400).json({ error: validationError })
-  }
+  if (validationError) return res.status(400).json({ error: validationError })
 
   try {
     const thread = await getThreadById(threadId)
@@ -261,16 +252,13 @@ export async function createThreadConsultation(req, res) {
       }
     }
 
-    const consultationToInsert = buildConsultationInsert(threadId, req.body)
-
     const { data, error } = await supabaseAdmin
       .from('coordination_consultations')
-      .insert(consultationToInsert)
+      .insert(buildConsultationInsert(threadId, req.body))
       .select('*')
       .single()
 
     if (handleSupabaseError(error, res)) return
-
     return res.status(201).json({ consultation: mapConsultation(data) })
   } catch (error) {
     return handleSupabaseError(error, res)
@@ -279,9 +267,7 @@ export async function createThreadConsultation(req, res) {
 
 export async function respondConsultation(req, res) {
   const validationError = validateConsultationResponsePayload(req.body)
-  if (validationError) {
-    return res.status(400).json({ error: validationError })
-  }
+  if (validationError) return res.status(400).json({ error: validationError })
 
   try {
     const consultation = await getConsultationById(req.params.consultationId)
@@ -290,17 +276,117 @@ export async function respondConsultation(req, res) {
       return res.status(409).json({ error: 'consultation already resolved' })
     }
 
-    const updatePayload = buildConsultationResponseUpdate(req.body)
     const { data, error } = await supabaseAdmin
       .from('coordination_consultations')
-      .update(updatePayload)
+      .update(buildConsultationResponseUpdate(req.body))
       .eq('id', req.params.consultationId)
       .select('*')
       .single()
 
     if (handleSupabaseError(error, res)) return
-
     return res.json({ consultation: mapConsultation(data) })
+  } catch (error) {
+    return handleSupabaseError(error, res)
+  }
+}
+
+export async function listThreadApprovals(req, res) {
+  const { threadId } = req.params
+  const { limit, offset } = parseListParams(req.query, 20, 100)
+
+  try {
+    const thread = await getThreadById(threadId)
+    if (!thread) return res.status(404).json({ error: 'thread not found' })
+
+    let query = supabaseAdmin
+      .from('coordination_approvals')
+      .select('*', { count: 'exact' })
+      .eq('thread_id', threadId)
+      .order('requested_at', { ascending: false })
+
+    if (req.query.status && APPROVAL_STATUSES.includes(req.query.status)) {
+      query = query.eq('status', req.query.status)
+    }
+
+    const { data, error, count } = await query.range(offset, offset + limit - 1)
+    if (handleSupabaseError(error, res)) return
+
+    return res.json({
+      approvals: (data || []).map(mapApproval),
+      pagination: { limit, offset, count: count || 0 },
+    })
+  } catch (error) {
+    return handleSupabaseError(error, res)
+  }
+}
+
+export async function createThreadApproval(req, res) {
+  const { threadId } = req.params
+  const validationError = validateApprovalPayload(req.body)
+  if (validationError) return res.status(400).json({ error: validationError })
+
+  try {
+    const thread = await getThreadById(threadId)
+    if (!thread) return res.status(404).json({ error: 'thread not found' })
+    if (thread.status === 'closed' || thread.status === 'archived') {
+      return res.status(409).json({ error: 'cannot create approval on a closed thread' })
+    }
+
+    if (req.body.messageId) {
+      const message = await getMessageById(req.body.messageId)
+      if (!message) return res.status(400).json({ error: 'messageId not found' })
+      if (message.thread_id !== threadId) return res.status(400).json({ error: 'messageId must belong to the same thread' })
+    }
+
+    if (req.body.consultationId) {
+      const consultation = await getConsultationById(req.body.consultationId)
+      if (!consultation) return res.status(400).json({ error: 'consultationId not found' })
+      if (consultation.thread_id !== threadId) {
+        return res.status(400).json({ error: 'consultationId must belong to the same thread' })
+      }
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('coordination_approvals')
+      .insert(buildApprovalInsert(threadId, req.body))
+      .select('*')
+      .single()
+
+    if (handleSupabaseError(error, res)) return
+    return res.status(201).json({ approval: mapApproval(data) })
+  } catch (error) {
+    return handleSupabaseError(error, res)
+  }
+}
+
+export async function getApproval(req, res) {
+  try {
+    const approval = await getApprovalById(req.params.approvalId)
+    if (!approval) return res.status(404).json({ error: 'approval not found' })
+    return res.json({ approval: mapApproval(approval) })
+  } catch (error) {
+    return handleSupabaseError(error, res)
+  }
+}
+
+export async function respondApproval(req, res) {
+  const validationError = validateApprovalResponsePayload(req.body)
+  if (validationError) return res.status(400).json({ error: validationError })
+
+  try {
+    const approval = await getApprovalById(req.params.approvalId)
+    if (!approval) return res.status(404).json({ error: 'approval not found' })
+    if (approval.status !== 'pending') return res.status(409).json({ error: 'approval already resolved' })
+
+    const { data, error } = await supabaseAdmin
+      .from('coordination_approvals')
+      .update(buildApprovalResponseUpdate(req.body))
+      .eq('id', req.params.approvalId)
+      .select('*')
+      .single()
+
+    if (handleSupabaseError(error, res)) return
+    return res.json({ approval: mapApproval(data) })
   } catch (error) {
     return handleSupabaseError(error, res)
   }

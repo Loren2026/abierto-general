@@ -12,6 +12,11 @@ const CONSULTATION_ROLES = ['loren', 'turin', 'claude', 'system']
 const CONSULTATION_TARGET_ROLES = ['loren', 'turin', 'claude']
 const CONSULTATION_STATUSES = ['pending', 'answered', 'cancelled', 'superseded']
 const RESOLVABLE_CONSULTATION_STATUSES = ['answered', 'cancelled', 'superseded']
+const APPROVAL_TYPES = ['operational', 'scope', 'production', 'closure', 'protocol_exception']
+const APPROVAL_STATUSES = ['pending', 'approved', 'rejected', 'revoked', 'expired']
+const APPROVAL_REQUESTER_ROLES = ['turin', 'claude', 'system']
+const APPROVAL_APPROVER_ROLES = ['loren']
+const RESOLVABLE_APPROVAL_STATUSES = ['approved', 'rejected', 'revoked', 'expired']
 
 function isUuid(value) {
   return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
@@ -170,6 +175,62 @@ export function buildConsultationResponseUpdate(payload = {}) {
   }
 }
 
+export function validateApprovalPayload(payload = {}) {
+  const requestedByRole = pickString(payload.requestedByRole)
+  const approverRole = pickString(payload.approverRole)
+  const requestedAction = pickString(payload.requestedAction)
+
+  if (!requestedByRole) return 'requestedByRole is required'
+  if (!approverRole) return 'approverRole is required'
+  if (!requestedAction) return 'requestedAction is required'
+
+  const checks = [
+    ensureAllowed(payload.approvalType ?? 'operational', APPROVAL_TYPES, 'approvalType'),
+    ensureAllowed(requestedByRole, APPROVAL_REQUESTER_ROLES, 'requestedByRole'),
+    ensureAllowed(approverRole, APPROVAL_APPROVER_ROLES, 'approverRole'),
+  ].filter(Boolean)
+
+  if (payload.messageId && !isUuid(payload.messageId)) return 'messageId must be a valid uuid'
+  if (payload.consultationId && !isUuid(payload.consultationId)) return 'consultationId must be a valid uuid'
+  if (checks.length) return checks[0]
+  return null
+}
+
+export function buildApprovalInsert(threadId, payload = {}) {
+  return {
+    thread_id: threadId,
+    message_id: pickString(payload.messageId),
+    consultation_id: pickString(payload.consultationId),
+    approval_type: pickString(payload.approvalType) || 'operational',
+    status: 'pending',
+    requested_by_role: pickString(payload.requestedByRole),
+    approver_role: pickString(payload.approverRole),
+    requested_action: pickString(payload.requestedAction),
+    metadata: typeof payload.metadata === 'object' && payload.metadata !== null ? payload.metadata : {},
+  }
+}
+
+export function validateApprovalResponsePayload(payload = {}) {
+  const status = pickString(payload.status)
+  if (!status) return 'status is required'
+  const invalid = ensureAllowed(status, RESOLVABLE_APPROVAL_STATUSES, 'status')
+  if (invalid) return invalid
+  return null
+}
+
+export function buildApprovalResponseUpdate(payload = {}) {
+  const status = pickString(payload.status)
+  const now = new Date().toISOString()
+  return {
+    status,
+    decision_note: pickString(payload.decisionNote),
+    decided_at: now,
+    revoked_at: status === 'revoked' ? now : null,
+    expires_at: status === 'expired' ? now : null,
+    metadata: typeof payload.metadata === 'object' && payload.metadata !== null ? payload.metadata : {},
+  }
+}
+
 export function mapThread(row) {
   if (!row) return null
   return {
@@ -233,8 +294,32 @@ export function mapConsultation(row) {
   }
 }
 
+export function mapApproval(row) {
+  if (!row) return null
+  return {
+    id: row.id,
+    threadId: row.thread_id,
+    messageId: row.message_id,
+    consultationId: row.consultation_id,
+    approvalType: row.approval_type,
+    status: row.status,
+    requestedByRole: row.requested_by_role,
+    approverRole: row.approver_role,
+    requestedAction: row.requested_action,
+    decisionNote: row.decision_note,
+    requestedAt: row.requested_at,
+    decidedAt: row.decided_at,
+    expiresAt: row.expires_at,
+    revokedAt: row.revoked_at,
+    metadata: row.metadata || {},
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
+
 export {
   THREAD_STATUSES,
   THREAD_PRIORITIES,
   CONSULTATION_STATUSES,
+  APPROVAL_STATUSES,
 }
