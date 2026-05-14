@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import emailjs from '@emailjs/browser'
 import PublicLayout from '../components/layout/PublicLayout'
 import fitLorenHero from '../assets/fit-loren-hero.jpg'
@@ -46,7 +46,6 @@ const featuredProjects = [
     badge: 'Próximamente',
     accessLabel: 'Código de invitación',
     visibleUrl: 'fit.inteligencialoren.com',
-    redirectUrl: 'https://fit.inteligencialoren.com',
   },
 ]
 
@@ -138,6 +137,7 @@ export default function HomePage() {
   const [isInviteOpen, setIsInviteOpen] = useState(false)
   const [isAccessModalOpen, setIsAccessModalOpen] = useState(false)
   const [selectedProject, setSelectedProject] = useState(null)
+  const [publicProjects, setPublicProjects] = useState(featuredProjects)
   const [accessCode, setAccessCode] = useState('')
   const [accessStatus, setAccessStatus] = useState({ type: 'idle', message: '' })
   const [isValidatingCode, setIsValidatingCode] = useState(false)
@@ -146,6 +146,39 @@ export default function HomePage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const emailJsConfig = useMemo(getEmailJsConfig, [])
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadPublicProjects() {
+      try {
+        const response = await fetch(`${PANEL_API_BASE_URL}/projects`)
+        const data = await response.json().catch(() => ({}))
+
+        if (!response.ok || !Array.isArray(data.projects)) {
+          return
+        }
+
+        const projectsBySlug = new Map(data.projects.map((project) => [project.slug, project]))
+        const hydratedProjects = featuredProjects.map((project) => ({
+          ...project,
+          redirectUrl: projectsBySlug.get(project.slug)?.redirectUrl ?? null,
+        }))
+
+        if (isMounted) {
+          setPublicProjects(hydratedProjects)
+        }
+      } catch (error) {
+        // keep static fallback content if the public API is temporarily unavailable
+      }
+    }
+
+    loadPublicProjects()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   function updateField(field, value) {
     setFormData((current) => ({ ...current, [field]: value }))
@@ -301,6 +334,14 @@ export default function HomePage() {
         return
       }
 
+      if (!selectedProject.redirectUrl) {
+        setAccessStatus({
+          type: 'error',
+          message: 'Este proyecto todavía no tiene URL de destino configurada. Pide a Loren que revise la publicación.',
+        })
+        return
+      }
+
       setAccessStatus({ type: 'success', message: 'Acceso validado. Redirigiendo al proyecto…' })
       window.location.href = selectedProject.redirectUrl
     } catch (error) {
@@ -326,7 +367,7 @@ export default function HomePage() {
               segura y controlada.
             </p>
             <div className="hero-panel__actions">
-              <button className="cta-button cta-button--primary" type="button" onClick={() => openAccessModal(featuredProjects[0])}>
+              <button className="cta-button cta-button--primary" type="button" onClick={() => openAccessModal(publicProjects[0])}>
                 Acceder con código
               </button>
               <button className="cta-button cta-button--invite" type="button" onClick={openInvite}>
@@ -402,7 +443,7 @@ export default function HomePage() {
             </p>
           </div>
           <div className="project-showcase-grid">
-            {featuredProjects.map((project) => (
+            {publicProjects.map((project) => (
               <article className="project-card project-card--featured" key={project.slug}>
                 <div className="project-card__media">
                   <img src={project.image} alt={project.name} />
@@ -440,7 +481,7 @@ export default function HomePage() {
               </p>
             </div>
             <div className="hero-panel__actions invite-section__actions">
-              <button className="cta-button cta-button--primary" type="button" onClick={() => openAccessModal(featuredProjects[0])}>
+              <button className="cta-button cta-button--primary" type="button" onClick={() => openAccessModal(publicProjects[0])}>
                 Acceder con código
               </button>
               <button className="cta-button cta-button--invite" type="button" onClick={openInvite}>
@@ -455,7 +496,7 @@ export default function HomePage() {
             <strong>Inteligencia Loren</strong>
             <span>Acceso privado y gestionado</span>
             <div className="landing-footer__links">
-              <button type="button" className="landing-footer__link-button" onClick={() => openAccessModal(featuredProjects[0])}>
+              <button type="button" className="landing-footer__link-button" onClick={() => openAccessModal(publicProjects[0])}>
                 Acceso con código
               </button>
               <a href="#privacidad">Privacidad</a>
