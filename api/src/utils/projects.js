@@ -45,6 +45,7 @@ export function buildProjectUpdate(payload = {}) {
   if (payload.name !== undefined) update.name = payload.name?.toString().trim() || null
   if (payload.description !== undefined) update.description = payload.description?.toString().trim() || null
   if (payload.imageUrl !== undefined) update.image_url = payload.imageUrl?.toString().trim() || null
+  if (payload.redirectUrl !== undefined) update.redirect_url = payload.redirectUrl?.toString().trim() || null
   if (payload.version !== undefined) update.version = payload.version?.toString().trim() || null
   if (payload.updateMessage !== undefined) update.update_message = payload.updateMessage?.toString().trim() || null
   if (payload.sourceFileId !== undefined) update.source_file_id = payload.sourceFileId?.toString().trim() || null

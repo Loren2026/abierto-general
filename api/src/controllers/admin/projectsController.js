@@ -4,6 +4,7 @@ import {
   buildProjectUpdate,
   validateCreateProjectPayload,
 } from '../../utils/projects.js'
+import { sanitizeAdminProject } from '../../utils/publicProjects.js'
 
 function handleSupabaseError(error, res) {
   if (!error) return false
@@ -25,7 +26,7 @@ export async function listProjects(req, res) {
 
   if (handleSupabaseError(error, res)) return
 
-  return res.json({ projects: data })
+  return res.json({ projects: (data || []).map(sanitizeAdminProject) })
 }
 
 export async function createProject(req, res) {
@@ -44,7 +45,7 @@ export async function createProject(req, res) {
 
   if (handleSupabaseError(error, res)) return
 
-  return res.status(201).json({ project: data })
+  return res.status(201).json({ project: sanitizeAdminProject(data) })
 }
 
 export async function getProject(req, res) {
@@ -59,7 +60,7 @@ export async function getProject(req, res) {
   if (handleSupabaseError(error, res)) return
   if (!data) return res.status(404).json({ error: 'project not found' })
 
-  return res.json({ project: data })
+  return res.json({ project: sanitizeAdminProject(data) })
 }
 
 export async function updateProject(req, res) {
@@ -80,7 +81,7 @@ export async function updateProject(req, res) {
   if (handleSupabaseError(error, res)) return
   if (!data) return res.status(404).json({ error: 'project not found' })
 
-  return res.json({ project: data })
+  return res.json({ project: sanitizeAdminProject(data) })
 }
 
 export async function publishProject(req, res) {
@@ -103,7 +104,7 @@ export async function publishProject(req, res) {
   if (handleSupabaseError(error, res)) return
   if (!data) return res.status(404).json({ error: 'project not found' })
 
-  return res.json({ project: data })
+  return res.json({ project: sanitizeAdminProject(data) })
 }
 
 export async function unpublishProject(req, res) {
@@ -119,5 +120,5 @@ export async function unpublishProject(req, res) {
   if (handleSupabaseError(error, res)) return
   if (!data) return res.status(404).json({ error: 'project not found' })
 
-  return res.json({ project: data })
+  return res.json({ project: sanitizeAdminProject(data) })
 }
