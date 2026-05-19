@@ -150,7 +150,7 @@ function AdminPage() {
   }
 
   async function handleCreateAccess(event) {
-    event.preventDefault()
+    event?.preventDefault()
 
     if (!selectedProjectId) return
 
@@ -339,10 +339,16 @@ function AdminPage() {
                       placeholder="Opcional"
                     />
                   </label>
-                  <button className="cta-admin-button cta-admin-button--green" type="submit" disabled={isCreatingAccess}>
-                    {isCreatingAccess ? 'Creando…' : 'Generar código'}
-                  </button>
                 </form>
+
+                <button
+                  className="cta-admin-button cta-admin-button--green"
+                  type="button"
+                  onClick={handleCreateAccess}
+                  disabled={isCreatingAccess}
+                >
+                  {isCreatingAccess ? 'Creando…' : 'Generar código'}
+                </button>
 
                 {accessActionMessage.message ? (
                   <div className={`admin-notice admin-notice--${accessActionMessage.type || 'info'}`}>
