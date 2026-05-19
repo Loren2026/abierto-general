@@ -1378,23 +1378,19 @@ async function refreshFxRates(){
  const key = getFmpKey();
  if(!key) return;
  try{
-   const pairs = [
-     { code:'USD', symbol:'EURUSD' },
-     { code:'GBP', symbol:'EURGBP' },
-     { code:'CAD', symbol:'EURCAD' },
-   ];
+   const [eurusdData, gbpusdData, usdcadData] = await Promise.all([
+     fmpFetch('quote', 'EURUSD'),
+     fmpFetch('quote', 'GBPUSD'),
+     fmpFetch('quote', 'USDCAD'),
+   ]);
 
-   const results = await Promise.all(pairs.map(async ({code, symbol}) => {
-     const data = await fmpFetch('quote', symbol);
-     const q = Array.isArray(data) ? data[0] : data;
-     return { code, price: q && q.price ? Number(q.price) : null };
-   }));
+   const eurusd = Number((Array.isArray(eurusdData) ? eurusdData[0] : eurusdData)?.price || 0);
+   const gbpusd = Number((Array.isArray(gbpusdData) ? gbpusdData[0] : gbpusdData)?.price || 0);
+   const usdcad = Number((Array.isArray(usdcadData) ? usdcadData[0] : usdcadData)?.price || 0);
 
-   results.forEach(({code, price}) => {
-     if(price && isFinite(price) && price > 0){
-       FX_RATES[code] = price;
-     }
-   });
+   if(eurusd > 0) FX_RATES.USD = eurusd;
+   if(eurusd > 0 && gbpusd > 0) FX_RATES.GBP = eurusd / gbpusd;
+   if(eurusd > 0 && usdcad > 0) FX_RATES.CAD = eurusd * usdcad;
 
    FX_RATES.EUR = 1.00;
    saveFxRates();
