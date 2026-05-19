@@ -436,7 +436,6 @@ function AdminPage() {
                               className="cta-admin-button cta-admin-button--orange"
                               type="button"
                               onClick={() => handleRegenerateAccess(access)}
-                              disabled={access.status === 'revoked'}
                             >
                               Regenerar código
                             </button>

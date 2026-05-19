@@ -93,9 +93,6 @@ export async function regenerateProjectPassword(req, res) {
 
   if (handleSupabaseError(existingError, res)) return
   if (!existing) return res.status(404).json({ error: 'access not found' })
-  if (existing.status === 'revoked') {
-    return res.status(409).json({ error: 'revoked access cannot regenerate password' })
-  }
 
   const generatedPassword = generateProjectPassword(8)
   const passwordHash = await hashProjectPassword(generatedPassword)
@@ -104,6 +101,8 @@ export async function regenerateProjectPassword(req, res) {
     .from('project_accesses')
     .update({
       password_hash: passwordHash,
+      status: 'active',
+      revoked_at: null,
       password_last_generated_at: new Date().toISOString(),
     })
     .eq('id', accessId)
