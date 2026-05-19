@@ -4,6 +4,28 @@ import { findMatchingAccess, sanitizeValidatedAccess } from '../../utils/invitat
 import { sanitizeDeviceRecord } from '../../utils/devices.js'
 import { normalizeProjectSlug } from '../../utils/projects.js'
 
+function setProjectAccessCookie(res, { project, deviceId, accessId, binding }) {
+  if (project?.slug !== 'gestactas') return
+
+  const payload = encodeURIComponent(JSON.stringify({
+    validated: true,
+    project: 'gestactas',
+    deviceId,
+    accessId: accessId || null,
+    binding: binding || null,
+    ts: Date.now(),
+  }))
+
+  res.cookie('gestactas_access', payload, {
+    domain: '.inteligencialoren.com',
+    path: '/',
+    httpOnly: false,
+    secure: true,
+    sameSite: 'lax',
+    maxAge: 1000 * 60 * 60 * 12,
+  })
+}
+
 async function findActiveDevice(accessId) {
   const { data, error } = await supabaseAdmin
     .from('project_devices')
@@ -89,6 +111,13 @@ export async function validateAnyProjectCode(req, res) {
     if (!activeDevice) {
       const createdDevice = await bindDeviceToAccess(access.id, { deviceId, deviceName })
 
+      setProjectAccessCookie(res, {
+        project,
+        deviceId,
+        accessId: access.id,
+        binding: 'created',
+      })
+
       return res.json({
         ok: true,
         project,
@@ -112,6 +141,13 @@ export async function validateAnyProjectCode(req, res) {
       .from('project_devices')
       .update({ last_seen_at: lastSeenAt })
       .eq('id', activeDevice.id)
+
+    setProjectAccessCookie(res, {
+      project,
+      deviceId,
+      accessId: access.id,
+      binding: 'reused',
+    })
 
     return res.json({
       ok: true,
@@ -164,6 +200,13 @@ export async function validateProjectCode(req, res) {
     if (!activeDevice) {
       const createdDevice = await bindDeviceToAccess(access.id, { deviceId, deviceName })
 
+      setProjectAccessCookie(res, {
+        project,
+        deviceId,
+        accessId: access.id,
+        binding: 'created',
+      })
+
       return res.json({
         ok: true,
         project,
@@ -187,6 +230,13 @@ export async function validateProjectCode(req, res) {
       .from('project_devices')
       .update({ last_seen_at: lastSeenAt })
       .eq('id', activeDevice.id)
+
+    setProjectAccessCookie(res, {
+      project,
+      deviceId,
+      accessId: access.id,
+      binding: 'reused',
+    })
 
     return res.json({
       ok: true,
