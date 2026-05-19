@@ -1134,7 +1134,7 @@ function rResumen(){
   const tv=D.c.reduce((s,e)=>s+e.val,0),tp=D.c.reduce((s,e)=>s+e.pnl,0),td=D.c.reduce((s,e)=>s+(e.divs||0),0);
   const retPct=34.99;const pnlCls=tp>=0?'up':'dn';
   let h=`<div class="hero-card"><div class="big-l">Valor total cartera</div><div class="big" style="font-size:44px">€${f(tv+2356,0)}</div><div class="hero-sub"><span class="hero-pnl">${tp>=0?'+':''}${f(tp,0)}€</span><span class="hero-badge ${pnlCls}">${retPct>=0?'+':''}${f(retPct,2)}%</span></div><div class="hero-detail">Invertido: ${f(23786,0)}€ · Dividendos netos: ${f(td,0)}€</div></div>
-  <div class="fx-bar"><span class="fx-icon">💱</span><span class="fx-pair">EUR/USD</span> <span class="fx-val">1,16</span><span class="fx-pair">EUR/GBP</span> <span class="fx-val">0,87</span><span class="fx-pair">EUR/CAD</span> <span class="fx-val">1,60</span></div>`;
+  <div class="fx-bar"><span class="fx-icon">💱</span><span class="fx-pair">EUR/USD</span> <span class="fx-val">${getFx('USD').toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:4})}</span><span class="fx-pair">EUR/GBP</span> <span class="fx-val">${getFx('GBP').toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:4})}</span><span class="fx-pair">EUR/CAD</span> <span class="fx-val">${getFx('CAD').toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:4})}</span></div>`;
   const maxAbs=Math.max(...D.c.map(e=>{const m=METRICS[e.tk];return m?Math.abs(m.rent):0;}),1);
   h+=`<div class="card perf-card"><div class="card-t">Rendimiento por posición</div>`;
   D.c.sort((a,b)=>{const ma=METRICS[a.tk],mb=METRICS[b.tk];return(mb?mb.rent:0)-(ma?ma.rent:0);}).forEach(e=>{const m=METRICS[e.tk];if(!m)return;const pct=m.rent,d=pct>=0?'up':'dn',w=Math.max(Math.abs(pct)/maxAbs*100,3);h+=`<div class="perf-row"><span class="perf-tk ${d}">${e.tk}</span><div class="perf-bar-wrap"><div class="perf-bar ${d}" style="width:${w}%"></div></div><span class="perf-pct ${d}">${pct>=0?'+':''}${f(pct,1)}%</span></div>`;});
@@ -1359,7 +1359,50 @@ function toast(m){
 /* ════════════════════════════════════════════════
    TIPOS DE CAMBIO AUTOMÁTICOS
    ════════════════════════════════════════════════ */
-const FX_RATES = { USD:1.17, GBP:0.86, CAD:1.60, EUR:1.00 }; // EUR/X al 28/04/2026
+let FX_RATES = { USD:1.17, GBP:0.86, CAD:1.60, EUR:1.00 }; // fallback inicial
+
+function loadFxRates(){
+ try{
+ const saved = JSON.parse(localStorage.getItem('fxRates')||'null');
+ if(saved && typeof saved==='object'){
+ FX_RATES = { ...FX_RATES, ...saved };
+ }
+ }catch(e){}
+}
+
+function saveFxRates(){
+ localStorage.setItem('fxRates', JSON.stringify(FX_RATES));
+}
+
+async function refreshFxRates(){
+ const key = getFmpKey();
+ if(!key) return;
+ try{
+   const pairs = [
+     { code:'USD', symbol:'EURUSD' },
+     { code:'GBP', symbol:'EURGBP' },
+     { code:'CAD', symbol:'EURCAD' },
+   ];
+
+   const results = await Promise.all(pairs.map(async ({code, symbol}) => {
+     const data = await fmpFetch('quote', symbol);
+     const q = Array.isArray(data) ? data[0] : data;
+     return { code, price: q && q.price ? Number(q.price) : null };
+   }));
+
+   results.forEach(({code, price}) => {
+     if(price && isFinite(price) && price > 0){
+       FX_RATES[code] = price;
+     }
+   });
+
+   FX_RATES.EUR = 1.00;
+   saveFxRates();
+ } catch(err){
+   console.warn('No se pudieron actualizar los tipos FX:', err);
+ }
+}
+
 function getFx(cur){ return FX_RATES[cur] || 1; }
 function toEur(amount, cur){ const fx=getFx(cur); return cur==='EUR' ? amount : amount / fx; }
 
@@ -2786,7 +2829,9 @@ function importData(event){
   event.target.value = '';
 }
 
+loadFxRates();
 load();updC();rResumen();
+refreshFxRates().then(()=>{ if(cur==='resumen') rResumen(); });
 </script>
 </body>
 </html>
