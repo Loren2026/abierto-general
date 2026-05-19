@@ -565,6 +565,12 @@
   margin-top: 16px;
 }
 
+@media (max-width: 768px) {
+  .admin-inline-form {
+    grid-template-columns: 1fr;
+  }
+}
+
 .coordination-layout {
   display: grid;
   grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
