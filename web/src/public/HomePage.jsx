@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import emailjs from '@emailjs/browser'
 import PublicLayout from '../components/layout/PublicLayout'
 import fitLorenHero from '../assets/fit-loren-hero.jpg'
+import gestactasHero from '../assets/gestactas-hero.png'
 
 const DEVICE_ID_KEY = 'inteligencialoren.deviceId'
 const PANEL_API_BASE_URL = 'https://panel.inteligencialoren.com/api'
@@ -34,7 +35,7 @@ const featureCards = [
   },
 ]
 
-const publishedProjects = ['Fit Loren', 'fit-loren']
+const publishedProjects = ['Fit Loren', 'fit-loren', 'GestActas', 'gestactas']
 
 const featuredProjects = [
   {
@@ -46,6 +47,16 @@ const featuredProjects = [
     badge: 'Próximamente',
     accessLabel: 'Código de invitación',
     visibleUrl: 'fit.inteligencialoren.com',
+  },
+  {
+    slug: 'gestactas',
+    name: 'GestActas',
+    description:
+      'Gestión completa de juntas de comunidades de propietarios. Grabación de audio, transcripción automática y generación del acta con inteligencia artificial.',
+    image: gestactasHero,
+    badge: 'Disponible',
+    accessLabel: 'Código de invitación',
+    visibleUrl: 'gestactas.inteligencialoren.com',
   },
 ]
 
@@ -311,7 +322,7 @@ export default function HomePage() {
       const deviceId = getOrCreateDeviceId()
       const { deviceName, platform } = getClientDeviceInfo()
 
-      const response = await fetch(`${PANEL_API_BASE_URL}/projects/${selectedProject.slug}/validate-code`, {
+      const response = await fetch(`${PANEL_API_BASE_URL}/validate-code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -334,7 +345,9 @@ export default function HomePage() {
         return
       }
 
-      if (!selectedProject.redirectUrl) {
+      const resolvedProject = publicProjects.find((project) => project.slug === data.project?.slug)
+
+      if (!resolvedProject?.redirectUrl) {
         setAccessStatus({
           type: 'error',
           message: 'Este proyecto todavía no tiene URL de destino configurada. Pide a Loren que revise la publicación.',
@@ -342,7 +355,7 @@ export default function HomePage() {
         return
       }
 
-      if (selectedProject.slug === 'gestactas') {
+      if (data.project?.slug === 'gestactas') {
         localStorage.setItem('gestactas_access', JSON.stringify({
           validated: true,
           project: 'gestactas',
@@ -354,7 +367,7 @@ export default function HomePage() {
       }
 
       setAccessStatus({ type: 'success', message: 'Acceso validado. Redirigiendo al proyecto…' })
-      window.location.href = selectedProject.redirectUrl
+      window.location.href = resolvedProject.redirectUrl
     } catch (error) {
       setAccessStatus({
         type: 'error',
