@@ -1126,6 +1126,7 @@ let D;
 function load(){const s=localStorage.getItem('idc7');if(s)try{D=JSON.parse(s);return}catch(e){}D={c:JSON.parse(JSON.stringify(IC)),p:JSON.parse(JSON.stringify(IP))};}
 function save(){localStorage.setItem('idc7',JSON.stringify(D));}
 function f(n,d){return n==null?'—':Number(n).toLocaleString('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function roundMoney(n){ return Math.round((Number(n) + Number.EPSILON) * 100) / 100; }
 
 let cur='resumen';
 function go(v){cur=v;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.v===v));document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));document.getElementById(`v-${v}`).classList.add('on');({resumen:rResumen,valoracion:rValoracion,config:rConfig})[v]?.();window.scrollTo({top:0});}
@@ -1761,8 +1762,8 @@ function confirmBuy(){
   const [moved] = D.p.splice(idx, 1);
   moved.qty = qty;
   moved.avg = pr;
-  moved.cost = Math.round(costEur);
-  moved.val = Math.round(toEur(qty * (moved.pr||pr), cur));
+  moved.cost = roundMoney(costEur);
+  moved.val = roundMoney(toEur(qty * (moved.pr||pr), cur));
   moved.pnl = moved.val - moved.cost;
   moved.w = 0;
   moved.divs = 0;
@@ -1936,14 +1937,14 @@ function confirmAddBuy(tk){
   const oldQty = item.qty;
   const oldCost = item.cost || 0;
   item.qty = oldQty + qty;
-  item.cost = Math.round(oldCost + costEur);
-  item.val = Math.round(toEur(item.qty * (item.pr||pr), cur));
+  item.cost = roundMoney(oldCost + costEur);
+  item.val = roundMoney(toEur(item.qty * (item.pr||pr), cur));
   item.pnl = item.val - item.cost;
 
   // Registrar en BUYS
   if(!BUYS[tk]) BUYS[tk] = [];
-  const valNow = Math.round(toEur(qty * (item.pr||pr), cur));
-  const plBuy = valNow - Math.round(costEur);
+  const valNow = roundMoney(toEur(qty * (item.pr||pr), cur));
+  const plBuy = valNow - roundMoney(costEur);
   BUYS[tk].push({
     d: date, q: qty,
     p: curSym + pr.toLocaleString('es-ES',{minimumFractionDigits:2}),
@@ -2064,9 +2065,9 @@ function confirmSell(tk, mode){
     d: date, q: qty,
     p: curSym + pr.toLocaleString('es-ES',{minimumFractionDigits:2}),
     precio: pr, divisa: cur,
-    ingreso_eur: Math.round(grossEur),
-    coste_prop_eur: Math.round(costProp),
-    pl: Math.round(pl),
+    ingreso_eur: roundMoney(grossEur),
+    coste_prop_eur: roundMoney(costProp),
+    pl: roundMoney(pl),
     comision: comms,
     tipo: mode==='total' || qty >= item.qty ? 'total' : 'parcial'
   });
@@ -2078,7 +2079,7 @@ function confirmSell(tk, mode){
     item.pnl = 0;
     item.closed = true;
     item.closedDate = date;
-    item.closedPl = Math.round(pl);
+    item.closedPl = roundMoney(pl);
     // NO borrar BUYS ni METRICS — se necesitan para el informe
     toast(`✅ ${tk} vendido · ${qty} acc. · ${(pl>=0?'+':'')}${pl.toLocaleString('es-ES',{maximumFractionDigits:0})}€`);
     // Mostrar informe automáticamente
@@ -2088,8 +2089,8 @@ function confirmSell(tk, mode){
     const remainQty = item.qty - qty;
     const remainCost = item.cost - costProp;
     item.qty = remainQty;
-    item.cost = Math.round(remainCost);
-    item.val = Math.round(toEur(remainQty * (item.pr||pr), cur));
+    item.cost = roundMoney(remainCost);
+    item.val = roundMoney(toEur(remainQty * (item.pr||pr), cur));
     item.pnl = item.val - item.cost;
     // Actualizar METRICS
     const m = METRICS[tk];
@@ -2523,9 +2524,9 @@ IMPORTANTE - ERRORES COMUNES A EVITAR:
       if(item){
         // Actualizar posición existente
         if(pos.num_acciones != null) item.qty = pos.num_acciones;
-        if(pos.valor_mercado_eur != null) item.val = Math.round(pos.valor_mercado_eur);
-        if(pos.coste_total_eur != null) item.cost = Math.round(pos.coste_total_eur);
-        if(pos.pnl_eur != null) item.pnl = Math.round(pos.pnl_eur);
+        if(pos.valor_mercado_eur != null) item.val = roundMoney(pos.valor_mercado_eur);
+        if(pos.coste_total_eur != null) item.cost = roundMoney(pos.coste_total_eur);
+        if(pos.pnl_eur != null) item.pnl = roundMoney(pos.pnl_eur);
         if(pos.peso_pct != null) item.w = pos.peso_pct;
         if(pos.dividendos_netos_eur != null) item.divs = pos.dividendos_netos_eur;
         // Solo actualizar precio medio si viene del informe Y es razonable (no confundir con PyG)
@@ -2559,9 +2560,9 @@ IMPORTANTE - ERRORES COMUNES A EVITAR:
           cur: pos.divisa || 'USD', sec: pos.sector || '—',
           qty: pos.num_acciones || 0, avg: pos.precio_medio || 0,
           pr: pos.precio_actual || 0,
-          cost: Math.round(pos.coste_total_eur || 0),
-          val: Math.round(pos.valor_mercado_eur || 0),
-          pnl: Math.round(pos.pnl_eur || 0),
+          cost: roundMoney(pos.coste_total_eur || 0),
+          val: roundMoney(pos.valor_mercado_eur || 0),
+          pnl: roundMoney(pos.pnl_eur || 0),
           w: pos.peso_pct || 0, divs: pos.dividendos_netos_eur || 0,
           sig: null
         });
