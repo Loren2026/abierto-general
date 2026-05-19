@@ -1,0 +1,2792 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>App análisis Loren</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#e8eff6;--white:#ffffff;--card:#ffffff;--border:#c5d5e4;--border2:#9bb3c9;
+  --ink:#0a1628;--ink2:#1a2940;--ink3:#3d5068;--ink4:#7a8fa3;--blue:#142e4c;
+  --acc:#d4621a;--acc2:#f08c38;--green:#0d9448;--green-bg:#d1fae5;--green-light:rgba(13,148,72,.12);
+  --red:#e02424;--red-bg:#fde8e8;--red-light:rgba(224,36,36,.1);
+  --yellow:#b45309;--yellow-bg:#fef3c7;
+  --grad-hero:linear-gradient(135deg,#142e4c 0%,#1e5a8a 60%,#2874a6 100%);
+  --grad-green:linear-gradient(135deg,#0d9448,#10b860);
+  --grad-red:linear-gradient(135deg,#e02424,#f56565);
+  --sans:'DM Sans',system-ui,sans-serif;--mono:'DM Mono','Courier New',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* ══ HEADER + NAV ══ */
+.top-bar{position:sticky;top:0;z-index:100;background:var(--white);border-bottom:2px solid var(--border);box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.hdr{padding:12px 16px;text-align:center}
+.hdr-title{font-size:22px;font-weight:900;color:var(--blue)}.hdr-title span{color:var(--acc)}
+.hdr-sub{font-size:12px;color:var(--ink3);margin-top:1px}
+.tabs{display:flex;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;border-top:1px solid var(--border);padding:0 8px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;padding:12px 18px;border:none;background:none;font-family:var(--sans);font-size:14px;font-weight:800;color:var(--ink4);cursor:pointer;position:relative;white-space:nowrap;transition:color .15s}
+.tab.on{color:var(--acc)}.tab.on::after{content:'';position:absolute;bottom:0;left:10px;right:10px;height:3px;background:var(--acc);border-radius:3px 3px 0 0}
+.tab .tcnt{font-family:var(--mono);font-size:12px;font-weight:800;background:var(--border);padding:2px 8px;border-radius:10px;margin-left:5px;vertical-align:middle;color:var(--ink2)}
+.tab.on .tcnt{background:rgba(212,98,26,.18);color:var(--acc)}
+
+/* ══ VIEW / CARD ══ */
+.view{display:none;padding:16px 14px;max-width:600px;margin:0 auto}.view.on{display:block}
+.card{background:var(--card);border:1.5px solid var(--border);border-radius:18px;padding:20px;margin-bottom:14px;box-shadow:0 3px 12px rgba(0,0,0,.06)}
+.card-t{font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);margin-bottom:14px}
+
+/* ══ BIG NUMBER ══ */
+.big{font-family:var(--mono);font-weight:500;letter-spacing:-.02em;line-height:1}
+.big-l{font-size:15px;font-weight:800;color:var(--ink3);margin-bottom:6px}
+.big-s{font-size:14px;color:var(--ink3);margin-top:6px;font-weight:600}
+.up{color:var(--green);font-weight:700}.dn{color:var(--red);font-weight:700}
+
+/* ══ HERO CARD ══ */
+.hero-card{background:var(--grad-hero);border:none;border-radius:20px;padding:28px 20px;text-align:center;color:#fff;box-shadow:0 8px 30px rgba(20,46,76,.3);margin-bottom:14px;position:relative;overflow:hidden}
+.hero-card::before{content:'';position:absolute;top:-40%;right:-20%;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.04)}
+.hero-card::after{content:'';position:absolute;bottom:-30%;left:-15%;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.03)}
+.hero-card .big-l{color:rgba(255,255,255,.75);font-weight:700}
+.hero-card .big{color:#fff;font-size:44px;text-shadow:0 2px 8px rgba(0,0,0,.2)}
+.hero-card .big-s{color:rgba(255,255,255,.6)}
+.hero-card .hero-sub{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+.hero-card .hero-pnl{font-family:var(--mono);font-size:18px;font-weight:700;color:rgba(255,255,255,.9)}
+.hero-card .hero-badge{display:inline-block;padding:4px 14px;border-radius:20px;font-family:var(--mono);font-size:15px;font-weight:700}
+.hero-badge.up{background:rgba(13,148,72,.3);color:#6ee7a0}.hero-badge.dn{background:rgba(224,36,36,.3);color:#fca5a5}
+.hero-card .hero-detail{font-size:13px;color:rgba(255,255,255,.5);margin-top:8px;font-weight:600}
+
+/* ══ STAT ══ */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat{text-align:center;padding:16px 10px;background:var(--card);border:1.5px solid var(--border);border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.05);transition:transform .15s}
+.stat:active{transform:scale(.97)}
+.stat-v{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--ink);margin-bottom:4px}
+.stat-l{font-size:11px;font-weight:900;color:var(--ink4);text-transform:uppercase;letter-spacing:.06em}
+.stat.glow-up{background:var(--green-light);border-color:rgba(13,148,72,.2)}.stat.glow-up .stat-v{color:var(--green)}
+.stat.glow-dn{background:var(--red-light);border-color:rgba(224,36,36,.2)}.stat.glow-dn .stat-v{color:var(--red)}
+
+/* ══ STOCK ITEM ══ */
+.si{padding:16px 0;border-bottom:1.5px solid var(--border);cursor:pointer;transition:background .15s}.si:last-child{border-bottom:none}.si:active{opacity:.7}
+.si-row{display:flex;align-items:center}.si-left{flex:1;min-width:0}
+.si-tk{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--ink)}
+.si-nm{font-size:13px;color:var(--ink3);margin-top:2px;font-weight:600}
+.si-right{text-align:right;flex-shrink:0;margin-left:10px}
+.si-price{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--ink)}
+.si-pnl{font-family:var(--mono);font-size:15px;font-weight:700;margin-top:2px}
+.si-arrow{color:var(--ink4);font-size:22px;margin-left:8px}
+.badge{display:inline-block;font-size:11px;font-weight:900;padding:3px 10px;border-radius:8px}
+.badge-buy{background:var(--green-bg);color:var(--green)}.badge-hold{background:var(--yellow-bg);color:var(--yellow)}
+.badge-sell{background:var(--red-bg);color:var(--red)}.badge-na{background:#e8edf2;color:var(--ink4)}
+
+/* ══ ACTIONS ══ */
+.act-row{display:flex;gap:8px;margin-top:14px;padding-top:14px;border-top:1.5px solid var(--border)}
+.act-btn{flex:1;padding:12px;border-radius:12px;font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;text-align:center;border:1.5px solid var(--border);background:var(--white);color:var(--ink3)}
+.act-btn:active{opacity:.7}.act-btn.grn{color:var(--green);border-color:var(--green-bg);background:var(--green-bg)}
+.act-btn.rd{color:var(--red);border-color:var(--red-bg);background:var(--red-bg);flex:0;padding:12px 18px}
+
+/* ══ DETAIL ══ */
+.det-back{display:inline-flex;align-items:center;gap:4px;font-size:16px;font-weight:800;color:var(--acc);background:none;border:none;cursor:pointer;padding:8px 0;margin-bottom:10px}
+.det-tk{font-family:var(--mono);font-size:38px;font-weight:700;color:var(--blue)}
+.det-nm{font-size:16px;color:var(--ink3);margin-top:2px;font-weight:700}
+.det-tags{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.det-tag{font-size:12px;font-weight:800;padding:5px 12px;border-radius:10px;background:var(--white);color:var(--ink3);border:1.5px solid var(--border)}
+.det-tag.acc{border-color:var(--acc);color:var(--acc);background:rgba(196,90,28,.05)}
+
+/* ══ DETAIL TABS ══ */
+.dtabs{display:flex;gap:6px;margin:18px 0 14px;flex-wrap:wrap}
+.dtab{padding:10px 18px;border-radius:12px;font-family:var(--sans);font-size:14px;font-weight:800;color:var(--ink4);background:var(--white);border:1.5px solid var(--border);cursor:pointer;transition:all .15s}
+.dtab.on{color:var(--blue);border-color:var(--acc);background:rgba(196,90,28,.06)}
+.dpanel{display:none;animation:dfade .2s ease}.dpanel.on{display:block}
+@keyframes dfade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.mrow{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--border)}.mrow:last-child{border-bottom:none}
+.mrow-l{font-size:14px;font-weight:700;color:var(--ink2)}.mrow-v{font-family:var(--mono);font-size:14px;font-weight:700;text-align:right}
+.dtbl{width:100%;border-collapse:collapse;font-size:13px}
+.dtbl th{padding:12px 8px;text-align:right;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);border-bottom:2px solid var(--border);white-space:nowrap;background:var(--white)}.dtbl th:first-child{text-align:left}
+.dtbl td{padding:12px 8px;text-align:right;font-family:var(--mono);font-size:13px;font-weight:700;border-top:1px solid var(--border);white-space:nowrap}.dtbl td:first-child{text-align:left;font-family:var(--sans);font-weight:800;color:var(--ink)}
+.dtbl tr.trow{border-top:2.5px solid var(--blue)}.dtbl tr.trow td{font-weight:700}
+.price-cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.price-cmp-box{text-align:center;padding:14px 10px;background:var(--card);border:1.5px solid var(--border);border-radius:14px}
+.price-cmp-box .pcl{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--ink4);margin-bottom:5px}
+.price-cmp-box .pcv{font-family:var(--mono);font-size:22px;font-weight:700}
+
+/* ══ FX BAR ══ */
+.fx-bar{display:flex;align-items:center;gap:14px;padding:12px 18px;background:var(--card);border:1.5px solid var(--border);border-radius:14px;margin-bottom:14px;font-size:13px;color:var(--ink3);flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.fx-bar .fx-icon{font-size:18px}.fx-bar .fx-pair{font-weight:700;color:var(--ink3)}.fx-bar .fx-val{font-family:var(--mono);font-weight:800;color:var(--blue);font-size:15px}
+
+/* ══ PERFORMANCE BARS ══ */
+.perf-card{margin-bottom:14px}
+.perf-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}.perf-row:last-child{border-bottom:none}
+.perf-tk{font-family:var(--mono);font-size:15px;font-weight:700;min-width:50px}.perf-tk.up{color:var(--green)}.perf-tk.dn{color:var(--red)}
+.perf-bar-wrap{flex:1;height:14px;background:#dce4ed;border-radius:7px;position:relative;overflow:hidden}
+.perf-bar{height:100%;border-radius:7px;min-width:4px;animation:barGrow .6s ease-out both}.perf-bar.up{background:var(--grad-green)}.perf-bar.dn{background:var(--grad-red)}
+@keyframes barGrow{from{width:0!important}to{}}
+.perf-pct{font-family:var(--mono);font-size:14px;font-weight:800;min-width:66px;text-align:right}
+
+/* ══ MODAL ══ */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;display:none;align-items:flex-end;justify-content:center}.overlay.open{display:flex}
+.modal{background:var(--white);border-radius:20px 20px 0 0;padding:24px 20px 32px;width:100%;max-width:440px}
+.modal h3{font-size:20px;font-weight:900;color:var(--blue);margin-bottom:18px}
+.fld{margin-bottom:14px}.fld label{display:block;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);margin-bottom:6px}
+.fld input{width:100%;padding:14px;background:var(--bg);border:1.5px solid var(--border);color:var(--ink);font-family:var(--sans);font-size:16px;font-weight:500;border-radius:12px}.fld input:focus{outline:none;border-color:var(--acc)}
+.mo-btns{display:flex;gap:10px;margin-top:20px}
+.mo-btn{flex:1;padding:16px;border:none;border-radius:14px;font-family:var(--sans);font-size:16px;font-weight:800;cursor:pointer;text-align:center}
+.mo-btn.cancel{background:var(--bg);color:var(--ink3)}.mo-btn.ok{background:var(--acc);color:#fff}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(50px);background:var(--ink);color:#fff;padding:14px 28px;border-radius:14px;font-size:15px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.25);transition:transform .3s ease,opacity .3s ease;z-index:600;opacity:0;visibility:hidden;cursor:pointer}
+
+/* ══ MODAL CARTERA (entrada/salida) ══ */
+.overlay2{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:510;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)}.overlay2.open{display:flex}
+.modal2{background:var(--white);border-radius:22px 22px 0 0;padding:24px 20px 34px;width:100%;max-width:440px;max-height:85vh;overflow-y:auto;animation:modalUp .25s ease-out}
+@keyframes modalUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal2 h3{font-size:20px;font-weight:900;color:var(--blue);margin-bottom:6px}
+.modal2 .m2-sub{font-size:13px;color:var(--ink3);font-weight:600;margin-bottom:18px}
+.modal2 .m2-tk{font-family:var(--mono);color:var(--acc);font-weight:800}
+.m2-calc{display:flex;gap:10px;margin-top:4px;padding:10px 14px;background:var(--bg);border-radius:12px;align-items:center}
+.m2-calc-lbl{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink4)}
+.m2-calc-val{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--blue)}
+.m2-divider{height:1.5px;background:var(--border);margin:18px 0}
+.m2-opts{display:flex;flex-direction:column;gap:10px;margin-bottom:6px}
+.m2-opt{padding:16px 18px;border-radius:14px;border:1.5px solid var(--border);background:var(--white);cursor:pointer;display:flex;align-items:center;gap:12px;transition:all .15s}
+.m2-opt:active{transform:scale(.97)}
+.m2-opt .m2-opt-icon{font-size:22px;flex-shrink:0}
+.m2-opt .m2-opt-txt{flex:1}
+.m2-opt .m2-opt-title{font-size:15px;font-weight:800;color:var(--ink)}
+.m2-opt .m2-opt-desc{font-size:12px;color:var(--ink4);margin-top:2px}
+.m2-opt.sell{border-color:rgba(224,36,36,.25);background:var(--red-light)}.m2-opt.sell .m2-opt-title{color:var(--red)}
+.m2-opt.move{border-color:rgba(180,83,9,.25);background:var(--yellow-bg)}.m2-opt.move .m2-opt-title{color:var(--yellow)}
+.m2-opt.del{border-color:rgba(224,36,36,.15);background:var(--red-bg)}.m2-opt.del .m2-opt-title{color:var(--red)}
+.m2-opt.buy{border-color:rgba(13,148,72,.25);background:var(--green-light)}.m2-opt.buy .m2-opt-title{color:var(--green)}
+
+/* ══ BROKER DOCS ══ */
+.broker-card{background:var(--card);border:1.5px solid var(--border);border-radius:18px;padding:20px;margin-bottom:14px;box-shadow:0 3px 12px rgba(0,0,0,.06)}
+.broker-status{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;margin-top:12px;font-size:13px;font-weight:700}
+.broker-status.ok{background:var(--green-light);color:var(--green);border:1px solid rgba(13,148,72,.2)}
+.broker-status.empty{background:var(--bg);color:var(--ink4);border:1px solid var(--border)}
+.broker-tariff{margin-top:12px;font-size:12px}
+.broker-tariff .bt-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.broker-tariff .bt-row:last-child{border-bottom:none}
+.broker-tariff .bt-label{color:var(--ink3);font-weight:700}
+.broker-tariff .bt-value{font-family:var(--mono);font-weight:700;color:var(--ink)}
+.upload-zone{width:100%;padding:18px;border:2px dashed var(--border2);border-radius:14px;background:#eef3f8;font-family:var(--sans);font-size:14px;font-weight:700;color:var(--ink3);cursor:pointer;text-align:center;transition:all .15s;position:relative}
+.upload-zone:active{transform:scale(.97);background:#dde8f2}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upload-zone.processing{border-color:var(--acc);background:#fff8ee;color:var(--acc)}
+.comm-attach{margin-top:6px}
+.comm-attach-btn{display:flex;align-items:center;gap:8px;padding:10px 14px;border:1.5px dashed var(--border2);border-radius:10px;background:#f8fafc;cursor:pointer;font-size:12px;font-weight:700;color:var(--ink3);transition:all .15s;position:relative}
+.comm-attach-btn:active{background:#eef3f8}
+.comm-attach-btn input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.comm-attach-btn.done{border-color:var(--green);background:var(--green-light);color:var(--green)}
+.comm-attach-btn.reading{border-color:var(--acc);background:#fff8ee;color:var(--acc);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+
+/* ══ VALORACIÓN IDC — TABLAS ══ */
+.val-section{margin-bottom:18px}
+.val-section-t{font-size:14px;font-weight:900;color:var(--blue);margin-bottom:10px;padding:10px 14px;background:var(--blue);color:#fff;border-radius:12px;letter-spacing:.03em}
+.val-scroll{overflow-x:auto;margin:0 -20px;padding:0 20px;-webkit-overflow-scrolling:touch}
+.vt{width:100%;border-collapse:collapse;font-size:12px;min-width:600px}
+.vt th{padding:7px 6px;text-align:right;font-size:10px;font-weight:800;color:#fff;background:var(--blue);white-space:nowrap;letter-spacing:.04em;position:sticky;top:0}
+.vt th:first-child{text-align:left;min-width:90px;border-radius:6px 0 0 0}.vt th:last-child{border-radius:0 6px 0 0}
+.vt th.est{background:#1e5a8a}.vt th.med{background:#2e7d32}
+.vt td{padding:7px 6px;text-align:right;font-family:var(--mono);font-size:12px;font-weight:600;color:var(--ink2);border-bottom:1px solid #e8edf2;white-space:nowrap}
+.vt td:first-child{text-align:left;font-family:var(--sans);font-size:12px;font-weight:800;color:var(--ink)}
+.vt tr.hi td{background:#eef6ff}.vt tr.hi td:first-child{background:#eef6ff}
+.vt tr.sep td{border-top:2.5px solid var(--blue)}
+.vt td.est-c{background:#f0f8ff}.vt td.med-c{background:#f0f7ee}
+.vt td.neg{color:var(--red)}.vt td.pos{color:var(--green)}
+
+/* ══ INPUTS IDC — 3 columnas ══ */
+.idc-tbl{width:100%;border-collapse:collapse;min-width:400px;font-size:12px}
+.idc-tbl th{padding:8px 6px;text-align:center;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:#fff;white-space:nowrap}
+.idc-tbl th:nth-child(1){background:var(--blue);text-align:left;min-width:150px}
+.idc-tbl th:nth-child(2){background:var(--acc);width:27%}
+.idc-tbl th:nth-child(3){background:#b45309;width:27%}
+.idc-tbl th:nth-child(4){background:#2e7d32;width:27%}
+.idc-tbl td{padding:8px 6px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:12px}
+.idc-tbl td:first-child{font-weight:800;color:var(--ink)}
+.idc-tbl .c-app{font-family:var(--mono);font-weight:700;text-align:center;color:var(--acc);background:#fff8ee}
+.idc-tbl .d-full{font-family:var(--mono);font-weight:700;text-align:center;color:#7a6c00;background:#fffde7;border-left:2px solid #c9b800;border-right:2px solid #c9b800}
+.idc-tbl .d-empty{font-family:var(--mono);font-weight:600;text-align:center;color:#c0392b;background:#fdecea;border-left:2px dashed #e74c3c;border-right:2px dashed #e74c3c;font-style:italic;font-size:11px}
+.idc-tbl .e-data{font-family:var(--mono);font-weight:600;text-align:center;color:#2e7d32;background:#e8f5e9}
+.idc-tbl .e-empty{font-family:var(--mono);font-weight:600;text-align:center;color:var(--ink4);background:#f4f7fa}
+.idc-tbl tr.idc-sec td{background:var(--blue);color:#fff;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;padding:6px;border:none}
+.idc-tbl .ref{font-size:9px;color:var(--ink4);font-family:var(--mono);display:block;margin-top:1px}
+.idc-tbl .ico{font-size:10px;margin-left:3px}
+.d-inp{width:100%;text-align:center;font-family:var(--mono);font-size:13px;font-weight:700;color:#7a6c00;background:transparent;border:none;outline:none;padding:2px}
+.d-inp::placeholder{color:#c0392b;font-style:italic;font-weight:600;font-size:11px}
+.idc-upload-btn{width:100%;padding:16px;border:2px dashed var(--acc);border-radius:14px;background:#fff8ee;font-family:var(--sans);font-size:14px;font-weight:800;color:var(--acc);cursor:pointer;margin-bottom:14px;transition:all .15s}
+.idc-upload-btn:active{transform:scale(.97);background:#ffecd2}
+.idc-flow{padding:12px 14px;background:var(--white);border-radius:14px;border:1.5px solid var(--border);margin-bottom:14px;font-size:11px;line-height:1.6;color:var(--ink3)}
+.idc-flow b{color:var(--ink2)}
+.idc-flow-step{display:flex;align-items:flex-start;gap:6px;margin-bottom:4px}
+.idc-flow-n{width:18px;height:18px;border-radius:50%;background:var(--blue);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* ══ SIGNAL CARD ══ */
+.signal-card{text-align:center;padding:28px 20px;border-radius:18px;margin-bottom:14px}
+.signal-card.buy{background:var(--green-bg);border:2px solid rgba(21,128,61,.2)}
+.signal-card.hold{background:var(--yellow-bg);border:2px solid rgba(161,98,7,.2)}
+.signal-card.sell{background:var(--red-bg);border:2px solid rgba(220,38,38,.2)}
+.signal-card.na{background:#e8edf2;border:2px solid var(--border)}
+.signal-icon{font-size:48px;margin-bottom:8px}.signal-text{font-size:26px;font-weight:900}
+.signal-sub{font-size:14px;color:var(--ink3);margin-top:6px;font-weight:600}
+
+/* ══ LOADER ══ */
+.loader-wrap{text-align:center;padding:60px 20px}
+.loader{display:inline-block;width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-txt{margin-top:14px;font-size:15px;font-weight:700;color:var(--ink3)}
+
+/* ══ CHART CONTAINER ══ */
+.chart-wrap{position:relative;height:220px;margin:10px 0}
+
+/* ══ INFORME DE POSICIÓN ══ */
+.rpt-header{padding:24px 20px;border-radius:18px;margin-bottom:14px;text-align:center;position:relative;overflow:hidden}
+.rpt-header.profit{background:linear-gradient(135deg,#064e3b,#059669);color:#fff}
+.rpt-header.loss{background:linear-gradient(135deg,#7f1d1d,#dc2626);color:#fff}
+.rpt-header .rpt-tk{font-family:var(--mono);font-size:42px;font-weight:700;opacity:.15;position:absolute;right:16px;top:10px}
+.rpt-header .rpt-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;opacity:.7;margin-bottom:4px}
+.rpt-header .rpt-big{font-family:var(--mono);font-size:36px;font-weight:700}
+.rpt-header .rpt-sub{font-size:14px;opacity:.8;margin-top:6px;font-weight:600}
+.rpt-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.rpt-cell{padding:16px 14px;background:var(--card);border:1.5px solid var(--border);border-radius:14px}
+.rpt-cell-l{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink4);margin-bottom:4px}
+.rpt-cell-v{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--ink)}
+.rpt-cell-v.up{color:var(--green)}.rpt-cell-v.dn{color:var(--red)}
+.rpt-timeline{position:relative;padding-left:24px;margin:14px 0}
+.rpt-timeline::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--border)}
+.rpt-event{position:relative;padding:12px 0 18px;font-size:13px}
+.rpt-event::before{content:'';position:absolute;left:-20px;top:14px;width:12px;height:12px;border-radius:50%;border:2px solid var(--border);background:var(--white);z-index:1}
+.rpt-event.buy::before{background:var(--green);border-color:var(--green)}
+.rpt-event.sell::before{background:var(--red);border-color:var(--red)}
+.rpt-event.div::before{background:var(--acc);border-color:var(--acc)}
+.rpt-event-date{font-weight:800;color:var(--ink);font-family:var(--mono);font-size:12px}
+.rpt-event-desc{color:var(--ink2);margin-top:2px;font-weight:600}
+.rpt-event-val{font-family:var(--mono);font-weight:700;margin-top:2px}
+.rpt-section{margin-bottom:14px}
+.rpt-section-t{font-size:14px;font-weight:900;color:var(--blue);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+</style>
+</head>
+<body>
+
+<!-- ══ TOP BAR ══ -->
+<div class="top-bar">
+  <div class="hdr"><div class="hdr-title">App análisis <span>Loren</span></div><div class="hdr-sub">Mi cartera de inversión</div></div>
+  <div class="tabs">
+    <button class="tab on" data-v="resumen" onclick="go('resumen')">📊 Cartera <span class="tcnt" id="nc1">6</span></button>
+    <button class="tab" data-v="valoracion" onclick="go('valoracion')">🎯 Valorar <span class="tcnt" id="nc2">13</span></button>
+    <button class="tab" data-v="config" onclick="go('config')">⚙️ Config</button>
+  </div>
+</div>
+
+<div class="view on" id="v-resumen"></div>
+<div class="view" id="v-valoracion"></div>
+<div class="view" id="v-config"></div>
+
+<div class="overlay" id="modal" onclick="if(event.target===this)closeM()">
+  <div class="modal">
+    <h3 id="m-title">Añadir empresa</h3>
+    <div class="fld"><label>Ticker</label><input id="m-tk" placeholder="AMZN" style="text-transform:uppercase"></div>
+    <div class="fld"><label>Nombre</label><input id="m-nm" placeholder="Amazon.com Inc."></div>
+    <div class="fld"><label>Exchange</label><input id="m-ex" placeholder="NASDAQ"></div>
+    <div class="fld"><label>Sector</label><input id="m-sc" placeholder="Technology"></div>
+    <div class="fld"><label>Precio actual</label><input id="m-pr" type="number" step="0.01" inputmode="decimal"></div>
+    <div class="fld" id="fld-q"><label>Nº acciones</label><input id="m-q" type="number" inputmode="numeric"></div>
+    <div class="fld" id="fld-a"><label>Precio medio compra</label><input id="m-av" type="number" step="0.01" inputmode="decimal"></div>
+    <div class="mo-btns"><button class="mo-btn cancel" onclick="closeM()">Cancelar</button><button class="mo-btn ok" onclick="addIt()">Añadir</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- ══ MODAL: ENTRADA A CARTERA (Candidata → Cartera) ══ -->
+<div class="overlay2" id="modal-buy" onclick="if(event.target===this)closeBuyM()">
+  <div class="modal2">
+    <h3>📥 Añadir a Cartera</h3>
+    <div class="m2-sub">Registra tu compra de <span class="m2-tk" id="buy-tk-label">—</span></div>
+    <div class="comm-attach" style="margin-bottom:16px">
+      <div class="comm-attach-btn" id="buy-trade-btn" style="background:#eef6ff;border-color:var(--blue);padding:14px 16px">
+        <span style="font-size:18px">📸</span><span id="buy-trade-text" style="color:var(--blue);font-size:13px">Subir captura del broker (auto-rellena todo)</span>
+        <input type="file" accept="image/*,.pdf,.txt" id="buy-trade-file" onchange="readTradeCapture(event,_buyTk,'buy')">
+      </div>
+    </div>
+    <div style="text-align:center;font-size:11px;color:var(--ink4);margin-bottom:12px;font-weight:700">— o rellena a mano —</div>
+    <div class="fld"><label>Fecha de compra</label><input id="buy-date" type="date"></div>
+    <div class="fld"><label>Nº acciones compradas</label><input id="buy-qty" type="number" inputmode="numeric" min="1" placeholder="Ej: 10"></div>
+    <div class="fld"><label>Precio compra (<span id="buy-cur-label">USD</span>)</label><input id="buy-price" type="number" step="0.01" inputmode="decimal" placeholder="Ej: 185.50"></div>
+    <div class="fld"><label>Comisión broker (€)</label><input id="buy-comm" type="number" step="0.01" inputmode="decimal" value="0" placeholder="0.00">
+      <div class="comm-attach" id="buy-attach-wrap">
+        <div class="comm-attach-btn" id="buy-attach-btn">
+          <span>📎</span><span id="buy-attach-text">Adjuntar captura de comisión</span>
+          <input type="file" accept="image/*,.pdf,.txt" id="buy-attach-file" onchange="readCommissionCapture(event,'buy')">
+        </div>
+      </div>
+    </div>
+    <div class="m2-calc" id="buy-calc" style="display:none">
+      <div style="flex:1"><div class="m2-calc-lbl">Tipo cambio → EUR</div><div class="m2-calc-val" id="buy-fx">—</div></div>
+      <div style="flex:1"><div class="m2-calc-lbl">Coste total EUR</div><div class="m2-calc-val" id="buy-total">—</div></div>
+    </div>
+    <div class="mo-btns"><button class="mo-btn cancel" onclick="closeBuyM()">Cancelar</button><button class="mo-btn ok" onclick="confirmBuy()">✅ Confirmar compra</button></div>
+  </div>
+</div>
+
+<!-- ══ MODAL: SALIDA DE CARTERA (opciones) ══ -->
+<div class="overlay2" id="modal-exit" onclick="if(event.target===this)closeExitM()">
+  <div class="modal2" id="exit-modal-inner">
+    <!-- Se rellena dinámicamente -->
+  </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script>
+/* ════════════════════════════════════════════════
+   DATOS CARTERA (hardcoded — igual que la app actual)
+   ════════════════════════════════════════════════ */
+const DIVS={ZEG:[{d:'2026-01-08',bruto:1117.92,ret:0.00,neto:1117.92}],META:[{d:'2025-06-26',bruto:0.90,ret:0,neto:0.90},{d:'2025-09-29',bruto:0.90,ret:0,neto:0.90},{d:'2025-12-23',bruto:3.56,ret:0,neto:3.56},{d:'2026-03-26',bruto:3.64,ret:0,neto:3.64}],MSFT:[{d:'2026-03-12',bruto:7.91,ret:0,neto:7.91}],CSU:[{d:'2026-01-12',bruto:0.85,ret:0,neto:0.85},{d:'2026-04-15',bruto:1.71,ret:0,neto:1.71}],AMZN:[],WKL:[]};
+const SELLS={}; // {ticker: [{d:'2026-01-15', q:5, p:'$195.00', ingreso_eur:840, coste_prop_eur:750, pl:90, comision:1.2}]}
+const METRICS={
+  ZEG:{costTotal:6529.77,valMerc:11716.42,plNR:5199.15,rent:79.62,pMedio:'£9,36',pActual:'£16,92',varP:80.77,nAcc:600,sector:'Technology',divisa:'GBP',tcambio:'0,87',curSym:'£'},
+  META:{costTotal:5954.48,valMerc:5731.63,plNR:647.94,rent:10.88,pMedio:'$594,95',pActual:'$671,34',varP:12.84,nAcc:10,sector:'Telecomm',divisa:'USD',tcambio:'1,17',curSym:'$'},
+  MSFT:{costTotal:4533.00,valMerc:3664.76,plNR:-205.33,rent:-4.53,pMedio:'$453,00',pActual:'$429,25',varP:-5.24,nAcc:10,sector:'Technology',divisa:'USD',tcambio:'1,17',curSym:'$'},
+  CSU:{costTotal:3869.15,valMerc:3038.62,plNR:-830.52,rent:-21.47,pMedio:'C$3.099',pActual:'C$2.434',varP:-21.45,nAcc:2,sector:'Technology',divisa:'CAD',tcambio:'1,60',curSym:'C$'},
+  AMZN:{costTotal:1822.00,valMerc:1773.77,plNR:218.22,rent:11.98,pMedio:'$227,50',pActual:'$259,70',varP:14.15,nAcc:8,sector:'Consumer Cyclicals',divisa:'USD',tcambio:'1,17',curSym:'$'},
+  WKL:{costTotal:1571.00,valMerc:930.16,plNR:-640.84,rent:-40.79,pMedio:'€112,00',pActual:'€66,44',varP:-40.68,nAcc:14,sector:'Industrial',divisa:'EUR',tcambio:'1,00',curSym:'€'}
+};
+const BUYS={
+  ZEG:[{d:'2025-05-06',q:300,p:'£7,16',e:'2.525,60',va:'5.741,38',pl:'+3.215,78',pct:'+127,3%'},{d:'2025-08-29',q:300,p:'£11,55',e:'4.004,10',va:'5.741,38',pl:'+1.737,28',pct:'+43,4%'}],
+  META:[{d:'2025-04-10',q:2,p:'$571,10',e:'1.020',va:'991,80',pl:'-28,20',pct:'-2,8%'},{d:'2025-11-05',q:2,p:'$628,64',e:'1.094',va:'991,80',pl:'-102,20',pct:'-9,3%'},{d:'2025-11-07',q:2,p:'$615,00',e:'1.063',va:'991,80',pl:'-71,20',pct:'-6,7%'},{d:'2025-11-13',q:2,p:'$605,00',e:'1.040',va:'991,80',pl:'-48,20',pct:'-4,6%'},{d:'2026-03-26',q:2,p:'$555,00',e:'960',va:'991,80',pl:'+31,80',pct:'+3,3%'}],
+  MSFT:[{d:'2026-01-02',q:4,p:'$480,00',e:'1.638',va:'1.284,00',pl:'-354,00',pct:'-21,6%'},{d:'2026-01-20',q:3,p:'$450,00',e:'1.152',va:'963,00',pl:'-189,00',pct:'-16,4%'},{d:'2026-02-03',q:3,p:'$420,00',e:'1.067',va:'963,00',pl:'-104,00',pct:'-9,7%'}],
+  CSU:[{d:'2025-10-29',q:1,p:'C$3.599',e:'2.225',va:'1.477,00',pl:'-748,00',pct:'-33,6%'},{d:'2026-01-28',q:1,p:'C$2.600',e:'1.605',va:'1.477,00',pl:'-128,00',pct:'-8,0%'}],
+  AMZN:[{d:'2026-01-02',q:4,p:'$230,00',e:'785',va:'737,50',pl:'-47,50',pct:'-6,1%'},{d:'2026-02-05',q:4,p:'$225,00',e:'765',va:'737,50',pl:'-27,50',pct:'-3,6%'}],
+  WKL:[{d:'2025-10-03',q:14,p:'€112,00',e:'1.568',va:'906,00',pl:'-662,00',pct:'-42,2%'}]
+};
+const IC=[
+  {tk:'ZEG',nm:'Zegona Communications',ex:'LSE',cur:'GBP',sec:'Technology',qty:600,avg:9.36,pr:16.92,val:11716,cost:6530,pnl:5199,w:39.43,sig:null,divs:1118},
+  {tk:'META',nm:'Meta Platforms',ex:'NASDAQ',cur:'USD',sec:'Telecomm',qty:10,avg:594.95,pr:671.34,val:5732,cost:5954,pnl:648,w:19.29,sig:null,divs:9},
+  {tk:'MSFT',nm:'Microsoft',ex:'NASDAQ',cur:'USD',sec:'Technology',qty:10,avg:453.00,pr:429.25,val:3665,cost:4533,pnl:-205,w:12.33,sig:null,divs:8},
+  {tk:'CSU',nm:'Constellation Software',ex:'TSE',cur:'CAD',sec:'Technology',qty:2,avg:3099.53,pr:2434.99,val:3039,cost:3869,pnl:-831,w:10.23,sig:null,divs:3},
+  {tk:'AMZN',nm:'Amazon.com',ex:'NASDAQ',cur:'USD',sec:'Consumer Cyclicals',qty:8,avg:227.50,pr:259.70,val:1774,cost:1822,pnl:218,w:5.97,sig:null,divs:0},
+  {tk:'WKL',nm:'Wolters Kluwer',ex:'AEB',cur:'EUR',sec:'Industrial',qty:14,avg:112.00,pr:66.44,val:930,cost:1571,pnl:-641,w:3.13,sig:null,divs:0},
+];
+const IP=[
+  {tk:'NVDA',nm:'NVIDIA',ex:'NASDAQ',sec:'Technology',pr:181.67,chg:3.57,pct:2.00,sig:null},
+  {tk:'SPGI',nm:'S&P Global',ex:'NYSE',sec:'Financials',pr:438.23,chg:8.17,pct:1.90,sig:null},
+  {tk:'NDAQ',nm:'Nasdaq',ex:'NASDAQ',sec:'Financials',pr:88.51,chg:2.11,pct:2.44,sig:null},
+  {tk:'GOOGL',nm:'Alphabet',ex:'NASDAQ',sec:'Technology',pr:318.30,chg:12.84,pct:4.20,sig:null},
+  {tk:'MA',nm:'Mastercard',ex:'NYSE',sec:'Financials',pr:511.44,chg:13.16,pct:2.64,sig:null},
+  {tk:'AXP',nm:'American Express',ex:'NYSE',sec:'Financials',pr:316.46,chg:9.43,pct:3.07,sig:null},
+  {tk:'ASML',nm:'ASML Holding',ex:'NASDAQ',sec:'Technology',pr:1424.66,chg:118.21,pct:9.05,sig:null},
+];
+
+/* ════════════════════════════════════════════════
+   FMP API — Motor de valoración IDC
+   ════════════════════════════════════════════════ */
+function getFmpKey(){ return localStorage.getItem('fmpKey')||''; }
+function setFmpKey(k){ localStorage.setItem('fmpKey',k); }
+
+async function fmpFetch(endpoint, tk, extraParams={}){
+  const key = getFmpKey();
+  if(!key) throw new Error('NO_KEY');
+  // FMP Stable API: https://financialmodelingprep.com/stable/endpoint?symbol=TK&apikey=KEY
+  const params = new URLSearchParams({symbol: tk, apikey: key, ...extraParams});
+  const url = `https://financialmodelingprep.com/stable/${endpoint}?${params}`;
+  const r = await fetch(url);
+  if(!r.ok){
+    const txt = await r.text().catch(()=>'');
+    throw new Error(`FMP ${r.status}: ${txt.slice(0,200)}`);
+  }
+  return r.json();
+}
+
+// Obtener todos los datos necesarios de FMP para una empresa
+async function fetchAllFmpData(tk){
+  const [quote, is, bs, cf] = await Promise.all([
+    fmpFetch('quote', tk),
+    fmpFetch('income-statement', tk, {period:'annual', limit:5}),
+    fmpFetch('balance-sheet-statement', tk, {period:'annual', limit:5}),
+    fmpFetch('cash-flow-statement', tk, {period:'annual', limit:5}),
+  ]);
+  // quote puede ser array o objeto según endpoint
+  const q = Array.isArray(quote) ? quote[0] : quote;
+  return { quote: q, is: is.reverse(), bs: bs.reverse(), cf: cf.reverse() };
+}
+
+// ═══ MOTOR DE CÁLCULO IDC ═══
+// Replica exacta de las fórmulas del Excel "Invertir Desde Cero"
+function calcIDC(data){
+  const {quote, is, bs, cf} = data;
+  const n = is.length; // años disponibles (hasta 5 en plan gratuito)
+  const price = quote.price;
+  const years = is.map(x => new Date(x.date).getFullYear());
+
+  // ═══ 1. INCOME STATEMENT ═══
+  const sales = is.map(x => x.revenue / 1e6);
+  const ebit = is.map(x => x.operatingIncome / 1e6);
+  const da = cf.map(x => Math.abs(x.depreciationAndAmortization || 0) / 1e6);
+  const ebitda = ebit.map((e,i) => e + da[i]);
+  const intExp = is.map(x => (x.interestExpense || 0) / 1e6);
+  const intInc = is.map(x => (x.interestIncome || 0) / 1e6);
+  const totalInt = intExp.map((e,i) => -Math.abs(e) + (intInc[i]||0));
+  const ebt = ebit.map((e,i) => e + totalInt[i]);
+  const taxExp = is.map(x => Math.abs(x.incomeTaxExpense || 0) / 1e6);
+  const taxRate = ebt.map((e,i) => e > 0 ? taxExp[i] / e : 0);
+  const netIncome = is.map(x => x.netIncome / 1e6);
+  const shares = is.map(x => (x.weightedAverageShsOutDil || x.weightedAverageShsOut) / 1e6);
+  const eps = netIncome.map((ni,i) => shares[i] ? ni / shares[i] : 0);
+
+  // Márgenes
+  const ebitdaMargin = ebitda.map((e,i) => sales[i] ? e / sales[i] : 0);
+  const ebitMargin = ebit.map((e,i) => sales[i] ? e / sales[i] : 0);
+
+  // ═══ 2. BALANCE SHEET (para ROIC y Deuda Neta) ═══
+  const cash = bs.map(x => (x.cashAndCashEquivalents || 0) / 1e6);
+  const mktSec = bs.map(x => ((x.shortTermInvestments || 0)) / 1e6);
+  const stDebt = bs.map(x => ((x.shortTermDebt || 0) + (x.currentPortionOfLongTermDebt || 0)) / 1e6);
+  const ltDebt = bs.map(x => (x.longTermDebt || 0) / 1e6);
+  const equity = bs.map(x => (x.totalStockholdersEquity || 0) / 1e6);
+  const deudaNeta = stDebt.map((s,i) => (s + ltDebt[i]) - (cash[i] + mktSec[i]));
+  const dnEbitda = deudaNeta.map((dn,i) => ebitda[i] ? dn / ebitda[i] : 0);
+
+  // ═══ 3. FCF (fórmula IDC) ═══
+  const capexTotal = cf.map(x => (x.capitalExpenditure || 0) / 1e6); // negativo
+  const capexMant = da.map((d,i) => Math.min(Math.abs(capexTotal[i]), d)); // min(|capex|, D&A)
+  const ar = bs.map(x => (x.netReceivables || 0) / 1e6);
+  const ap = bs.map(x => (x.accountPayables || 0) / 1e6);
+  const inv = bs.map(x => (x.inventory || 0) / 1e6);
+  const wc = ar.map((a,i) => inv[i] + a - ap[i]);
+  const cwc = wc.map((w,i) => i===0 ? 0 : w - wc[i-1]);
+  const fcf = ebitda.map((eb,i) => eb - capexMant[i] + totalInt[i] - taxExp[i] - cwc[i]);
+  const fcfMargin = fcf.map((f,i) => sales[i] ? f / sales[i] : 0);
+
+  // ═══ 4. ROIC ═══
+  const nopat = ebit.map((e,i) => e * (1 - taxRate[i]));
+  const investedCapital = equity.map((eq,i) => eq + stDebt[i] + ltDebt[i] - mktSec[i]);
+  const roic = nopat.map((no,i) => investedCapital[i] ? no / investedCapital[i] : 0);
+  const roe = netIncome.map((ni,i) => equity[i] ? ni / equity[i] : 0);
+
+  // ═══ 5. MARKET CAP y EV (calculados, no de endpoint) ═══
+  const lastShares = shares[n-1];
+  // MCap histórico: usamos shares de cada año × precio de cierre implícito (EV = MCap + DeudaNeta)
+  // Como no tenemos precio histórico por año, usamos el ratio del quote actual
+  // Mejor aproximación: MCap = netIncome × PER implícito del quote
+  const currentMcap = (quote.marketCap || price * lastShares * 1e6) / 1e6;
+  // Para calcular MCap histórico, usamos key-metrics si disponible, si no aproximamos
+  // Aproximación: shares[i] * (netIncome[i]/shares[i]) * (currentMcap/netIncome[n-1])
+  const mcap = shares.map((s, i) => {
+    // Usar proporción de beneficios respecto al último año para estimar MCap histórico
+    if(netIncome[n-1] && netIncome[i]) return currentMcap * (netIncome[i] / netIncome[n-1]) * (shares[n-1] / s);
+    return currentMcap;
+  });
+  const evArr = mcap.map((m,i) => m + deudaNeta[i]);
+
+  // ═══ 6. MÚLTIPLOS HISTÓRICOS ═══
+  const per = mcap.map((m,i) => netIncome[i] > 0 ? m / netIncome[i] : null);
+  const evFcf = evArr.map((e,i) => fcf[i] > 0 ? e / fcf[i] : null);
+  const evEbitda = evArr.map((e,i) => ebitda[i] > 0 ? e / ebitda[i] : null);
+  const evEbit = evArr.map((e,i) => ebit[i] > 0 ? e / ebit[i] : null);
+
+  const median = arr => { const v=arr.filter(x=>x!=null&&x>0&&isFinite(x)).sort((a,b)=>a-b); if(!v.length)return 0; const m=Math.floor(v.length/2); return v.length%2?v[m]:(v[m-1]+v[m])/2; };
+
+  const medPer = median(per);
+  const medEvFcf = median(evFcf);
+  const medEvEbitda = median(evEbitda);
+  const medEvEbit = median(evEbit);
+
+  // ═══ 7. ESTIMACIONES (5 años) ═══
+  // Crecimientos conservadores basados en medianas históricas -10%
+  const lastSalesGr = sales.length>=2 ? (sales.slice(1).map((s,i)=>sales[i]?s/sales[i]-1:0)) : [0.05];
+  const medSalesGr = Math.max(median(lastSalesGr) * 0.9, 0.03); // al menos 3%
+  const lastEbitMargin = median(ebitMargin);
+  const lastTaxRate = median(taxRate);
+  const lastDnEbitda = dnEbitda[n-1] || 0;
+  const lastCapexPct = median(capexMant.map((c,i)=>sales[i]?c/sales[i]:0));
+  const lastWcPct = median(wc.map((w,i)=>sales[i]?w/sales[i]:0));
+  const lastSharesGr = shares.length>=3 ? median(shares.slice(1).map((s,i)=>shares[i]?s/shares[i]-1:0)) : -0.01;
+
+  const estYears = [];
+  const estSales = [], estEbitda = [], estEbit = [], estDa = [], estNi = [], estFcf = [];
+  const estShares = [], estEps = [], estDn = [], estEv = [], estMcap = [];
+
+  let prevSales = sales[n-1], prevShares = shares[n-1], prevWc = wc[n-1];
+  const lastYear = years[n-1];
+
+  for(let y=1; y<=5; y++){
+    const yr = lastYear + y;
+    estYears.push(yr+'e');
+    const gr = Math.max(medSalesGr - (y-1)*0.005, 0.02); // degradación suave
+    const s = prevSales * (1 + gr);
+    const eb = s * lastEbitMargin;
+    const d = da[n-1] * (1 + gr); // D&A crece con ventas
+    const ebitE = eb - d;
+    const taxE = lastTaxRate;
+    const intE = totalInt[n-1]; // mantener intereses
+    const ebtE = ebitE + intE;
+    const niE = ebtE * (1 - taxE);
+    const capM = s * lastCapexPct;
+    const wcE = s * lastWcPct;
+    const cwcE = wcE - prevWc;
+    const fcfE = eb - capM + intE - ebtE * taxE - cwcE;
+    const shrE = prevShares * (1 + lastSharesGr);
+    const epsE = shrE ? niE / shrE : 0;
+    const dnEbitdaE = lastDnEbitda; // mantener ratio
+    const dnE = dnEbitdaE * eb;
+    const mcapE = price * shrE; // MCap estimada con precio actual
+    const evE = mcapE + dnE;
+
+    estSales.push(s); estEbitda.push(eb); estEbit.push(ebitE); estDa.push(d);
+    estNi.push(niE); estFcf.push(fcfE); estShares.push(shrE); estEps.push(epsE);
+    estDn.push(dnE); estMcap.push(mcapE); estEv.push(evE);
+    prevSales = s; prevShares = shrE; prevWc = wcE;
+  }
+
+  // ═══ 8. MÚLTIPLOS OBJETIVO (conservador: mediana -10/15%) ═══
+  // Múltiplos objetivo = mediana histórica (sin descuento, igual que en el Excel IDC)
+  // Loren ya es conservador en sus estimaciones de crecimiento
+  const objPer = Math.round(medPer);
+  const objEvFcf = Math.round(medEvFcf);
+  const objEvEbitda = Math.round(medEvEbitda);
+  const objEvEbit = Math.round(medEvEbit);
+
+  // ═══ 9. PRECIO OBJETIVO (fórmulas exactas del Excel) ═══
+  const lastSharesEst = estShares; // shares por año estimado
+  const precioObj = { perExCash:[], evFcf:[], evEbitda:[], evEbit:[], prom:[] };
+
+  for(let i=0; i<5; i++){
+    const dn = estDn[i];
+    const shr = estShares[i];
+    // PER ex Cash: IF(DN<0, NI*PER_obj - DN, NI*PER_obj) / Shares
+    const pPer = dn < 0 ? (estNi[i]*objPer - dn)/shr : (estNi[i]*objPer)/shr;
+    // EV/FCF: (FCF*Mult - DN) / Shares
+    const pFcf = (estFcf[i]*objEvFcf - dn)/shr;
+    // EV/EBITDA: (EBITDA*Mult - DN) / Shares
+    const pEbitda = (estEbitda[i]*objEvEbitda - dn)/shr;
+    // EV/EBIT: (EBIT*Mult - DN) / Shares
+    const pEbit = (estEbit[i]*objEvEbit - dn)/shr;
+    const avg = (pPer + pFcf + pEbitda + pEbit) / 4;
+
+    precioObj.perExCash.push(pPer);
+    precioObj.evFcf.push(pFcf);
+    precioObj.evEbitda.push(pEbitda);
+    precioObj.evEbit.push(pEbit);
+    precioObj.prom.push(avg);
+  }
+
+  // ═══ 10. CAGR y MARGEN DE SEGURIDAD ═══
+  const cagr5 = {
+    per: price>0 ? Math.pow(precioObj.perExCash[4]/price, 1/5)-1 : 0,
+    fcf: price>0 ? Math.pow(precioObj.evFcf[4]/price, 1/5)-1 : 0,
+    ebitda: price>0 ? Math.pow(precioObj.evEbitda[4]/price, 1/5)-1 : 0,
+    ebit: price>0 ? Math.pow(precioObj.evEbit[4]/price, 1/5)-1 : 0,
+    prom: price>0 ? Math.pow(precioObj.prom[4]/price, 1/5)-1 : 0,
+  };
+
+  const margenSeg = precioObj.evFcf.map(p => price>0 ? p/price - 1 : 0);
+
+  // ═══ 11. PRECIO COMPRA PARA 15% ANUAL ═══
+  const retObj = 0.15;
+  const precioCompra15 = precioObj.evFcf[4] > 0 ? precioObj.evFcf[4] / Math.pow(1+retObj, 5) : 0;
+  const difVsActual = price > 0 ? (precioCompra15 - price) / price : 0;
+
+  // ═══ 12. SEMÁFORO ═══
+  const ms5 = margenSeg[4] || 0; // margen seguridad a 5 años (EV/FCF)
+  let signal = 'na', signalText = 'Sin datos';
+  if(ms5 >= 0.50){ signal='buy'; signalText='COMPRAR'; }
+  else if(ms5 >= 0.15){ signal='hold'; signalText='MANTENER'; }
+  else { signal='sell'; signalText='ESPERAR'; }
+
+  return {
+    ticker: quote.symbol, name: quote.companyName || quote.symbol, price, currency: quote.currency||'USD',
+    years, estYears, n,
+    // Históricos
+    sales, ebitda, ebitdaMargin, ebit, ebitMargin, da, netIncome, eps, shares, taxRate,
+    intExp, intInc, totalInt, ebt, fcf, fcfMargin,
+    cash, mktSec, stDebt, ltDebt, equity, deudaNeta, dnEbitda,
+    mcap, evArr, roic, roe,
+    per, evFcf, evEbitda, evEbit, medPer, medEvFcf, medEvEbitda, medEvEbit,
+    wc, cwc, capexMant, investedCapital, nopat,
+    // Estimaciones
+    estSales, estEbitda, estEbit, estDa, estNi, estFcf, estShares, estEps, estDn, estMcap, estEv,
+    // Objetivo
+    objPer, objEvFcf, objEvEbitda, objEvEbit,
+    precioObj, cagr5, margenSeg, signal, signalText,
+    precioCompra15, retObj, difVsActual,
+    // Ratios estimaciones
+    medSalesGr, lastEbitMargin, lastTaxRate, lastDnEbitda, lastCapexPct, lastWcPct, lastSharesGr,
+    // Arrays de crecimiento por año (para edición individual)
+    estSalesGr: Array(5).fill(0).map((_,i) => Math.max(medSalesGr - i*0.005, 0.02)),
+    estEbitMgn: Array(5).fill(lastEbitMargin),
+  };
+}
+
+/* ════════════════════════════════════════════════
+   RENDERIZAR VISTA DE VALORACIÓN IDC
+   ════════════════════════════════════════════════ */
+function renderValoracionIDC(v, el, backTo){
+  const ff = (n,d=2) => n==null?'—':Number(n).toLocaleString('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const ffm = (n) => n==null?'—':Number(n).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2}); // millones con 2 dec
+  const fp = (n) => n==null?'—':(n*100).toLocaleString('es-ES',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+  const fx = (n) => n==null?'—':Number(n).toLocaleString('es-ES',{minimumFractionDigits:1,maximumFractionDigits:1})+'x';
+  const cls = n => n>=0?'pos':'neg';
+
+  let h = `<button class="det-back" onclick="go('${backTo}')">← Volver</button>`;
+
+  // ═══ HEADER ═══
+  h += `<div style="margin-bottom:18px">
+    <div class="det-tk">${v.ticker}</div>
+    <div class="det-nm">${v.name}</div>
+    <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <span style="font-family:var(--mono);font-size:36px;font-weight:700">${ff(v.price,2)}</span>
+      <span style="font-size:15px;color:var(--ink3)">${v.currency}</span>
+    </div>
+  </div>`;
+
+  // ═══ SEMÁFORO ═══
+  const sigIcon = v.signal==='buy'?'🟢':v.signal==='hold'?'🟡':'🔴';
+  const sigCls = v.signal==='buy'?'buy':v.signal==='hold'?'hold':'sell';
+  h += `<div class="signal-card ${sigCls}">
+    <div class="signal-icon">${sigIcon}</div>
+    <div class="signal-text">${v.signalText}</div>
+    <div class="signal-sub">Margen de seguridad ${fp(v.margenSeg[4])} (EV/FCF 5 años)</div>
+  </div>`;
+
+  // ═══ RESUMEN RÁPIDO ═══
+  h += `<div class="stats">
+    <div class="stat ${v.cagr5.prom>=0.15?'glow-up':''}"><div class="stat-v">${fp(v.cagr5.prom)}</div><div class="stat-l">CAGR 5a Prom</div></div>
+    <div class="stat"><div class="stat-v">${ff(v.precioObj.prom[4],2)}</div><div class="stat-l">P. Obj. 5a Prom</div></div>
+    <div class="stat"><div class="stat-v">${ff(v.precioCompra15,2)}</div><div class="stat-l">Compra p/15%</div></div>
+    <div class="stat ${v.difVsActual>=0?'glow-up':'glow-dn'}"><div class="stat-v">${fp(v.difVsActual)}</div><div class="stat-l">Dif. vs actual</div></div>
+  </div>`;
+
+  // ═══ TABS DE DETALLE ═══
+  h += `<div class="dtabs">
+    <div class="dtab on" onclick="valTab('base')">Base</div>
+    <div class="dtab" onclick="valTab('mult')">Múltiplos</div>
+    <div class="dtab" onclick="valTab('obj')">Objetivo</div>
+    <div class="dtab" onclick="valTab('graf')">Gráficos</div>
+  </div>`;
+
+  // ═══ TAB BASE: Valoración base + IS resumen ═══
+  h += `<div class="dpanel on" id="vp-base">`;
+
+  // Tabla: Valoración (millones)
+  h += `<div class="val-section"><div class="val-section-t">Valoración (millones)</div><div class="val-scroll"><table class="vt"><thead><tr><th></th>`;
+  v.years.forEach(y => h += `<th>${y}</th>`);
+  v.estYears.forEach(y => h += `<th class="est">${y}</th>`);
+  h += `</tr></thead><tbody>`;
+
+  const addRow = (label, hist, est, dec=0, highlight=false) => {
+    h += `<tr${highlight?' class="hi"':''}><td>${label}</td>`;
+    hist.forEach(x => h += `<td>${ffm(x)}</td>`);
+    if(est) est.forEach(x => h += `<td class="est-c">${ffm(x)}</td>`);
+    h += `</tr>`;
+  };
+  const addRowPct = (label, hist, est, highlight=false) => {
+    h += `<tr${highlight?' class="hi"':''}><td>${label}</td>`;
+    hist.forEach(x => h += `<td>${fp(x)}</td>`);
+    if(est) est.forEach(x => h += `<td class="est-c">${fp(x)}</td>`);
+    h += `</tr>`;
+  };
+
+  addRow('Market Cap', v.mcap, v.estMcap);
+  addRow('Deuda Neta', v.deudaNeta, v.estDn);
+  h += `<tr><td>DN/EBITDA</td>`;
+  v.dnEbitda.forEach(x => h += `<td>${fx(x)}</td>`);
+  for(let i=0;i<5;i++) h += `<td class="est-c">${fx(v.lastDnEbitda)}</td>`;
+  h += `</tr>`;
+  addRow('Enterprise Value', v.evArr, v.estEv);
+  h += `<tr class="sep"></tr>`;
+  addRow('Sales', v.sales, v.estSales);
+  addRow('EBITDA', v.ebitda, v.estEbitda);
+  addRowPct('  Margen EBITDA', v.ebitdaMargin, Array(5).fill(v.lastEbitMargin));
+  addRow('EBIT', v.ebit, v.estEbit);
+  addRow('Net Income', v.netIncome, v.estNi);
+  addRow('FCF', v.fcf, v.estFcf, 0, true);
+  addRowPct('  FCF Margin', v.fcfMargin, v.estFcf.map((f,i)=>v.estSales[i]?f/v.estSales[i]:0));
+  h += `<tr class="sep"></tr>`;
+  h += `<tr><td>EPS</td>`; v.eps.forEach(x=>h+=`<td>${ff(x,2)}</td>`); v.estEps.forEach(x=>h+=`<td class="est-c">${ff(x,2)}</td>`); h+=`</tr>`;
+  h += `<tr><td>Shares (M)</td>`; v.shares.forEach(x=>h+=`<td>${ffm(x)}</td>`); v.estShares.forEach(x=>h+=`<td class="est-c">${ffm(x)}</td>`); h+=`</tr>`;
+  addRowPct('  Tax Rate', v.taxRate, Array(5).fill(v.lastTaxRate));
+  addRowPct('ROIC', v.roic, []);
+  addRowPct('ROE', v.roe, []);
+  h += `</tbody></table></div></div>`;
+  h += `</div>`; // fin tab base
+
+  // ═══ TAB MÚLTIPLOS ═══
+  h += `<div class="dpanel" id="vp-mult">`;
+
+  // Botón subir Excel
+  h += `<input type="file" id="xlUpload" accept=".xlsx,.xls" style="display:none" onchange="handleExcelUpload(event)">`;
+  h += `<button class="idc-upload-btn" onclick="document.getElementById('xlUpload').click()">📁 Subir Excel de valoración de ${v.ticker}</button>`;
+
+  // Flujo explicativo
+  h += `<div class="idc-flow">
+    <div class="idc-flow-step"><div class="idc-flow-n">1</div><div><b>C</b> se rellena sola (FMP)</div></div>
+    <div class="idc-flow-step"><div class="idc-flow-n">2</div><div>Subes Excel → <b>E</b> se rellena</div></div>
+    <div class="idc-flow-step"><div class="idc-flow-n">3</div><div>16 datos ⚡ pasan E→D→C auto · 11 datos ✋ esperan tu decisión</div></div>
+    <div style="text-align:center;font-weight:800;color:var(--blue);margin-top:4px">C = D si existe · Si D vacío → C = FMP</div>
+  </div>`;
+
+  // Datos guardados por empresa (localStorage)
+  const stored = JSON.parse(localStorage.getItem('idc_inputs_'+v.ticker)||'{}');
+  const exd = stored.excel || {}; // columna E
+  const adj = stored.adjust || {}; // columna D
+
+  // Tipos de formato: 'price', 'pct', 'x', 'int', 'millions'
+  const fmtVal = (val, fmt) => {
+    if(val==null || val==='') return '—';
+    const n = Number(val);
+    if(isNaN(n)) return '—';
+    if(fmt==='pct') return (n < 1 && n > -1 ? n*100 : n).toLocaleString('es-ES',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+    if(fmt==='x') return n.toLocaleString('es-ES',{minimumFractionDigits:1,maximumFractionDigits:1})+'x';
+    if(fmt==='int') return Math.round(n).toLocaleString('es-ES');
+    if(fmt==='price') return n.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2});
+    if(fmt==='millions') return n.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2});
+    return n.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2});
+  };
+
+  // Helper: generar fila
+  const idcRow = (key, label, ref, cVal, isAuto, fmt='int') => {
+    const eVal = exd[key]!=null ? exd[key] : null;
+    let dVal = adj[key]!=null ? adj[key] : null;
+    // Si auto y E tiene dato → D se rellena de E
+    if(isAuto && eVal!=null && dVal==null) dVal = eVal;
+    // C toma de D si existe, si no de cVal (FMP)
+    const cFinal = dVal!=null ? dVal : cVal;
+    const ico = isAuto ? '⚡' : '✋';
+
+    const cDisplay = fmtVal(cFinal, fmt);
+    const dDisplay = fmtVal(dVal, fmt);
+    const eDisplay = fmtVal(eVal, fmt);
+    const dClass = dVal!=null ? 'd-full' : 'd-empty';
+
+    // Input editable en D para los manuales
+    // Para inputs: mostrar el valor en formato legible (ej: 13 para 13%, no 0.13)
+    const dInputVal = dVal!=null ? (fmt==='pct' && Math.abs(dVal)<1 ? (dVal*100) : dVal) : '';
+    const dHtml = isAuto
+      ? `<td class="${dClass}">${dVal!=null ? dDisplay : 'pendiente'}</td>`
+      : `<td class="${dClass}"><input class="d-inp" data-key="${key}" data-fmt="${fmt}" value="${dInputVal}" placeholder="pendiente" onchange="updateD('${v.ticker}','${key}',this.value,'${fmt}')"></td>`;
+
+    return `<tr><td>${label}<span class="ico">${ico}</span><span class="ref">${ref}</span></td><td class="c-app">${cDisplay}</td>${dHtml}<td class="${eVal!=null?'e-data':'e-empty'}">${eDisplay}</td></tr>`;
+  };
+
+  const secRow = (title) => `<tr class="idc-sec"><td colspan="4">${title}</td></tr>`;
+
+  h += `<div class="val-scroll"><table class="idc-tbl"><thead><tr><th>Input</th><th>C · App</th><th>D · Tu ajuste</th><th>E · Excel</th></tr></thead><tbody>`;
+
+  // ═══ VALORACIÓN ═══
+  h += secRow('VALORACIÓN');
+  h += idcRow('price','Precio actual ($)','4.Val B19', v.price, true, 'price');
+  h += idcRow('dnEbitda','Deuda neta / EBITDA','4.Val L5', v.lastDnEbitda, true, 'x');
+  h += idcRow('retObj','Retorno objetivo (%)','4.Val B51', v.retObj, true, 'pct');
+
+  // ═══ MÚLTIPLOS OBJETIVO ═══
+  h += secRow('MÚLTIPLOS OBJETIVO');
+  h += idcRow('objPer','PER','4.Val B22', v.objPer, true, 'int');
+  h += idcRow('objEvFcf','EV / FCF','4.Val B23', v.objEvFcf, true, 'int');
+  h += idcRow('objEvEbitda','EV / EBITDA','4.Val B24', v.objEvEbitda, true, 'int');
+  h += idcRow('objEvEbit','EV / EBIT','4.Val B25', v.objEvEbit, true, 'int');
+
+  // ═══ CRECIMIENTO VENTAS ═══
+  h += secRow('ESTIMACIÓN — CRECIMIENTO VENTAS');
+  for(let i=0;i<5;i++){
+    const yr = v.estYears[i];
+    h += idcRow('salesGr'+i, 'Crec. ventas '+yr, '1.IS '+'LMNOP'[i]+'4', v.estSalesGr?v.estSalesGr[i]:v.medSalesGr, false, 'pct');
+  }
+
+  // ═══ MARGEN EBIT ═══
+  h += secRow('ESTIMACIÓN — MARGEN EBIT');
+  for(let i=0;i<5;i++){
+    const yr = v.estYears[i];
+    h += idcRow('ebitMgn'+i, 'Margen EBIT '+yr, '1.IS '+'LMNOP'[i]+'10', v.lastEbitMargin, false, 'pct');
+  }
+
+  // ═══ TAX RATE ═══
+  h += secRow('ESTIMACIÓN — TAX RATE');
+  h += idcRow('taxRate','Tax rate (%)','1.IS L17', v.lastTaxRate, false, 'pct');
+
+  // ═══ ÚLTIMO AÑO REAL ═══
+  h += secRow('ÚLTIMO AÑO REAL');
+  h += idcRow('lastSales','Sales (M)','1.IS K3', v.sales[v.n-1], true, 'millions');
+  h += idcRow('lastEbit','EBIT (M)','1.IS K9', v.ebit[v.n-1], true, 'millions');
+  h += idcRow('lastAR','Accounts Receivable (M)','2.FCF K8', v.wc.length?v.wc[v.n-1]:0, true, 'millions');
+  h += idcRow('lastAP','Accounts Payable (M)','2.FCF K9', 0, true, 'millions');
+  h += idcRow('lastCash','Cash & equivalents (M)','3.ROIC K4', v.cash[v.n-1], true, 'millions');
+  h += idcRow('lastMktSec','Marketable Securities (M)','3.ROIC K5', v.mktSec[v.n-1], true, 'millions');
+  h += idcRow('lastLtDebt','Long-Term Debt (M)','3.ROIC K7', v.ltDebt[v.n-1], true, 'millions');
+
+  h += `</tbody></table></div>`;
+  h += `</div>`; // fin tab mult
+
+  // ═══ TAB OBJETIVO: Precio objetivo + CAGR ═══
+  h += `<div class="dpanel" id="vp-obj">`;
+  h += `<div class="val-section"><div class="val-section-t">Precio objetivo por método</div><div class="val-scroll"><table class="vt"><thead><tr><th></th>`;
+  v.estYears.forEach(y=>h+=`<th class="est">${y}</th>`);
+  h += `<th class="med">CAGR 5a</th></tr></thead><tbody>`;
+  const addObjRow = (label, arr, cagr, hi=false) => {
+    h += `<tr${hi?' class="hi"':''}><td>${label}</td>`;
+    arr.forEach(x=>h+=`<td class="est-c">${ff(x,2)}</td>`);
+    h += `<td class="med-c ${cagr>=0.15?'pos':'neg'}">${fp(cagr)}</td></tr>`;
+  };
+  addObjRow('PER ex Cash', v.precioObj.perExCash, v.cagr5.per);
+  addObjRow('EV / FCF', v.precioObj.evFcf, v.cagr5.fcf, true);
+  addObjRow('EV / EBITDA', v.precioObj.evEbitda, v.cagr5.ebitda);
+  addObjRow('EV / EBIT', v.precioObj.evEbit, v.cagr5.ebit);
+  h += `<tr class="sep"><td><strong>Promedio</strong></td>`;
+  v.precioObj.prom.forEach(x=>h+=`<td class="est-c"><strong>${ff(x,2)}</strong></td>`);
+  h += `<td class="med-c"><strong>${fp(v.cagr5.prom)}</strong></td></tr>`;
+  h += `</tbody></table></div></div>`;
+
+  // Margen de seguridad
+  h += `<div class="val-section"><div class="val-section-t" style="background:#2e7d32">Margen de seguridad (EV/FCF)</div><div class="val-scroll"><table class="vt"><thead><tr><th></th>`;
+  v.estYears.forEach(y=>h+=`<th class="est">${y}</th>`);
+  h += `</tr></thead><tbody><tr><td>vs Precio actual</td>`;
+  v.margenSeg.forEach(m=>h+=`<td class="est-c ${cls(m)}" style="font-weight:800">${fp(m)}</td>`);
+  h += `</tr></tbody></table></div></div>`;
+
+  // Precio compra 15%
+  h += `<div class="card" style="text-align:center;padding:24px 20px">
+    <div style="font-size:13px;font-weight:800;color:var(--ink3);text-transform:uppercase;margin-bottom:8px">Precio de compra para ${fp(v.retObj)} anual</div>
+    <div style="font-family:var(--mono);font-size:36px;font-weight:700;color:var(--blue)">${ff(v.precioCompra15,2)} ${v.currency}</div>
+    <div style="margin-top:8px;font-size:15px;font-weight:700" class="${cls(v.difVsActual)}">Diferencia vs actual: ${fp(v.difVsActual)}</div>
+  </div>`;
+  h += `</div>`; // fin tab obj
+
+  // ═══ TAB GRÁFICOS ═══
+  h += `<div class="dpanel" id="vp-graf">`;
+  h += `<div class="card"><div class="card-t">Múltiplo histórico EV/FCF</div><div class="chart-wrap"><canvas id="ch-evfcf"></canvas></div></div>`;
+  h += `<div class="card"><div class="card-t">Valor intrínseco (precio objetivo promedio)</div><div class="chart-wrap"><canvas id="ch-intrinsic"></canvas></div></div>`;
+  h += `</div>`; // fin tab graf
+
+  el.innerHTML = h;
+
+  // Activar primera tab
+  document.querySelectorAll('.view').forEach(vw=>vw.classList.remove('on'));
+  el.classList.add('on');
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.v==='valoracion'));
+  window.scrollTo({top:0});
+
+  // Guardar datos para recálculo
+  window._valData = v;
+  window._valEl = el;
+  window._valBackTo = backTo;
+
+  // Renderizar gráficos si la tab está visible
+  setTimeout(()=>renderCharts(v), 100);
+}
+
+function valTab(tab){
+  document.querySelectorAll('#v-valoracion .dtab').forEach((t,i)=>t.classList.toggle('on',['base','mult','obj','graf'][ i]===tab));
+  document.querySelectorAll('#v-valoracion .dpanel').forEach(p=>p.classList.remove('on'));
+  const p = document.getElementById('vp-'+tab);
+  if(p) p.classList.add('on');
+  if(tab==='graf' && window._valData) setTimeout(()=>renderCharts(window._valData),50);
+}
+
+function recalcObj(){
+  if(!window._valData) return;
+  const v = window._valData;
+  const stored = JSON.parse(localStorage.getItem('idc_inputs_'+v.ticker)||'{}');
+  const adj = stored.adjust || {};
+
+  // Leer múltiplos de D si existen, si no del cálculo FMP
+  v.objPer = adj.objPer!=null ? Number(adj.objPer) : v.objPer;
+  v.objEvFcf = adj.objEvFcf!=null ? Number(adj.objEvFcf) : v.objEvFcf;
+  v.objEvEbitda = adj.objEvEbitda!=null ? Number(adj.objEvEbitda) : v.objEvEbitda;
+  v.objEvEbit = adj.objEvEbit!=null ? Number(adj.objEvEbit) : v.objEvEbit;
+  v.retObj = adj.retObj!=null ? Number(adj.retObj) : v.retObj;
+
+  // Leer estimaciones de D si existen
+  for(let i=0;i<5;i++){
+    if(adj['salesGr'+i]!=null) v.estSalesGr[i] = Number(adj['salesGr'+i]);
+    if(adj['ebitMgn'+i]!=null) v.estEbitMgn[i] = Number(adj['ebitMgn'+i]);
+  }
+  if(adj.taxRate!=null) v.lastTaxRate = Number(adj.taxRate);
+
+  // Recalcular estimaciones con los valores actualizados
+  let prevSales = v.sales[v.n-1];
+  let prevShares = v.shares[v.n-1];
+  let prevWc = v.wc[v.n-1]||0;
+  for(let i=0;i<5;i++){
+    const gr = v.estSalesGr?v.estSalesGr[i]:v.medSalesGr;
+    const mgn = v.estEbitMgn?v.estEbitMgn[i]:v.lastEbitMargin;
+    const s = prevSales*(1+gr);
+    const eb = s * (mgn + v.lastEbitMargin - v.lastEbitMargin); // usa margen
+    const ebitda_e = s * (v.ebitdaMargin[v.n-1]||0.4);
+    const ebit_e = s * mgn;
+    const tax = v.lastTaxRate;
+    const intE = v.totalInt[v.n-1]||0;
+    const ebt_e = ebit_e + intE;
+    const ni_e = ebt_e * (1-tax);
+    const da_e = ebitda_e - ebit_e;
+    const capM = s * v.lastCapexPct;
+    const wcE = s * v.lastWcPct;
+    const cwcE = wcE - prevWc;
+    const fcf_e = ebitda_e - capM + intE - ebt_e*tax - cwcE;
+    const shrE = prevShares * (1 + (v.lastSharesGr||(-0.01)));
+
+    v.estSales[i]=s; v.estEbitda[i]=ebitda_e; v.estEbit[i]=ebit_e;
+    v.estNi[i]=ni_e; v.estFcf[i]=fcf_e; v.estShares[i]=shrE;
+    v.estEps[i]=shrE?ni_e/shrE:0;
+    const dnE = (adj.dnEbitda!=null?Number(adj.dnEbitda):v.lastDnEbitda) * ebitda_e;
+    v.estDn[i]=dnE;
+    prevSales=s; prevShares=shrE; prevWc=wcE;
+  }
+
+  // Recalcular precios objetivo
+  for(let i=0;i<5;i++){
+    const dn=v.estDn[i], shr=v.estShares[i];
+    v.precioObj.perExCash[i] = dn<0?(v.estNi[i]*v.objPer-dn)/shr:(v.estNi[i]*v.objPer)/shr;
+    v.precioObj.evFcf[i] = (v.estFcf[i]*v.objEvFcf-dn)/shr;
+    v.precioObj.evEbitda[i] = (v.estEbitda[i]*v.objEvEbitda-dn)/shr;
+    v.precioObj.evEbit[i] = (v.estEbit[i]*v.objEvEbit-dn)/shr;
+    v.precioObj.prom[i] = (v.precioObj.perExCash[i]+v.precioObj.evFcf[i]+v.precioObj.evEbitda[i]+v.precioObj.evEbit[i])/4;
+  }
+  const p = adj.price!=null ? Number(adj.price) : v.price;
+  v.cagr5.per = p>0?Math.pow(v.precioObj.perExCash[4]/p,1/5)-1:0;
+  v.cagr5.fcf = p>0?Math.pow(v.precioObj.evFcf[4]/p,1/5)-1:0;
+  v.cagr5.ebitda = p>0?Math.pow(v.precioObj.evEbitda[4]/p,1/5)-1:0;
+  v.cagr5.ebit = p>0?Math.pow(v.precioObj.evEbit[4]/p,1/5)-1:0;
+  v.cagr5.prom = p>0?Math.pow(v.precioObj.prom[4]/p,1/5)-1:0;
+  v.margenSeg = v.precioObj.evFcf.map(x=>p>0?x/p-1:0);
+  v.precioCompra15 = v.precioObj.evFcf[4]>0?v.precioObj.evFcf[4]/Math.pow(1+v.retObj,5):0;
+  v.difVsActual = p>0?(v.precioCompra15-p)/p:0;
+  const ms5=v.margenSeg[4]||0;
+  if(ms5>=0.50){v.signal='buy';v.signalText='COMPRAR';}
+  else if(ms5>=0.15){v.signal='hold';v.signalText='MANTENER';}
+  else{v.signal='sell';v.signalText='ESPERAR';}
+
+  // Actualizar señal en cartera/candidatas
+  const item=[...D.c,...D.p].find(e=>e.tk===v.ticker);
+  if(item){item.sig=v.signal;save();}
+
+  renderValoracionIDC(v, window._valEl, window._valBackTo);
+  setTimeout(()=>valTab('obj'),50);
+  toast('Recalculado');
+}
+
+// ═══ GUARDAR VALOR EN COLUMNA D ═══
+function updateD(ticker, key, val, fmt){
+  const stored = JSON.parse(localStorage.getItem('idc_inputs_'+ticker)||'{}');
+  if(!stored.adjust) stored.adjust={};
+  if(val===''||val==null){
+    delete stored.adjust[key];
+  } else {
+    let num = parseFloat(val);
+    // Si es porcentaje y el usuario escribe 13 (no 0.13), convertir
+    if(fmt==='pct' && Math.abs(num)>=1) num = num/100;
+    stored.adjust[key] = num;
+  }
+  localStorage.setItem('idc_inputs_'+ticker, JSON.stringify(stored));
+  recalcObj();
+}
+
+// ═══ CARGAR EXCEL IDC ═══
+async function handleExcelUpload(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  if(!window._valData){toast('Primero abre una valoración');return;}
+  const tk = window._valData.ticker;
+
+  toast('Leyendo Excel...');
+  try {
+    const data = await file.arrayBuffer();
+    // Cargar SheetJS si no está disponible
+    if(typeof XLSX==='undefined'){
+      await new Promise((res,rej)=>{
+        const s=document.createElement('script');
+        s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+        s.onload=res;s.onerror=()=>rej(new Error('No se pudo cargar SheetJS'));
+        document.head.appendChild(s);
+      });
+    }
+    const wb = XLSX.read(data, {type:'array'});
+
+  // Mapa de celdas a extraer
+  const cellMap = {
+    // 4.Valoracion
+    price: {sheet:'4.Valoracion', cell:'B19'},
+    dnEbitda: {sheet:'4.Valoracion', cell:'L5'},
+    retObj: {sheet:'4.Valoracion', cell:'B51'},
+    objPer: {sheet:'4.Valoracion', cell:'B22'},
+    objEvFcf: {sheet:'4.Valoracion', cell:'B23'},
+    objEvEbitda: {sheet:'4.Valoracion', cell:'B24'},
+    objEvEbit: {sheet:'4.Valoracion', cell:'B25'},
+    // 1.IS - Crecimiento ventas
+    salesGr0: {sheet:'1.IS', cell:'L4'},
+    salesGr1: {sheet:'1.IS', cell:'M4'},
+    salesGr2: {sheet:'1.IS', cell:'N4'},
+    salesGr3: {sheet:'1.IS', cell:'O4'},
+    salesGr4: {sheet:'1.IS', cell:'P4'},
+    // 1.IS - Margen EBIT
+    ebitMgn0: {sheet:'1.IS', cell:'L10'},
+    ebitMgn1: {sheet:'1.IS', cell:'M10'},
+    ebitMgn2: {sheet:'1.IS', cell:'N10'},
+    ebitMgn3: {sheet:'1.IS', cell:'O10'},
+    ebitMgn4: {sheet:'1.IS', cell:'P10'},
+    // 1.IS - Tax rate
+    taxRate: {sheet:'1.IS', cell:'L17'},
+    // Último año real
+    lastSales: {sheet:'1.IS', cell:'K3'},
+    lastEbit: {sheet:'1.IS', cell:'K9'},
+    lastAR: {sheet:'2.FCF', cell:'K8'},
+    lastAP: {sheet:'2.FCF', cell:'K9'},
+    lastCash: {sheet:'3.ROIC', cell:'K4'},
+    lastMktSec: {sheet:'3.ROIC', cell:'K5'},
+    lastLtDebt: {sheet:'3.ROIC', cell:'K7'},
+  };
+
+  // Claves auto (16 datos estables)
+  const autoKeys = ['price','dnEbitda','retObj','objPer','objEvFcf','objEvEbitda','objEvEbit',
+    'lastSales','lastEbit','lastAR','lastAP','lastCash','lastMktSec','lastLtDebt',
+    'taxRate']; // tax rate como estable pero editable
+  // +2 para llegar a 16: taxRate cuenta como 1, retObj ya está
+
+  const stored = JSON.parse(localStorage.getItem('idc_inputs_'+tk)||'{}');
+  stored.excel = {};
+  if(!stored.adjust) stored.adjust = {};
+
+  let count = 0;
+  for(const [key, loc] of Object.entries(cellMap)){
+    const ws = wb.Sheets[loc.sheet];
+    if(!ws) continue;
+    const cellObj = ws[loc.cell];
+    if(cellObj && cellObj.v!=null){
+      const val = Number(cellObj.v);
+      if(!isNaN(val)){
+        stored.excel[key] = val;
+        count++;
+        // Si es auto → copiar a D automáticamente
+        if(autoKeys.includes(key)){
+          stored.adjust[key] = val;
+        }
+      }
+    }
+  }
+
+  localStorage.setItem('idc_inputs_'+tk, JSON.stringify(stored));
+  toast(`✅ Excel leído: ${count} datos extraídos`);
+
+  // Recalcular y re-renderizar
+  recalcObj();
+  setTimeout(()=>valTab('mult'),100);
+  } catch(err) {
+    toast('❌ Error leyendo Excel: '+err.message);
+    console.error('Excel upload error:', err);
+  }
+  // Reset file input para permitir re-subir
+  event.target.value = '';
+}
+
+// ═══ GRÁFICOS Chart.js ═══
+let chartEvFcf=null, chartIntrinsic=null;
+function renderCharts(v){
+  // Destruir anteriores
+  if(chartEvFcf){chartEvFcf.destroy();chartEvFcf=null;}
+  if(chartIntrinsic){chartIntrinsic.destroy();chartIntrinsic=null;}
+
+  const c1 = document.getElementById('ch-evfcf');
+  const c2 = document.getElementById('ch-intrinsic');
+  if(!c1||!c2) return;
+
+  // Gráfico 1: EV/FCF histórico con mediana
+  const evfcfData = v.evFcf.map(x=>x&&isFinite(x)?x:null);
+  chartEvFcf = new Chart(c1, {
+    type:'bar',
+    data:{
+      labels:v.years.map(String),
+      datasets:[
+        {label:'EV/FCF',data:evfcfData,backgroundColor:'rgba(20,46,76,.7)',borderRadius:4},
+        {label:'Mediana',data:Array(v.n).fill(v.medEvFcf),type:'line',borderColor:'#d4621a',borderWidth:2,borderDash:[6,3],pointRadius:0,fill:false}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11,family:'DM Sans'}}}},scales:{y:{beginAtZero:true,ticks:{font:{size:10}}},x:{ticks:{font:{size:10}}}}}
+  });
+
+  // Gráfico 2: Valor intrínseco proyectado
+  const allYears = [...v.years.map(String), ...v.estYears];
+  const histPrice = Array(v.n).fill(null);
+  const projPrice = [...Array(v.n).fill(null), ...v.precioObj.prom];
+  const actualLine = Array(allYears.length).fill(v.price);
+  chartIntrinsic = new Chart(c2, {
+    type:'line',
+    data:{
+      labels: allYears,
+      datasets:[
+        {label:'Precio obj. promedio',data:projPrice,borderColor:'#0d9448',backgroundColor:'rgba(13,148,72,.1)',borderWidth:3,fill:true,tension:.3,pointRadius:4},
+        {label:'Precio actual',data:actualLine,borderColor:'#d4621a',borderWidth:2,borderDash:[6,3],pointRadius:0,fill:false}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11,family:'DM Sans'}}}},scales:{y:{ticks:{font:{size:10}}},x:{ticks:{font:{size:10}}}}}
+  });
+}
+
+/* ════════════════════════════════════════════════
+   LÓGICA DE LA APP (Cartera, Candidatas, etc.)
+   — Igual que la versión actual —
+   ════════════════════════════════════════════════ */
+let D;
+function load(){const s=localStorage.getItem('idc7');if(s)try{D=JSON.parse(s);return}catch(e){}D={c:JSON.parse(JSON.stringify(IC)),p:JSON.parse(JSON.stringify(IP))};}
+function save(){localStorage.setItem('idc7',JSON.stringify(D));}
+function f(n,d){return n==null?'—':Number(n).toLocaleString('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d})}
+
+let cur='resumen';
+function go(v){cur=v;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.v===v));document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));document.getElementById(`v-${v}`).classList.add('on');({resumen:rResumen,valoracion:rValoracion,config:rConfig})[v]?.();window.scrollTo({top:0});}
+
+function rResumen(){
+  const tv=D.c.reduce((s,e)=>s+e.val,0),tp=D.c.reduce((s,e)=>s+e.pnl,0),td=D.c.reduce((s,e)=>s+(e.divs||0),0);
+  const retPct=34.99;const pnlCls=tp>=0?'up':'dn';
+  let h=`<div class="hero-card"><div class="big-l">Valor total cartera</div><div class="big" style="font-size:44px">€${f(tv+2356,0)}</div><div class="hero-sub"><span class="hero-pnl">${tp>=0?'+':''}${f(tp,0)}€</span><span class="hero-badge ${pnlCls}">${retPct>=0?'+':''}${f(retPct,2)}%</span></div><div class="hero-detail">Invertido: ${f(23786,0)}€ · Dividendos netos: ${f(td,0)}€</div></div>
+  <div class="fx-bar"><span class="fx-icon">💱</span><span class="fx-pair">EUR/USD</span> <span class="fx-val">1,16</span><span class="fx-pair">EUR/GBP</span> <span class="fx-val">0,87</span><span class="fx-pair">EUR/CAD</span> <span class="fx-val">1,60</span></div>`;
+  const maxAbs=Math.max(...D.c.map(e=>{const m=METRICS[e.tk];return m?Math.abs(m.rent):0;}),1);
+  h+=`<div class="card perf-card"><div class="card-t">Rendimiento por posición</div>`;
+  D.c.sort((a,b)=>{const ma=METRICS[a.tk],mb=METRICS[b.tk];return(mb?mb.rent:0)-(ma?ma.rent:0);}).forEach(e=>{const m=METRICS[e.tk];if(!m)return;const pct=m.rent,d=pct>=0?'up':'dn',w=Math.max(Math.abs(pct)/maxAbs*100,3);h+=`<div class="perf-row"><span class="perf-tk ${d}">${e.tk}</span><div class="perf-bar-wrap"><div class="perf-bar ${d}" style="width:${w}%"></div></div><span class="perf-pct ${d}">${pct>=0?'+':''}${f(pct,1)}%</span></div>`;});
+  h+=`</div>`;
+  h+=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div class="card-t" style="margin-bottom:0">Posiciones</div><button style="padding:6px 14px;font-size:12px;font-weight:800;font-family:var(--sans);border-radius:8px;border:1.5px solid var(--acc);background:transparent;color:var(--acc);cursor:pointer" onclick="openM('c')">+ Añadir</button></div>`;
+  D.c.sort((a,b)=>b.val-a.val).forEach(e=>{const d=e.pnl>=0?'up':'dn',p=e.cost?((e.pnl/e.cost)*100):0;h+=`<div class="si" onclick="goDetail('${e.tk}','resumen')"><div class="si-row"><div class="si-left"><div class="si-tk">${e.tk} <span style="font-size:13px;color:var(--ink4);font-family:var(--sans);font-weight:700">${e.qty} acc.</span></div><div class="si-nm">${e.nm}</div></div><div class="si-right"><div class="si-price">€${f(e.val,0)}</div><div class="si-pnl ${d}">${e.pnl>=0?'+':''}${f(e.pnl,0)}€ (${p>=0?'+':''}${f(p,1)}%)</div></div><span class="si-arrow">›</span></div><div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"><button style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:800;font-family:var(--sans);border:1.5px solid rgba(224,36,36,.2);background:var(--red-light);color:var(--red);cursor:pointer" onclick="event.stopPropagation();openExitM('${e.tk}')">📤 Gestionar</button></div></div>`;});
+  h+=`</div>`;document.getElementById('v-resumen').innerHTML=h;
+}
+
+function rValoracion(){
+  let h=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><h2 style="font-size:22px;font-weight:900;color:var(--blue)">Valoración IDC</h2><button style="padding:6px 14px;font-size:12px;font-weight:800;font-family:var(--sans);border-radius:8px;border:1.5px solid var(--acc);background:transparent;color:var(--acc);cursor:pointer" onclick="openM('p')">+ Añadir</button></div>`;
+  if(!getFmpKey()) h+=`<div class="card" style="text-align:center;padding:24px;border:2px dashed var(--acc)"><div style="font-size:28px;margin-bottom:8px">🔑</div><div style="font-size:15px;font-weight:700;color:var(--acc)">Configura tu API Key de FMP</div><div style="font-size:13px;color:var(--ink3);margin-top:4px">Ve a Config → FMP API Key</div></div>`;
+
+  // ═══ EN CARTERA ═══
+  h+=`<div class="card"><div class="card-t">En cartera · ${D.c.length}</div>`;
+  D.c.forEach(e=>{
+    const hasSig = e.sig==='buy'||e.sig==='hold'||e.sig==='sell';
+    const sig = e.sig==='buy'?'<span class="badge badge-buy">COMPRAR</span>':e.sig==='hold'?'<span class="badge badge-hold">MANTENER</span>':e.sig==='sell'?'<span class="badge badge-sell">ESPERAR</span>':'';
+    const btn = hasSig
+      ? `<div class="act-row"><button class="act-btn" onclick="event.stopPropagation();startValoracion('${e.tk}','valoracion')">🔄 Valorar de nuevo</button></div>`
+      : `<div class="act-row"><button class="act-btn" style="color:var(--acc);border-color:var(--acc)" onclick="event.stopPropagation();startValoracion('${e.tk}','valoracion')">🎯 Valorar</button></div>`;
+    h+=`<div class="card" style="padding:14px 18px;margin-bottom:8px;box-shadow:none;border:1.5px solid var(--border)">
+      <div class="si-row" style="cursor:pointer" onclick="startValoracion('${e.tk}','valoracion')">
+        <div class="si-left"><div class="si-tk">${e.tk}</div><div class="si-nm">${e.nm}</div></div>
+        <div class="si-right">${sig}${!hasSig?'<span class="badge badge-na">Sin valorar</span>':''}</div>
+        <span class="si-arrow">›</span>
+      </div>${btn}</div>`;
+  });
+  h+=`</div>`;
+
+  // ═══ CANDIDATAS ═══
+  h+=`<div class="card"><div class="card-t">Candidatas · ${D.p.length}</div>`;
+  D.p.forEach(e=>{
+    const hasSig = e.sig==='buy'||e.sig==='hold'||e.sig==='sell';
+    const sig = e.sig==='buy'?'<span class="badge badge-buy">COMPRAR</span>':e.sig==='hold'?'<span class="badge badge-hold">MANTENER</span>':e.sig==='sell'?'<span class="badge badge-sell">ESPERAR</span>':'';
+    const btn1 = hasSig
+      ? `<button class="act-btn" onclick="event.stopPropagation();startValoracion('${e.tk}','valoracion')">🔄 Valorar de nuevo</button>`
+      : `<button class="act-btn" style="color:var(--acc);border-color:var(--acc)" onclick="event.stopPropagation();startValoracion('${e.tk}','valoracion')">🎯 Valorar</button>`;
+    h+=`<div class="card" style="padding:14px 18px;margin-bottom:8px;box-shadow:none;border:1.5px solid var(--border)">
+      <div class="si-row" style="cursor:pointer" onclick="startValoracion('${e.tk}','valoracion')">
+        <div class="si-left"><div class="si-tk">${e.tk}</div><div class="si-nm">${e.nm} · ${e.ex||''}</div></div>
+        <div class="si-right">${sig}${!hasSig?'<span class="badge badge-na">Sin valorar</span>':''}</div>
+        <span class="si-arrow">›</span>
+      </div>
+      <div class="act-row">${btn1}<button class="act-btn grn" onclick="event.stopPropagation();mv('${e.tk}','p','c')">← Cartera</button><button class="act-btn rd" onclick="event.stopPropagation();del('${e.tk}','p')">✕</button></div>
+    </div>`;
+  });
+  h+=`</div>`;
+
+  document.getElementById('v-valoracion').innerHTML=h;
+}
+
+// ═══ INICIAR VALORACIÓN ═══
+async function startValoracion(tk, backTo){
+  const key = getFmpKey();
+  if(!key){ toast('⚠️ Introduce tu API Key en Config'); go('config'); return; }
+
+  const el = document.getElementById('v-valoracion');
+  el.innerHTML = `<div class="loader-wrap"><div class="loader"></div><div class="loader-txt">Analizando ${tk}...<br>Descargando datos de FMP</div></div>`;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  el.classList.add('on');
+
+  try {
+    const data = await fetchAllFmpData(tk);
+    if(!data.is || !data.is.length) throw new Error('Sin datos financieros');
+    const v = calcIDC(data);
+
+    // Guardar señal en la empresa
+    const item = [...D.c,...D.p].find(e=>e.tk===tk);
+    if(item){ item.sig = v.signal; save(); }
+
+    renderValoracionIDC(v, el, backTo);
+  } catch(err) {
+    let msg = 'Error al obtener datos';
+    if(err.message==='NO_KEY') msg='Introduce tu API Key de FMP en Config';
+    else if(err.message.includes('403')) msg='API Key inválida o sin permisos';
+    else if(err.message.includes('429')) msg='Límite de peticiones alcanzado (250/día)';
+    else if(err.message.includes('Sin datos')) msg=`${tk}: sin datos financieros en FMP (¿empresa no-US?)`;
+    el.innerHTML=`<button class="det-back" onclick="go('${backTo}')">← Volver</button><div class="card" style="text-align:center;padding:40px 20px"><div style="font-size:40px;margin-bottom:12px">⚠️</div><div style="font-size:17px;font-weight:800;color:var(--red);margin-bottom:8px">${msg}</div><div style="font-size:13px;color:var(--ink3)">${err.message}</div></div>`;
+  }
+}
+
+function rConfig(){
+  const savedKey = getFmpKey();
+  const claudeKey = getClaudeKey();
+  const brokerData = getBrokerTariffs();
+  const hasBroker = brokerData && Object.keys(brokerData).length > 0;
+
+  let brokerHtml = '';
+  if(hasBroker){
+    brokerHtml = `<div class="broker-status ok">✅ Tarifas del broker cargadas</div><div class="broker-tariff">`;
+    for(const [k,v] of Object.entries(brokerData)){
+      brokerHtml += `<div class="bt-row"><span class="bt-label">${k}</span><span class="bt-value">${v}</span></div>`;
+    }
+    brokerHtml += `</div><button onclick="localStorage.removeItem('brokerTariffs');toast('Tarifas eliminadas');rConfig()" style="margin-top:10px;padding:10px;border:1px solid var(--red-bg);border-radius:10px;background:var(--red-bg);color:var(--red);font-size:12px;font-weight:700;font-family:var(--sans);cursor:pointer;width:100%">🗑️ Borrar tarifas</button>`;
+  } else {
+    brokerHtml = `<div class="broker-status empty">📄 Sin documentación — sube el contrato de tarifas</div>`;
+  }
+
+  document.getElementById('v-config').innerHTML=`<h2 style="font-size:22px;font-weight:900;color:var(--blue);margin-bottom:14px">Configuración</h2>
+  <div class="card"><div class="card-t">🔑 Conexiones</div>
+    <div style="font-size:12px;color:var(--ink3);margin-bottom:12px;line-height:1.5"><b>FMP</b> — Datos financieros de empresas (precios, balances, ratios). Gratis hasta 250 consultas/día.</div>
+    <div class="fld"><label>Clave FMP (datos financieros)</label><input id="cfg-fmp" value="${savedKey}" placeholder="Tu clave de financialmodelingprep.com" style="width:100%;padding:14px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;font-size:15px"></div>
+    <button onclick="setFmpKey(document.getElementById('cfg-fmp').value.trim());toast('✅ Clave FMP guardada')" style="width:100%;padding:14px;border:none;border-radius:12px;background:var(--acc);color:#fff;font-family:var(--sans);font-size:15px;font-weight:800;cursor:pointer;margin-top:4px">Guardar clave FMP</button>
+    ${savedKey?'<div style="margin-top:8px;font-size:12px;color:var(--green);font-weight:700">✅ Conectado</div>':''}
+    <div style="margin-top:14px;border-top:1.5px solid var(--border);padding-top:14px">
+    <div style="font-size:12px;color:var(--ink3);margin-bottom:12px;line-height:1.5"><b>Claude IA</b> — Lectura automática de documentos: capturas de compras del broker, contratos de tarifas, etc. <b>Opcional</b> — sin ella puedes meter los datos a mano.</div>
+    <div class="fld"><label>Clave Claude IA (lectura de documentos)</label><input id="cfg-claude" value="${claudeKey}" placeholder="sk-ant-..." style="width:100%;padding:14px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;font-size:15px" type="password"></div>
+    <button onclick="setClaudeKey(document.getElementById('cfg-claude').value.trim());toast('✅ Clave Claude guardada')" style="width:100%;padding:14px;border:none;border-radius:12px;background:#142e4c;color:#fff;font-family:var(--sans);font-size:15px;font-weight:800;cursor:pointer;margin-top:4px">Guardar clave Claude</button>
+    ${claudeKey?'<div style="margin-top:8px;font-size:12px;color:var(--green);font-weight:700">✅ Conectado</div>':''}
+    </div>
+  </div>
+
+  <div class="card"><div class="card-t">📋 Tarifas del broker</div>
+    <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;line-height:1.5">Sube el contrato o captura de tarifas de Interactive Brokers (o tu broker). La IA leerá el documento y extraerá las comisiones automáticamente.</div>
+    <div class="upload-zone" id="broker-upload-zone">
+      📄 Subir contrato de tarifas
+      <div style="font-size:11px;color:var(--ink4);margin-top:4px">PDF · Foto · Captura de pantalla</div>
+      <input type="file" accept=".pdf,image/*,.txt,.jpg,.jpeg,.png" id="broker-file-input" onchange="handleBrokerUpload(event)">
+    </div>
+    ${brokerHtml}
+  </div>
+
+  <div class="card"><div class="card-t">📊 Informe del broker</div>
+    <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;line-height:1.5">Sube el informe de Interactive Brokers (PDF de PortfolioAnalyst, extracto de actividad, o captura de posiciones). La IA leerá el documento y <b>actualizará todas tus posiciones</b> al céntimo: precio medio, P&L, dividendos, comisiones, tipos de cambio.</div>
+    <div class="upload-zone" id="ibkr-upload-zone">
+      📊 Subir informe IBKR
+      <div style="font-size:11px;color:var(--ink4);margin-top:4px">PDF · Imagen · Captura de pantalla</div>
+      <input type="file" accept=".pdf,image/*,.jpg,.jpeg,.png" id="ibkr-file-input" onchange="handleIbkrReport(event)">
+    </div>
+    <div id="ibkr-status"></div>
+  </div>
+
+  <div class="card"><div class="card-t">💾 Tus datos</div>
+    <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;line-height:1.5">Exporta una copia de todos tus datos (posiciones, compras, dividendos, valoraciones, claves). Impórtalos en una versión nueva para no perder nada.</div>
+    <button onclick="exportData()" style="width:100%;padding:16px;border:1.5px solid var(--green);border-radius:14px;background:var(--green-light);font-family:var(--sans);font-size:15px;font-weight:800;color:var(--green);cursor:pointer;margin-bottom:8px">📥 Exportar mis datos (JSON)</button>
+    <div style="position:relative">
+      <button onclick="document.getElementById('import-file').click()" style="width:100%;padding:16px;border:1.5px solid var(--blue);border-radius:14px;background:#eef6ff;font-family:var(--sans);font-size:15px;font-weight:800;color:var(--blue);cursor:pointer">📤 Importar datos de versión anterior</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+    </div>
+  </div>
+  <div class="card"><button onclick="if(confirm('¿Borrar todos los datos y restaurar la app a su estado inicial?')){localStorage.removeItem('idc7');location.reload()}" style="width:100%;padding:16px;border:1.5px solid var(--red-bg);border-radius:14px;background:var(--red-bg);font-family:var(--sans);font-size:15px;font-weight:700;color:var(--red);cursor:pointer">🔄 Restaurar datos originales</button></div>`;
+}
+
+// ═══ DETAIL VIEW (Cartera) — sin cambios ═══
+function goDetail(tk,from){
+  const item=[...D.c,...D.p].find(e=>e.tk===tk);if(!item)return;const inC=D.c.some(e=>e.tk===tk);const el=document.getElementById('v-valoracion');
+  const backTo=from||'resumen';const m=METRICS[tk]||null;const buys=BUYS[tk]||[];const divs=DIVS[tk]||[];
+  const cls=v=>v>=0?'up':'dn';const sg=v=>v>=0?'+':'';
+
+  let h=`<button class="det-back" onclick="go('${backTo}')">← Volver</button><div style="margin-bottom:20px"><div class="det-tk">${item.tk}</div><div class="det-nm">${item.nm}</div><div class="det-tags"><span class="det-tag">${item.ex}</span><span class="det-tag">${m?m.sector:(item.sec||'—')}</span>${inC?`<span class="det-tag acc">En cartera · ${item.qty} acc.</span>`:'<span class="det-tag">Candidata</span>'}</div>`;
+  if(inC&&m){
+    h+=`<div style="margin-top:16px"><span style="font-family:var(--mono);font-size:40px;font-weight:500;color:var(--ink)">${f(m.valMerc,2)}</span> <span style="font-size:16px;color:var(--ink3)">€</span></div>`;
+    h+=`<div style="font-size:13px;color:var(--ink3);margin-top:4px">${m.nAcc} acciones · Peso ${item.w}% · <span class="${cls(m.plNR)}" style="font-weight:700;font-family:var(--mono)">${sg(m.plNR)}${f(m.plNR,2)}€</span></div></div>`;
+    h+=`<div class="price-cmp"><div class="price-cmp-box"><div class="pcl">Precio medio compra</div><div class="pcv">${m.pMedio}</div></div><div class="price-cmp-box"><div class="pcl">Cotización actual</div><div class="pcv ${cls(m.varP)}">${m.pActual}</div></div></div>`;
+    h+=`<div class="dtabs"><div class="dtab on" onclick="dtGo('res','${tk}')">Resumen</div><div class="dtab" onclick="dtGo('comp','${tk}')">Compras</div><div class="dtab" onclick="dtGo('div','${tk}')">Dividendos</div></div>`;
+    h+=`<div class="dpanel on" id="dp-res"><div class="card" style="padding:18px 20px"><div class="card-t">Métricas</div>`;
+    h+=`<div class="mrow"><span class="mrow-l">Coste total</span><span class="mrow-v">${f(m.costTotal,2)}€</span></div>`;
+    h+=`<div class="mrow"><span class="mrow-l">Valor mercado</span><span class="mrow-v">${f(m.valMerc,2)}€</span></div>`;
+    h+=`<div class="mrow"><span class="mrow-l">P/L no realizado</span><span class="mrow-v ${cls(m.plNR)}">${sg(m.plNR)}${f(m.plNR,2)}€</span></div>`;
+    h+=`<div class="mrow"><span class="mrow-l">Rentabilidad</span><span class="mrow-v ${cls(m.rent)}">${sg(m.rent)}${f(m.rent,2)}%</span></div>`;
+    h+=`<div class="mrow"><span class="mrow-l">Precio medio (${m.divisa})</span><span class="mrow-v">${m.pMedio}</span></div>`;
+    h+=`<div class="mrow"><span class="mrow-l">Cotización (${m.divisa})</span><span class="mrow-v">${m.pActual}</span></div>`;
+    h+=`<div class="mrow"><span class="mrow-l">Var. precio</span><span class="mrow-v ${cls(m.varP)}">${sg(m.varP)}${f(m.varP,2)}%</span></div>`;
+    h+=`<div class="mrow"><span class="mrow-l">Nº acciones</span><span class="mrow-v">${m.nAcc}</span></div>`;
+    h+=`<div class="mrow"><span class="mrow-l">Sector</span><span class="mrow-v" style="font-family:var(--sans)">${m.sector}</span></div>`;
+    h+=`<div class="mrow"><span class="mrow-l">Divisa</span><span class="mrow-v" style="font-family:var(--sans)">${m.divisa}</span></div>`;
+    h+=`</div></div>`;
+    h+=`<div class="dpanel" id="dp-comp"><div class="card" style="padding:16px 10px;overflow-x:auto">`;
+    if(buys.length){h+=`<table class="dtbl"><thead><tr><th>Fecha</th><th>Acc.</th><th>Precio</th><th>Coste €</th><th>Valor €</th><th>P/L €</th><th>%</th></tr></thead><tbody>`;buys.forEach(b=>{const plCls=b.pl.startsWith('+')?'up':'dn';const pctCls=b.pct.startsWith('+')?'up':'dn';h+=`<tr><td>${b.d}</td><td>${b.q}</td><td>${b.p}</td><td>${b.e}</td><td>${b.va}</td><td class="${plCls}">${b.pl}</td><td class="${pctCls}">${b.pct}</td></tr>`;});h+=`<tr class="trow"><td>TOTAL</td><td>${item.qty}</td><td>—</td><td>${f(m.costTotal,2)}</td><td>${f(m.valMerc,2)}</td><td class="${cls(m.plNR)}">${sg(m.plNR)}${f(m.plNR,2)}</td><td class="${cls(m.rent)}">${sg(m.rent)}${f(m.rent,1)}%</td></tr></tbody></table>`;}else{h+=`<div style="text-align:center;padding:30px 10px;color:var(--ink4)">Sin datos de compras</div>`;}
+    h+=`</div></div>`;
+    h+=`<div class="dpanel" id="dp-div"><div class="card" style="padding:16px 14px;overflow-x:auto">`;
+    if(divs.length){const totB=divs.reduce((s,d)=>s+d.bruto,0),totR=divs.reduce((s,d)=>s+d.ret,0),totN=divs.reduce((s,d)=>s+d.neto,0);h+=`<table class="dtbl"><thead><tr><th>Fecha</th><th>Bruto €</th><th>Retención €</th><th>Neto €</th></tr></thead><tbody>`;divs.forEach(d=>{h+=`<tr><td>${d.d}</td><td>${f(d.bruto,2)}</td><td>-${f(d.ret,2)}</td><td>${f(d.neto,2)}</td></tr>`;});h+=`<tr class="trow"><td>TOTAL</td><td>${f(totB,2)}</td><td>-${f(totR,2)}</td><td>${f(totN,2)}</td></tr></tbody></table>`;}else{h+=`<div style="text-align:center;padding:30px 10px;color:var(--ink4)">Sin dividendos cobrados</div>`;}
+    h+=`</div></div>`;
+    h+=`<div style="margin-top:18px"><button style="width:100%;padding:16px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--red),#f56565);color:#fff;font-family:var(--sans);font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(224,36,36,.3)" onclick="openExitM('${tk}')">📤 Gestionar posición</button></div>`;
+  }else{h+=`<div style="margin-top:14px"><span style="font-family:var(--mono);font-size:34px;font-weight:500">${f(item.pr,2)}</span> <span style="font-size:15px;color:var(--ink3)">${item.cur||''}</span></div></div>`;}
+  el.innerHTML=h;document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));el.classList.add('on');document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.v==='valoracion'));window.scrollTo({top:0});
+}
+function dtGo(tab){document.querySelectorAll('.dtab').forEach((t,i)=>t.classList.toggle('on',['res','comp','div'][i]===tab));document.querySelectorAll('.dpanel').forEach(p=>p.classList.remove('on'));const p=document.getElementById('dp-'+tab);if(p)p.classList.add('on');}
+
+function mv(tk,fr,to){
+  if(fr==='p' && to==='c'){
+    // Candidata → Cartera: abrir modal de compra
+    openBuyM(tk);
+    return;
+  }
+  // Cartera → Candidatas: abrir modal de salida
+  if(fr==='c' && to==='p'){
+    openExitM(tk);
+    return;
+  }
+  // Fallback directo (no debería llegar aquí)
+  const s=fr==='c'?D.c:D.p,d=to==='c'?D.c:D.p;const i=s.findIndex(e=>e.tk===tk);if(i<0)return;const[it]=s.splice(i,1);if(to==='c'&&!it.qty){it.qty=0;it.avg=it.pr;it.cost=0;it.val=0;it.pnl=0;it.w=0;it.divs=0;}d.push(it);save();updC();go(cur);toast(`${tk} → ${to==='c'?'Cartera':'Candidatas'}`);
+}
+function del(tk,l){if(!confirm(`¿Eliminar ${tk}?`))return;const a=l==='c'?D.c:D.p;const i=a.findIndex(e=>e.tk===tk);if(i>=0)a.splice(i,1);save();updC();go(cur);toast(`${tk} eliminado`);}
+function updC(){document.getElementById('nc1').textContent=D.c.length;document.getElementById('nc2').textContent=D.c.length+D.p.length;}
+let mT='c';function openM(t){mT=t;document.getElementById('m-title').textContent=t==='c'?'Añadir a Cartera':'Añadir candidata';document.getElementById('fld-q').style.display=t==='c'?'':'none';document.getElementById('fld-a').style.display=t==='c'?'':'none';document.getElementById('modal').classList.add('open');}
+function closeM(){document.getElementById('modal').classList.remove('open');['m-tk','m-nm','m-ex','m-sc','m-pr','m-q','m-av'].forEach(id=>document.getElementById(id).value='');}
+function addIt(){const tk=document.getElementById('m-tk').value.trim().toUpperCase();if(!tk)return alert('Ticker');if([...D.c,...D.p].find(e=>e.tk===tk))return alert(`${tk} ya existe`);const pr=parseFloat(document.getElementById('m-pr').value)||0;const it={tk,nm:document.getElementById('m-nm').value.trim()||tk,ex:document.getElementById('m-ex').value.trim()||'—',sec:document.getElementById('m-sc').value.trim()||'—',pr,sig:null};if(mT==='c'){it.qty=parseInt(document.getElementById('m-q').value)||0;it.avg=parseFloat(document.getElementById('m-av').value)||pr;it.cost=it.qty*it.avg;it.val=it.qty*pr;it.pnl=it.val-it.cost;it.w=0;it.divs=0;it.cur='USD';}else{it.chg=0;it.pct=0;}(mT==='c'?D.c:D.p).push(it);closeM();save();updC();go(cur);toast(`${tk} añadido`);}
+let _toastTimer=null;
+function toast(m){
+  const t=document.getElementById('toast');
+  t.textContent=m;
+  t.style.transform='translateX(-50%) translateY(0)';
+  t.style.opacity='1';
+  t.style.visibility='visible';
+  if(_toastTimer){clearTimeout(_toastTimer);_toastTimer=null;}
+  _toastTimer=setTimeout(function(){
+    t.style.transform='translateX(-50%) translateY(50px)';
+    t.style.opacity='0';
+    setTimeout(function(){t.style.visibility='hidden';},350);
+    _toastTimer=null;
+  },3000);
+  t.onclick=function(){
+    if(_toastTimer){clearTimeout(_toastTimer);_toastTimer=null;}
+    t.style.transform='translateX(-50%) translateY(50px)';
+    t.style.opacity='0';
+    setTimeout(function(){t.style.visibility='hidden';},350);
+  };
+}
+
+/* ════════════════════════════════════════════════
+   TIPOS DE CAMBIO AUTOMÁTICOS
+   ════════════════════════════════════════════════ */
+const FX_RATES = { USD:1.17, GBP:0.86, CAD:1.60, EUR:1.00 }; // EUR/X al 28/04/2026
+function getFx(cur){ return FX_RATES[cur] || 1; }
+function toEur(amount, cur){ const fx=getFx(cur); return cur==='EUR' ? amount : amount / fx; }
+
+/* ════════════════════════════════════════════════
+   CLAUDE API — Lectura de documentos
+   ════════════════════════════════════════════════ */
+function getClaudeKey(){ return localStorage.getItem('claudeKey')||''; }
+function setClaudeKey(k){ localStorage.setItem('claudeKey',k); }
+function getBrokerTariffs(){ try{return JSON.parse(localStorage.getItem('brokerTariffs'))||null;}catch(e){return null;} }
+function setBrokerTariffs(data){ localStorage.setItem('brokerTariffs',JSON.stringify(data)); }
+
+async function callClaudeVision(base64Data, mediaType, prompt){
+  const key = getClaudeKey();
+  if(!key) throw new Error('NO_CLAUDE_KEY');
+  const body = {
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 1500,
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64Data } },
+        { type: 'text', text: prompt }
+      ]
+    }]
+  };
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+    body: JSON.stringify(body)
+  });
+  if(!r.ok){ const t=await r.text().catch(()=>''); throw new Error(`Claude API ${r.status}: ${t.slice(0,300)}`); }
+  const data = await r.json();
+  return data.content.map(c=>c.text||'').join('');
+}
+
+async function callClaudeText(textContent, prompt){
+  const key = getClaudeKey();
+  if(!key) throw new Error('NO_CLAUDE_KEY');
+  const body = {
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 1500,
+    messages: [{
+      role: 'user',
+      content: prompt + '\n\n--- DOCUMENTO ---\n' + textContent.slice(0, 15000)
+    }]
+  };
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+    body: JSON.stringify(body)
+  });
+  if(!r.ok){ const t=await r.text().catch(()=>''); throw new Error(`Claude API ${r.status}: ${t.slice(0,300)}`); }
+  const data = await r.json();
+  return data.content.map(c=>c.text||'').join('');
+}
+
+function parseClaudeJsonResponse(responseText){
+  const raw = String(responseText || '').trim();
+  if(!raw) throw new Error('Claude devolvió una respuesta vacía');
+
+  const clean = raw.replace(/```json|```/gi, '').trim();
+
+  try {
+    return JSON.parse(clean);
+  } catch(_) {
+    const match = clean.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+    if(match){
+      try {
+        return JSON.parse(match[0]);
+      } catch(_) {}
+    }
+  }
+
+  throw new Error('Claude no devolvió JSON válido');
+}
+
+function fileToBase64(file){
+  return new Promise((res,rej)=>{
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = () => rej(new Error('Error leyendo archivo'));
+    r.readAsDataURL(file);
+  });
+}
+
+/* ════════════════════════════════════════════════
+   SUBIR DOCUMENTACIÓN BROKER (Config)
+   ════════════════════════════════════════════════ */
+async function handleBrokerUpload(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const claudeKey = getClaudeKey();
+  if(!claudeKey){ toast('⚠️ Para leer documentos, añade la clave Claude en Config'); return; }
+
+  const zone = document.getElementById('broker-upload-zone');
+  zone.classList.add('processing');
+  zone.querySelector('input').disabled = true;
+  const origText = zone.childNodes[0].textContent;
+  zone.childNodes[0].textContent = '⏳ Analizando documento...';
+
+  const BROKER_PROMPT = `Analiza este documento de un broker de inversión (Interactive Brokers u otro).
+Extrae TODAS las tarifas y comisiones que encuentres. Responde SOLO con un JSON válido (sin markdown, sin backticks) con esta estructura exacta:
+{
+  "Comisión compra/venta acciones US": "valor",
+  "Comisión compra/venta acciones EU": "valor",
+  "Comisión compra/venta acciones UK": "valor",
+  "Comisión cambio divisa": "valor",
+  "Custodia mensual": "valor",
+  "Comisión inactividad": "valor",
+  "Comisión retiro": "valor",
+  "Otros gastos": "valor"
+}
+Si un campo no aparece en el documento, pon "No especificado". Si encuentras tarifas adicionales no listadas, añádelas como nuevas claves. Valores siempre con moneda (€, $, %, etc).`;
+
+  try {
+    let response;
+    if(file.type.startsWith('image/')){
+      const b64 = await fileToBase64(file);
+      response = await callClaudeVision(b64, file.type, BROKER_PROMPT);
+    } else if(file.type === 'application/pdf'){
+      // Para PDF convertimos la primera página a imagen via canvas
+      // Alternativa: leer como texto si es PDF con texto
+      const b64 = await fileToBase64(file);
+      response = await callClaudeVision(b64, 'application/pdf', BROKER_PROMPT);
+    } else {
+      // TXT
+      const text = await file.text();
+      response = await callClaudeText(text, BROKER_PROMPT);
+    }
+
+    // Parsear JSON de la respuesta
+    const tariffs = parseClaudeJsonResponse(response);
+    setBrokerTariffs(tariffs);
+    toast('✅ Tarifas del broker extraídas correctamente');
+    rConfig(); // re-renderizar config
+  } catch(err){
+    console.error('Broker upload error:', err);
+    if(err.message.includes('NO_CLAUDE_KEY')){
+      toast('⚠️ Clave Claude necesaria — ve a Config');
+    } else if(err.message.includes('401')){
+      toast('❌ Claude API Key inválida');
+    } else {
+      toast('❌ Error analizando documento: ' + err.message.slice(0,80));
+    }
+    zone.classList.remove('processing');
+    zone.childNodes[0].textContent = origText;
+    zone.querySelector('input').disabled = false;
+  }
+  event.target.value = '';
+}
+
+/* ════════════════════════════════════════════════
+   LEER CAPTURA COMISIÓN POR OPERACIÓN
+   ════════════════════════════════════════════════ */
+async function readCommissionCapture(event, context){
+  const file = event.target.files[0];
+  if(!file) return;
+  const claudeKey = getClaudeKey();
+  if(!claudeKey){ toast('⚠️ Configura la clave Claude en Config para leer capturas'); return; }
+
+  const btn = document.getElementById(context+'-attach-btn');
+  const textEl = document.getElementById(context+'-attach-text');
+  btn.classList.remove('done');
+  btn.classList.add('reading');
+  textEl.textContent = '⏳ Leyendo comisión...';
+
+  const COMM_PROMPT = `Analiza esta imagen/documento de una operación de compra/venta de acciones de un broker.
+Extrae SOLO el importe total de comisiones/fees/gastos del broker para esta operación.
+Responde SOLO con un JSON válido (sin markdown, sin backticks):
+{"comision_eur": 1.23, "detalle": "breve descripción"}
+El valor comision_eur debe ser un número en euros. Si el importe está en otra divisa, conviértelo a EUR aproximadamente.
+Si no encuentras comisión clara, pon {"comision_eur": 0, "detalle": "No se pudo detectar comisión"}.`;
+
+  try {
+    let response;
+    if(file.type.startsWith('image/')){
+      const b64 = await fileToBase64(file);
+      response = await callClaudeVision(b64, file.type, COMM_PROMPT);
+    } else {
+      const text = await file.text();
+      response = await callClaudeText(text, COMM_PROMPT);
+    }
+
+    const result = parseClaudeJsonResponse(response);
+
+    // Auto-rellenar campo comisión
+    const commField = document.getElementById(context==='sell'?'sell-comms':context==='addbuy'?'addbuy-comm':'buy-comm');
+    if(commField && result.comision_eur != null){
+      commField.value = result.comision_eur.toFixed(2);
+      // Trigger recalc si aplica
+      commField.dispatchEvent(new Event('input'));
+    }
+
+    btn.classList.remove('reading');
+    btn.classList.add('done');
+    textEl.textContent = `✅ ${result.comision_eur.toFixed(2)}€ — ${result.detalle||'Comisión detectada'}`;
+    toast(`✅ Comisión detectada: ${result.comision_eur.toFixed(2)}€`);
+  } catch(err){
+    console.error('Commission read error:', err);
+    btn.classList.remove('reading');
+    textEl.textContent = '📎 Adjuntar captura de comisión';
+    if(err.message.includes('NO_CLAUDE_KEY')){
+      toast('⚠️ Configura la clave Claude en Config para leer capturas');
+    } else {
+      toast('❌ Error leyendo captura: ' + err.message.slice(0,80));
+    }
+  }
+  event.target.value = '';
+}
+
+/* ════════════════════════════════════════════════
+   LEER CAPTURA COMPLETA DE OPERACIÓN DEL BROKER
+   Extrae: fecha, acciones, precio, comisión, divisa
+   ════════════════════════════════════════════════ */
+async function readTradeCapture(event, tk, targetPrefix){
+  const file = event.target.files[0];
+  if(!file) return;
+  const claudeKey = getClaudeKey();
+  if(!claudeKey){ toast('⚠️ Configura la clave Claude en Config para leer capturas'); return; }
+
+  const btn = document.getElementById(
+    targetPrefix==='buy' ? 'buy-trade-btn' : targetPrefix+'-attach-btn'
+  );
+  const textEl = document.getElementById(
+    targetPrefix==='buy' ? 'buy-trade-text' : targetPrefix+'-attach-text'
+  );
+  if(btn) { btn.classList.remove('done'); btn.classList.add('reading'); }
+  if(textEl) textEl.textContent = '⏳ Leyendo datos de la operación...';
+
+  const TRADE_PROMPT = `Analiza esta imagen/captura de pantalla de una operación de compra o venta de acciones en un broker (probablemente Interactive Brokers).
+Extrae TODOS los datos que puedas de la operación.
+Responde SOLO con un JSON válido (sin markdown, sin backticks, sin explicaciones):
+{
+  "tipo": "compra o venta",
+  "ticker": "AAPL",
+  "fecha": "2026-01-15",
+  "num_acciones": 10,
+  "precio_unitario": 185.50,
+  "divisa": "USD",
+  "comision_eur": 1.23,
+  "comision_original": "1.50 USD",
+  "importe_total_original": 1856.23,
+  "tipo_cambio": 1.08,
+  "notas": "cualquier dato adicional"
+}
+Si algún campo no está claro, pon null. comision_eur = comisión en euros. Tipos de cambio aprox: EUR/USD≈1.16, EUR/GBP≈0.87, EUR/CAD≈1.60.`;
+
+  try {
+    let response;
+    if(file.type.startsWith('image/')){
+      const b64 = await fileToBase64(file);
+      response = await callClaudeVision(b64, file.type, TRADE_PROMPT);
+    } else {
+      const text = await file.text();
+      response = await callClaudeText(text, TRADE_PROMPT);
+    }
+
+    const result = parseClaudeJsonResponse(response);
+
+    if(btn) { btn.classList.remove('reading'); btn.classList.add('done'); }
+
+    let summary = [];
+    if(result.fecha) summary.push(result.fecha);
+    if(result.num_acciones) summary.push(result.num_acciones+' acc.');
+    if(result.precio_unitario) summary.push(result.precio_unitario+' '+(result.divisa||''));
+    if(result.comision_eur!=null) summary.push('Com: '+result.comision_eur.toFixed(2)+'€');
+    if(textEl) textEl.textContent = '✅ ' + (summary.length ? summary.join(' · ') : 'Datos detectados');
+
+    window._lastTradeCapture = result;
+
+    // Auto-rellenar campos del modal de compra si existen
+    const dateEl = document.getElementById(targetPrefix+'-date');
+    const qtyEl = document.getElementById(targetPrefix+'-qty');
+    const priceEl = document.getElementById(targetPrefix+'-price');
+    const commEl = document.getElementById(
+      targetPrefix==='buy' ? 'buy-comm' :
+      targetPrefix==='addbuy' ? 'addbuy-comm' :
+      'sell-comms'
+    );
+    if(dateEl && result.fecha) dateEl.value = result.fecha;
+    if(qtyEl && result.num_acciones) qtyEl.value = result.num_acciones;
+    if(priceEl && result.precio_unitario) priceEl.value = result.precio_unitario;
+    if(commEl && result.comision_eur!=null) commEl.value = result.comision_eur.toFixed(2);
+    // Trigger recalc
+    if(qtyEl) qtyEl.dispatchEvent(new Event('input'));
+
+    toast('✅ Datos detectados: ' + summary.join(' · '));
+  } catch(err){
+    console.error('Trade capture error:', err);
+    if(btn) btn.classList.remove('reading');
+    if(textEl) textEl.textContent = '📎 Subir captura de la operación';
+    toast('❌ Error leyendo: ' + err.message.slice(0,60));
+  }
+  event.target.value = '';
+}
+
+/* ════════════════════════════════════════════════
+   MODAL 1: ENTRADA A CARTERA (Candidata → Cartera)
+   ════════════════════════════════════════════════ */
+let _buyTk = null;
+function openBuyM(tk){
+  const item = D.p.find(e=>e.tk===tk);
+  if(!item) return;
+  _buyTk = tk;
+  const cur = item.cur || 'USD';
+  document.getElementById('buy-tk-label').textContent = `${tk} — ${item.nm}`;
+  document.getElementById('buy-cur-label').textContent = cur;
+  document.getElementById('buy-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('buy-qty').value = '';
+  document.getElementById('buy-price').value = item.pr ? item.pr.toFixed(2) : '';
+  document.getElementById('buy-calc').style.display = 'none';
+  document.getElementById('modal-buy').classList.add('open');
+  // Auto-calc on input
+  ['buy-qty','buy-price','buy-comm'].forEach(id=>{
+    document.getElementById(id).oninput = ()=>calcBuyTotal(cur);
+  });
+  calcBuyTotal(cur);
+}
+function calcBuyTotal(cur){
+  const qty = parseFloat(document.getElementById('buy-qty').value)||0;
+  const pr = parseFloat(document.getElementById('buy-price').value)||0;
+  const comm = parseFloat(document.getElementById('buy-comm').value)||0;
+  const calc = document.getElementById('buy-calc');
+  if(qty>0 && pr>0){
+    const fx = getFx(cur);
+    const costLocal = qty * pr;
+    const costEur = toEur(costLocal, cur) + comm;
+    document.getElementById('buy-fx').textContent = cur==='EUR' ? '1,00' : fx.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:4});
+    document.getElementById('buy-total').textContent = costEur.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2}) + '€';
+    calc.style.display = 'flex';
+  } else {
+    calc.style.display = 'none';
+  }
+}
+function closeBuyM(){
+  _buyTk = null;
+  document.getElementById('modal-buy').classList.remove('open');
+}
+function confirmBuy(){
+  if(!_buyTk) return;
+  const tk = _buyTk;
+  const item = D.p.find(e=>e.tk===tk);
+  if(!item) return;
+  const date = document.getElementById('buy-date').value;
+  const qty = parseInt(document.getElementById('buy-qty').value);
+  const pr = parseFloat(document.getElementById('buy-price').value);
+  const comm = parseFloat(document.getElementById('buy-comm').value)||0;
+  if(!date) return alert('Introduce la fecha de compra');
+  if(!qty || qty<=0) return alert('Introduce el nº de acciones');
+  if(!pr || pr<=0) return alert('Introduce el precio de compra');
+
+  const cur = item.cur || 'USD';
+  const costLocal = qty * pr;
+  const costEur = toEur(costLocal, cur) + comm; // comisión incluida
+  const fx = getFx(cur);
+
+  // Mover de candidatas a cartera con datos reales
+  const idx = D.p.findIndex(e=>e.tk===tk);
+  if(idx<0) return;
+  const [moved] = D.p.splice(idx, 1);
+  moved.qty = qty;
+  moved.avg = pr;
+  moved.cost = Math.round(costEur);
+  moved.val = Math.round(toEur(qty * (moved.pr||pr), cur));
+  moved.pnl = moved.val - moved.cost;
+  moved.w = 0;
+  moved.divs = 0;
+  moved.cur = cur;
+  D.c.push(moved);
+
+  // Registrar en BUYS
+  if(!BUYS[tk]) BUYS[tk] = [];
+  const curSym = cur==='GBP'?'£':cur==='CAD'?'C$':cur==='EUR'?'€':'$';
+  BUYS[tk].push({
+    d: date,
+    q: qty,
+    p: curSym + pr.toLocaleString('es-ES',{minimumFractionDigits:2}),
+    e: costEur.toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:0}),
+    va: moved.val.toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:0}),
+    pl: (moved.pnl>=0?'+':'')+moved.pnl.toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:0}),
+    pct: (moved.pnl>=0?'+':'')+(moved.cost?((moved.pnl/moved.cost)*100).toFixed(1):'0.0')+'%'
+  });
+
+  // Registrar en METRICS
+  const m = METRICS[tk];
+  if(!m){
+    METRICS[tk] = {
+      costTotal:costEur, valMerc:moved.val, plNR:moved.pnl,
+      rent: moved.cost ? (moved.pnl/moved.cost)*100 : 0,
+      pMedio: curSym+pr.toLocaleString('es-ES',{minimumFractionDigits:2}),
+      pActual: curSym+(moved.pr||pr).toLocaleString('es-ES',{minimumFractionDigits:2}),
+      varP: moved.pr && pr ? ((moved.pr-pr)/pr)*100 : 0,
+      nAcc:qty, sector:moved.sec||'—', divisa:cur,
+      tcambio:fx.toLocaleString('es-ES',{minimumFractionDigits:2}), curSym
+    };
+  }
+
+  save();
+  closeBuyM();
+  updC();
+  go(cur=='resumen'?'resumen':cur);
+  go('valoracion');
+  toast(`✅ ${tk} añadido a Cartera · ${qty} acc. · ${costEur.toLocaleString('es-ES',{maximumFractionDigits:0})}€`);
+}
+
+/* ════════════════════════════════════════════════
+   MODAL 2: SALIDA DE CARTERA
+   ════════════════════════════════════════════════ */
+let _exitTk = null;
+function openExitM(tk){
+  _exitTk = tk;
+  const item = D.c.find(e=>e.tk===tk);
+  if(!item) return;
+  const cur = item.cur || 'USD';
+  const curSym = cur==='GBP'?'£':cur==='CAD'?'C$':cur==='EUR'?'€':'$';
+  const inner = document.getElementById('exit-modal-inner');
+  inner.innerHTML = `
+    <h3>📤 Gestionar posición</h3>
+    <div class="m2-sub"><span class="m2-tk">${tk}</span> — ${item.nm} · ${item.qty} acc.</div>
+    <div class="m2-opts">
+      <div class="m2-opt" style="border-color:rgba(20,46,76,.25);background:#eef6ff" onclick="closeExitM();showReport('${tk}')">
+        <div class="m2-opt-icon">📊</div>
+        <div class="m2-opt-txt"><div class="m2-opt-title" style="color:var(--blue)">Informe completo</div><div class="m2-opt-desc">Historial, gráficos, compras, ventas, dividendos</div></div>
+      </div>
+      <div class="m2-opt buy" onclick="closeExitM();showAddBuyForm('${tk}')">
+        <div class="m2-opt-icon">🛒</div>
+        <div class="m2-opt-txt"><div class="m2-opt-title">Añadir compra</div><div class="m2-opt-desc">Registrar nueva compra sobre esta posición</div></div>
+      </div>
+      <div class="m2-opt buy" style="border-color:rgba(20,46,76,.25);background:#eef6ff">
+        <div class="m2-opt-icon">📸</div>
+        <div class="m2-opt-txt" style="position:relative">
+          <div class="m2-opt-title" style="color:var(--blue)">Subir captura de operación</div>
+          <div class="m2-opt-desc" id="exit-capture-desc">Foto del broker → detecta compra o venta automáticamente</div>
+          <input type="file" accept="image/*,.pdf,.txt" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="readTradeCaptureFromExit(event,'${tk}')">
+        </div>
+      </div>
+      <div class="m2-opt sell" onclick="showSellForm('${tk}','partial')">
+        <div class="m2-opt-icon">📉</div>
+        <div class="m2-opt-txt"><div class="m2-opt-title">Venta parcial</div><div class="m2-opt-desc">Vender parte de las acciones</div></div>
+      </div>
+      <div class="m2-opt sell" onclick="showSellForm('${tk}','total')">
+        <div class="m2-opt-icon">💰</div>
+        <div class="m2-opt-txt"><div class="m2-opt-title">Venta total</div><div class="m2-opt-desc">Vender las ${item.qty} acciones</div></div>
+      </div>
+      <div class="m2-opt move" onclick="confirmMove('${tk}')">
+        <div class="m2-opt-icon">↩️</div>
+        <div class="m2-opt-txt"><div class="m2-opt-title">Mover a Candidatas</div><div class="m2-opt-desc">Sin registrar venta</div></div>
+      </div>
+      <div class="m2-opt del" onclick="confirmDelete('${tk}')">
+        <div class="m2-opt-icon">🗑️</div>
+        <div class="m2-opt-txt"><div class="m2-opt-title">Eliminar definitivamente</div><div class="m2-opt-desc">Borrar de la app por completo</div></div>
+      </div>
+    </div>
+    <div class="mo-btns"><button class="mo-btn cancel" onclick="closeExitM()" style="flex:1">Cancelar</button></div>
+  `;
+  document.getElementById('modal-exit').classList.add('open');
+}
+
+/* ════ AÑADIR COMPRA SOBRE POSICIÓN EXISTENTE ════ */
+function showAddBuyForm(tk){
+  const item = D.c.find(e=>e.tk===tk);
+  if(!item) return;
+  const cur = item.cur || 'USD';
+  const curSym = cur==='GBP'?'£':cur==='CAD'?'C$':cur==='EUR'?'€':'$';
+
+  const inner = document.getElementById('exit-modal-inner');
+  inner.innerHTML = `
+    <h3>🛒 Añadir compra</h3>
+    <div class="m2-sub"><span class="m2-tk">${tk}</span> — ${item.nm} · Tienes ${item.qty} acc.</div>
+    <div class="comm-attach" style="margin-bottom:14px">
+      <div class="comm-attach-btn" id="addbuy-attach-btn" style="background:#eef6ff;border-color:var(--blue);padding:12px 14px">
+        <span style="font-size:16px">📸</span><span id="addbuy-attach-text" style="color:var(--blue);font-size:12px">Subir captura del broker (auto-rellena)</span>
+        <input type="file" accept="image/*,.pdf,.txt" onchange="readTradeCapture(event,'${tk}','addbuy')">
+      </div>
+    </div>
+    <div style="text-align:center;font-size:11px;color:var(--ink4);margin-bottom:10px;font-weight:700">— o rellena a mano —</div>
+    <div class="fld"><label>Fecha de compra</label><input id="addbuy-date" type="date" value="${new Date().toISOString().split('T')[0]}"></div>
+    <div class="fld"><label>Nº acciones</label><input id="addbuy-qty" type="number" inputmode="numeric" min="1" placeholder="Ej: 5"></div>
+    <div class="fld"><label>Precio compra (${curSym})</label><input id="addbuy-price" type="number" step="0.01" inputmode="decimal" placeholder="Ej: 185.50"></div>
+    <div class="fld"><label>Comisión broker (€)</label><input id="addbuy-comm" type="number" step="0.01" inputmode="decimal" value="0" placeholder="0.00">
+      <div class="comm-attach">
+        <div class="comm-attach-btn" id="addbuy-comm-attach-btn">
+          <span>📎</span><span id="addbuy-comm-attach-text">Adjuntar captura de comisión</span>
+          <input type="file" accept="image/*,.pdf,.txt" onchange="readCommissionCapture(event,'addbuy')">
+        </div>
+      </div>
+    </div>
+    <div class="m2-calc" id="addbuy-calc" style="display:none">
+      <div style="flex:1"><div class="m2-calc-lbl">Tipo cambio → EUR</div><div class="m2-calc-val" id="addbuy-fx">—</div></div>
+      <div style="flex:1"><div class="m2-calc-lbl">Coste total EUR</div><div class="m2-calc-val" id="addbuy-total">—</div></div>
+    </div>
+    <div class="mo-btns">
+      <button class="mo-btn cancel" onclick="openExitM('${tk}')">← Atrás</button>
+      <button class="mo-btn ok" onclick="confirmAddBuy('${tk}')">✅ Confirmar compra</button>
+    </div>
+  `;
+  document.getElementById('modal-exit').classList.add('open');
+  // Auto-calc
+  ['addbuy-qty','addbuy-price','addbuy-comm'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.oninput = ()=>calcAddBuyTotal(cur);
+  });
+}
+
+function calcAddBuyTotal(cur){
+  const qty = parseFloat(document.getElementById('addbuy-qty').value)||0;
+  const pr = parseFloat(document.getElementById('addbuy-price').value)||0;
+  const comm = parseFloat(document.getElementById('addbuy-comm').value)||0;
+  const calc = document.getElementById('addbuy-calc');
+  if(qty>0 && pr>0){
+    const fx = getFx(cur);
+    const costEur = toEur(qty*pr, cur) + comm;
+    document.getElementById('addbuy-fx').textContent = cur==='EUR'?'1,00':fx.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:4});
+    document.getElementById('addbuy-total').textContent = costEur.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+'€';
+    calc.style.display = 'flex';
+  } else { calc.style.display = 'none'; }
+}
+
+function confirmAddBuy(tk){
+  const item = D.c.find(e=>e.tk===tk);
+  if(!item) return;
+  const date = document.getElementById('addbuy-date').value;
+  const qty = parseInt(document.getElementById('addbuy-qty').value);
+  const pr = parseFloat(document.getElementById('addbuy-price').value);
+  const comm = parseFloat(document.getElementById('addbuy-comm').value)||0;
+  if(!date) return alert('Introduce la fecha');
+  if(!qty || qty<=0) return alert('Introduce el nº de acciones');
+  if(!pr || pr<=0) return alert('Introduce el precio');
+
+  const cur = item.cur || 'USD';
+  const costEur = toEur(qty*pr, cur) + comm;
+  const curSym = cur==='GBP'?'£':cur==='CAD'?'C$':cur==='EUR'?'€':'$';
+
+  // Actualizar posición
+  const oldQty = item.qty;
+  const oldCost = item.cost || 0;
+  item.qty = oldQty + qty;
+  item.cost = Math.round(oldCost + costEur);
+  item.avg = item.cost / item.qty; // nuevo precio medio ponderado en EUR
+  item.val = Math.round(toEur(item.qty * (item.pr||pr), cur));
+  item.pnl = item.val - item.cost;
+
+  // Registrar en BUYS
+  if(!BUYS[tk]) BUYS[tk] = [];
+  const valNow = Math.round(toEur(qty * (item.pr||pr), cur));
+  const plBuy = valNow - Math.round(costEur);
+  BUYS[tk].push({
+    d: date, q: qty,
+    p: curSym + pr.toLocaleString('es-ES',{minimumFractionDigits:2}),
+    e: Math.round(costEur).toLocaleString('es-ES'),
+    va: valNow.toLocaleString('es-ES'),
+    pl: (plBuy>=0?'+':'')+plBuy.toLocaleString('es-ES'),
+    pct: (plBuy>=0?'+':'')+(costEur?(plBuy/costEur*100).toFixed(1):'0.0')+'%'
+  });
+
+  // Actualizar METRICS
+  const m = METRICS[tk];
+  if(m){
+    m.costTotal = item.cost;
+    m.valMerc = item.val;
+    m.plNR = item.pnl;
+    m.rent = item.cost ? (item.pnl/item.cost)*100 : 0;
+    m.nAcc = item.qty;
+    // Recalcular precio medio en divisa original
+    const totalCostLocal = BUYS[tk].reduce((s,b)=>{
+      const pVal = parseFloat((b.p||'0').replace(/[^0-9.,-]/g,'').replace(',','.')) || 0;
+      const bq = typeof b.q==='number'?b.q:parseInt(b.q)||0;
+      return s + pVal * bq;
+    }, 0);
+    const avgLocal = item.qty ? totalCostLocal / item.qty : 0;
+    m.pMedio = curSym + avgLocal.toLocaleString('es-ES',{minimumFractionDigits:2});
+  }
+
+  save();
+  closeExitM();
+  updC();
+  go('resumen');
+  toast(`✅ +${qty} acc. de ${tk} añadidas · Total: ${item.qty} acc.`);
+}
+
+function showSellForm(tk, mode){
+  const item = D.c.find(e=>e.tk===tk);
+  if(!item) return;
+  const cur = item.cur || 'USD';
+  const curSym = cur==='GBP'?'£':cur==='CAD'?'C$':cur==='EUR'?'€':'$';
+  const isTotal = mode==='total';
+  const inner = document.getElementById('exit-modal-inner');
+  inner.innerHTML = `
+    <h3>${isTotal?'💰 Venta total':'📉 Venta parcial'}</h3>
+    <div class="m2-sub"><span class="m2-tk">${tk}</span> — ${item.nm} · Tienes ${item.qty} acc.</div>
+    <div class="fld"><label>Fecha de venta</label><input id="sell-date" type="date" value="${new Date().toISOString().split('T')[0]}"></div>
+    <div class="fld"><label>Nº acciones vendidas</label><input id="sell-qty" type="number" inputmode="numeric" min="1" max="${item.qty}" value="${isTotal?item.qty:''}" ${isTotal?'readonly style="opacity:.6"':''} placeholder="Máx: ${item.qty}"></div>
+    <div class="fld"><label>Precio venta (${curSym})</label><input id="sell-price" type="number" step="0.01" inputmode="decimal" placeholder="Ej: 195.00"></div>
+    <div class="fld"><label>Comisiones (€)</label><input id="sell-comms" type="number" step="0.01" inputmode="decimal" value="0" placeholder="0.00">
+      <div class="comm-attach">
+        <div class="comm-attach-btn" id="sell-attach-btn">
+          <span>📎</span><span id="sell-attach-text">Adjuntar captura de comisión</span>
+          <input type="file" accept="image/*,.pdf,.txt" id="sell-attach-file" onchange="readCommissionCapture(event,'sell')">
+        </div>
+      </div>
+    </div>
+    <div class="m2-calc" id="sell-calc" style="display:none">
+      <div style="flex:1"><div class="m2-calc-lbl">Importe bruto EUR</div><div class="m2-calc-val" id="sell-gross">—</div></div>
+      <div style="flex:1"><div class="m2-calc-lbl">Beneficio/Pérdida</div><div class="m2-calc-val" id="sell-pl">—</div></div>
+    </div>
+    <div class="mo-btns">
+      <button class="mo-btn cancel" onclick="openExitM('${tk}')">← Atrás</button>
+      <button class="mo-btn ok" style="background:var(--red)" onclick="confirmSell('${tk}','${mode}')">Confirmar venta</button>
+    </div>
+  `;
+  // Auto-calc
+  ['sell-qty','sell-price','sell-comms'].forEach(id=>{
+    document.getElementById(id).oninput = ()=>calcSellTotal(tk, cur);
+  });
+  calcSellTotal(tk, cur);
+}
+
+function calcSellTotal(tk, cur){
+  const item = D.c.find(e=>e.tk===tk);
+  if(!item) return;
+  const qty = parseFloat(document.getElementById('sell-qty').value)||0;
+  const pr = parseFloat(document.getElementById('sell-price').value)||0;
+  const comms = parseFloat(document.getElementById('sell-comms').value)||0;
+  const calc = document.getElementById('sell-calc');
+  if(qty>0 && pr>0){
+    const grossLocal = qty * pr;
+    const grossEur = toEur(grossLocal, cur) - comms;
+    // Coste proporcional
+    const costProp = item.cost ? (item.cost / item.qty) * qty : 0;
+    const pl = grossEur - costProp;
+    document.getElementById('sell-gross').textContent = grossEur.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+'€';
+    const plEl = document.getElementById('sell-pl');
+    plEl.textContent = (pl>=0?'+':'')+pl.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+'€';
+    plEl.style.color = pl>=0 ? 'var(--green)' : 'var(--red)';
+    calc.style.display = 'flex';
+  } else {
+    calc.style.display = 'none';
+  }
+}
+
+function confirmSell(tk, mode){
+  const item = D.c.find(e=>e.tk===tk);
+  if(!item) return;
+  const date = document.getElementById('sell-date').value;
+  const qty = parseInt(document.getElementById('sell-qty').value);
+  const pr = parseFloat(document.getElementById('sell-price').value);
+  const comms = parseFloat(document.getElementById('sell-comms').value)||0;
+  if(!date) return alert('Introduce la fecha de venta');
+  if(!qty || qty<=0) return alert('Introduce el nº de acciones');
+  if(qty > item.qty) return alert(`Solo tienes ${item.qty} acciones`);
+  if(!pr || pr<=0) return alert('Introduce el precio de venta');
+
+  const cur = item.cur || 'USD';
+  const grossLocal = qty * pr;
+  const grossEur = toEur(grossLocal, cur) - comms;
+  const costProp = item.cost ? (item.cost / item.qty) * qty : 0;
+  const pl = grossEur - costProp;
+  const curSym = cur==='GBP'?'£':cur==='CAD'?'C$':cur==='EUR'?'€':'$';
+
+  // Registrar venta en SELLS siempre
+  if(!SELLS[tk]) SELLS[tk] = [];
+  SELLS[tk].push({
+    d: date, q: qty,
+    p: curSym + pr.toLocaleString('es-ES',{minimumFractionDigits:2}),
+    precio: pr, divisa: cur,
+    ingreso_eur: Math.round(grossEur),
+    coste_prop_eur: Math.round(costProp),
+    pl: Math.round(pl),
+    comision: comms,
+    tipo: mode==='total' || qty >= item.qty ? 'total' : 'parcial'
+  });
+
+  if(mode==='total' || qty >= item.qty){
+    // Venta total → mantener datos históricos para informe, marcar como cerrada
+    item.qty = 0;
+    item.val = 0;
+    item.pnl = 0;
+    item.closed = true;
+    item.closedDate = date;
+    item.closedPl = Math.round(pl);
+    // NO borrar BUYS ni METRICS — se necesitan para el informe
+    toast(`✅ ${tk} vendido · ${qty} acc. · ${(pl>=0?'+':'')}${pl.toLocaleString('es-ES',{maximumFractionDigits:0})}€`);
+    // Mostrar informe automáticamente
+    setTimeout(()=>showReport(tk), 500);
+  } else {
+    // Venta parcial → reducir posición
+    const remainQty = item.qty - qty;
+    const remainCost = item.cost - costProp;
+    item.qty = remainQty;
+    item.cost = Math.round(remainCost);
+    item.val = Math.round(toEur(remainQty * (item.pr||pr), cur));
+    item.pnl = item.val - item.cost;
+    // Actualizar METRICS
+    const m = METRICS[tk];
+    if(m){
+      m.costTotal = remainCost;
+      m.valMerc = item.val;
+      m.plNR = item.pnl;
+      m.rent = remainCost ? (item.pnl/remainCost)*100 : 0;
+      m.nAcc = remainQty;
+    }
+    // Actualizar BUYS: quitar las acciones vendidas de las compras más antiguas
+    if(BUYS[tk]){
+      let toRemove = qty;
+      const newBuys = [];
+      BUYS[tk].forEach(b=>{
+        if(toRemove <= 0){ newBuys.push(b); return; }
+        const bq = parseInt(b.q);
+        if(bq <= toRemove){
+          toRemove -= bq; // eliminar esta compra entera
+        } else {
+          // parcial: reducir qty de esta compra
+          const remain = bq - toRemove;
+          toRemove = 0;
+          newBuys.push({...b, q:remain});
+        }
+      });
+      BUYS[tk] = newBuys;
+    }
+    toast(`✅ Vendidas ${qty} acc. de ${tk} · Quedan ${remainQty} · P/L ${(pl>=0?'+':'')}${pl.toLocaleString('es-ES',{maximumFractionDigits:0})}€`);
+  }
+
+  save();
+  closeExitM();
+  updC();
+  go('resumen');
+}
+
+function confirmMove(tk){
+  if(!confirm(`¿Mover ${tk} a Candidatas sin registrar venta?`)) return;
+  const idx = D.c.findIndex(e=>e.tk===tk);
+  if(idx<0) return;
+  const [item] = D.c.splice(idx, 1);
+  // Limpiar datos de cartera
+  delete item.qty; delete item.avg; delete item.cost; delete item.val; delete item.pnl; delete item.w; delete item.divs;
+  item.chg = 0; item.pct = 0;
+  D.p.push(item);
+  save();
+  closeExitM();
+  updC();
+  go('resumen');
+  toast(`${tk} → Candidatas`);
+}
+
+function confirmDelete(tk){
+  if(!confirm(`¿Eliminar ${tk} definitivamente?\n\nSe borrarán todos los datos de esta posición.`)) return;
+  const idx = D.c.findIndex(e=>e.tk===tk);
+  if(idx>=0) D.c.splice(idx, 1);
+  delete METRICS[tk];
+  delete BUYS[tk];
+  delete DIVS[tk];
+  save();
+  closeExitM();
+  updC();
+  go('resumen');
+  toast(`🗑️ ${tk} eliminado`);
+}
+
+function closeExitM(){
+  _exitTk = null;
+  document.getElementById('modal-exit').classList.remove('open');
+}
+
+/* ════════════════════════════════════════════════
+   SUBIR CAPTURA DE COMPRA DESDE GESTIONAR POSICIÓN
+   (para posiciones ya existentes o datos olvidados)
+   ════════════════════════════════════════════════ */
+async function readTradeCaptureFromExit(event, tk){
+  const file = event.target.files[0];
+  if(!file) return;
+  const claudeKey = getClaudeKey();
+  if(!claudeKey){ toast('⚠️ Configura la clave Claude en Config para leer capturas'); return; }
+
+  const descEl = document.getElementById('exit-capture-desc');
+  if(descEl) descEl.textContent = '⏳ Leyendo captura...';
+
+  const TRADE_PROMPT = `Analiza esta imagen/captura de una operación de compra/venta de acciones en un broker (Interactive Brokers).
+Extrae todos los datos. Responde SOLO con JSON válido (sin markdown):
+{
+  "tipo": "compra o venta",
+  "ticker": "AAPL",
+  "fecha": "2026-01-15",
+  "num_acciones": 10,
+  "precio_unitario": 185.50,
+  "divisa": "USD",
+  "comision_eur": 1.23,
+  "comision_original": "1.50 USD",
+  "importe_total_original": 1856.23,
+  "tipo_cambio": 1.08,
+  "notas": "dato adicional"
+}
+Si no ves un campo, pon null. EUR/USD≈1.16, EUR/GBP≈0.87, EUR/CAD≈1.60.`;
+
+  try {
+    let response;
+    if(file.type.startsWith('image/')){
+      const b64 = await fileToBase64(file);
+      response = await callClaudeVision(b64, file.type, TRADE_PROMPT);
+    } else {
+      const text = await file.text();
+      response = await callClaudeText(text, TRADE_PROMPT);
+    }
+    const result = parseClaudeJsonResponse(response);
+
+    // Actualizar la posición en cartera con los datos detectados
+    const item = D.c.find(e=>e.tk===tk);
+    if(item && result.num_acciones) {
+      const cur = result.divisa || item.cur || 'USD';
+      const pr = result.precio_unitario || item.avg || 0;
+      const qty = result.num_acciones || item.qty;
+      const comm = result.comision_eur || 0;
+      const costEur = toEur(qty * pr, cur) + comm;
+
+      // Añadir como nueva compra en BUYS
+      if(!BUYS[tk]) BUYS[tk] = [];
+      const curSym = cur==='GBP'?'£':cur==='CAD'?'C$':cur==='EUR'?'€':'$';
+      const valNow = toEur(qty * (item.pr||pr), cur);
+      const plBuy = valNow - costEur;
+      BUYS[tk].push({
+        d: result.fecha || new Date().toISOString().split('T')[0],
+        q: qty,
+        p: curSym + pr.toLocaleString('es-ES',{minimumFractionDigits:2}),
+        e: costEur.toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:0}),
+        va: valNow.toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:0}),
+        pl: (plBuy>=0?'+':'')+plBuy.toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:0}),
+        pct: (plBuy>=0?'+':'')+(costEur?(plBuy/costEur*100).toFixed(1):'0.0')+'%'
+      });
+
+      save();
+      if(descEl) descEl.textContent = '✅ Compra registrada: '+qty+' acc. · '+(result.fecha||'')+ ' · Com: '+comm.toFixed(2)+'€';
+      toast(`✅ Compra de ${tk} registrada desde captura`);
+    } else {
+      if(descEl) descEl.textContent = '⚠️ No se detectaron datos suficientes';
+      toast('⚠️ No se pudieron extraer datos de la captura');
+    }
+  } catch(err){
+    console.error('Exit trade capture error:', err);
+    if(descEl) descEl.textContent = '❌ Error — inténtalo de nuevo';
+    toast('❌ Error: ' + err.message.slice(0,60));
+  }
+  event.target.value = '';
+}
+
+/* ════════════════════════════════════════════════
+   INFORME COMPLETO DE POSICIÓN
+   Timeline + gráficos + tabla de operaciones
+   ════════════════════════════════════════════════ */
+let _rptCharts = [];
+function showReport(tk){
+  const item = [...D.c,...D.p].find(e=>e.tk===tk);
+  if(!item) return;
+  const m = METRICS[tk] || null;
+  const buys = BUYS[tk] || [];
+  const sells = SELLS[tk] || [];
+  const divs = DIVS[tk] || [];
+  const cur = item.cur || 'USD';
+  const curSym = cur==='GBP'?'£':cur==='CAD'?'C$':cur==='EUR'?'€':'$';
+  const isClosed = item.closed || item.qty === 0;
+
+  // Calcular totales
+  const totalInvertido = m ? m.costTotal : (item.cost||0);
+  const totalVendido = sells.reduce((s,v)=>s+v.ingreso_eur, 0);
+  const totalDivs = divs.reduce((s,d)=>s+d.neto, 0);
+  const totalComms = sells.reduce((s,v)=>s+(v.comision||0), 0);
+  const valorActual = isClosed ? 0 : (m ? m.valMerc : (item.val||0));
+  const plTotal = (valorActual + totalVendido + totalDivs) - totalInvertido;
+  const plPct = totalInvertido ? (plTotal / totalInvertido) * 100 : 0;
+  const totalAccCompradas = buys.reduce((s,b)=>s+(typeof b.q==='number'?b.q:parseInt(b.q)||0), 0);
+  const totalAccVendidas = sells.reduce((s,v)=>s+v.q, 0);
+
+  // Construir timeline
+  const events = [];
+  buys.forEach(b => events.push({type:'buy', date:b.d, desc:`Compra ${b.q} acc. a ${b.p}`, val:`${b.e}€`, sort:b.d}));
+  sells.forEach(s => events.push({type:'sell', date:s.d, desc:`Venta ${s.tipo} · ${s.q} acc. a ${s.p}`, val:`${s.ingreso_eur>=0?'+':''}${f(s.ingreso_eur,0)}€ · P/L ${s.pl>=0?'+':''}${f(s.pl,0)}€`, sort:s.d}));
+  divs.forEach(d => events.push({type:'div', date:d.d, desc:`Dividendo cobrado`, val:`+${f(d.neto,2)}€ neto`, sort:d.d}));
+  events.sort((a,b) => (a.sort||'').localeCompare(b.sort||''));
+
+  // Datos para gráfico de evolución del coste acumulado
+  let accCost = 0, accQty = 0;
+  const costData = [], costLabels = [];
+  buys.forEach(b => {
+    const eurVal = parseFloat((b.e||'0').replace(/\./g,'').replace(',','.')) || 0;
+    accCost += eurVal;
+    accQty += (typeof b.q==='number'?b.q:parseInt(b.q)||0);
+    costLabels.push(b.d ? b.d.slice(5) : '');
+    costData.push(accCost);
+  });
+
+  const el = document.getElementById('v-valoracion');
+  const cls = v => v >= 0 ? 'up' : 'dn';
+  const sg = v => v >= 0 ? '+' : '';
+
+  let h = `<button class="det-back" onclick="go('resumen')">← Volver</button>`;
+
+  // Header del informe
+  h += `<div class="rpt-header ${plTotal>=0?'profit':'loss'}">
+    <div class="rpt-tk">${tk}</div>
+    <div class="rpt-title">${isClosed?'Posición cerrada':'Informe de posición'}</div>
+    <div style="font-size:18px;font-weight:700;margin-bottom:8px">${item.nm}</div>
+    <div class="rpt-big">${sg(plTotal)}${f(plTotal,0)}€</div>
+    <div class="rpt-sub">Rentabilidad total: ${sg(plPct)}${f(plPct,1)}%</div>
+  </div>`;
+
+  // Grid de métricas
+  h += `<div class="rpt-grid">
+    <div class="rpt-cell"><div class="rpt-cell-l">Total invertido</div><div class="rpt-cell-v">${f(totalInvertido,0)}€</div></div>
+    <div class="rpt-cell"><div class="rpt-cell-l">${isClosed?'Total vendido':'Valor actual'}</div><div class="rpt-cell-v">${f(isClosed?totalVendido:valorActual,0)}€</div></div>
+    <div class="rpt-cell"><div class="rpt-cell-l">Acciones compradas</div><div class="rpt-cell-v">${totalAccCompradas}</div></div>
+    <div class="rpt-cell"><div class="rpt-cell-l">${isClosed?'Acciones vendidas':'En cartera'}</div><div class="rpt-cell-v">${isClosed?totalAccVendidas:item.qty}</div></div>
+    <div class="rpt-cell"><div class="rpt-cell-l">Dividendos netos</div><div class="rpt-cell-v ${totalDivs>0?'up':''}">${totalDivs>0?'+':''}${f(totalDivs,2)}€</div></div>
+    <div class="rpt-cell"><div class="rpt-cell-l">Comisiones</div><div class="rpt-cell-v dn">${totalComms>0?'-':''}${f(totalComms,2)}€</div></div>`;
+  if(!isClosed && m){
+    h += `<div class="rpt-cell"><div class="rpt-cell-l">Precio medio</div><div class="rpt-cell-v">${m.pMedio}</div></div>
+    <div class="rpt-cell"><div class="rpt-cell-l">Cotización</div><div class="rpt-cell-v ${cls(m.varP)}">${m.pActual}</div></div>`;
+  }
+  if(sells.length > 0){
+    h += `<div class="rpt-cell"><div class="rpt-cell-l">P/L ventas</div><div class="rpt-cell-v ${cls(totalVendido-sells.reduce((s,v)=>s+v.coste_prop_eur,0))}">${sg(totalVendido-sells.reduce((s,v)=>s+v.coste_prop_eur,0))}${f(totalVendido-sells.reduce((s,v)=>s+v.coste_prop_eur,0),0)}€</div></div>
+    <div class="rpt-cell"><div class="rpt-cell-l">Acc. vendidas</div><div class="rpt-cell-v">${totalAccVendidas}</div></div>`;
+  }
+  h += `</div>`;
+
+  // Gráficos
+  h += `<div class="card"><div class="card-t">📈 Evolución inversión acumulada</div><div class="chart-wrap"><canvas id="rpt-ch-cost"></canvas></div></div>`;
+
+  if(!isClosed && m){
+    h += `<div class="card"><div class="card-t">⚖️ Coste vs Valor actual</div><div class="chart-wrap" style="height:160px"><canvas id="rpt-ch-cv"></canvas></div></div>`;
+  }
+
+  // Desglose de flujos
+  const totalFlujoIn = totalInvertido + totalComms;
+  const totalFlujoOut = valorActual + totalVendido + totalDivs;
+  h += `<div class="card"><div class="card-t">💰 Flujo de capital</div>
+    <div class="broker-tariff">
+      <div class="bt-row"><span class="bt-label">💸 Invertido</span><span class="bt-value" style="color:var(--red)">-${f(totalInvertido,0)}€</span></div>
+      <div class="bt-row"><span class="bt-label">💸 Comisiones</span><span class="bt-value" style="color:var(--red)">-${f(totalComms,2)}€</span></div>`;
+  if(totalVendido > 0) h += `<div class="bt-row"><span class="bt-label">💰 Ventas</span><span class="bt-value" style="color:var(--green)">+${f(totalVendido,0)}€</span></div>`;
+  if(totalDivs > 0) h += `<div class="bt-row"><span class="bt-label">🎁 Dividendos</span><span class="bt-value" style="color:var(--green)">+${f(totalDivs,2)}€</span></div>`;
+  if(!isClosed) h += `<div class="bt-row"><span class="bt-label">📊 Valor actual</span><span class="bt-value" style="color:var(--blue)">${f(valorActual,0)}€</span></div>`;
+  h += `<div class="bt-row" style="border-top:2px solid var(--blue);padding-top:12px;margin-top:4px"><span class="bt-label" style="font-weight:900;color:var(--ink)">Resultado neto</span><span class="bt-value ${cls(plTotal)}" style="font-size:16px">${sg(plTotal)}${f(plTotal,0)}€</span></div>
+    </div></div>`;
+
+  // Timeline
+  if(events.length > 0){
+    h += `<div class="card"><div class="card-t">📅 Historial de operaciones</div><div class="rpt-timeline">`;
+    events.forEach(ev => {
+      h += `<div class="rpt-event ${ev.type}">
+        <div class="rpt-event-date">${ev.date||'—'}</div>
+        <div class="rpt-event-desc">${ev.desc}</div>
+        <div class="rpt-event-val ${ev.type==='sell'?cls(0):''}">${ev.val}</div>
+      </div>`;
+    });
+    h += `</div></div>`;
+  }
+
+  // Tabla de compras
+  if(buys.length > 0){
+    h += `<div class="card" style="overflow-x:auto"><div class="card-t">🛒 Detalle de compras</div>
+      <table class="dtbl"><thead><tr><th>Fecha</th><th>Acc.</th><th>Precio</th><th>Coste €</th></tr></thead><tbody>`;
+    buys.forEach(b => {
+      h += `<tr><td>${b.d||'—'}</td><td>${b.q}</td><td>${b.p}</td><td>${b.e}</td></tr>`;
+    });
+    h += `<tr class="trow"><td>TOTAL</td><td>${totalAccCompradas}</td><td>—</td><td>${f(totalInvertido,0)}</td></tr></tbody></table></div>`;
+  }
+
+  // Tabla de ventas
+  if(sells.length > 0){
+    h += `<div class="card" style="overflow-x:auto"><div class="card-t">💰 Detalle de ventas</div>
+      <table class="dtbl"><thead><tr><th>Fecha</th><th>Acc.</th><th>Precio</th><th>Ingreso €</th><th>P/L €</th><th>Tipo</th></tr></thead><tbody>`;
+    sells.forEach(s => {
+      const plCls = s.pl >= 0 ? 'up' : 'dn';
+      h += `<tr><td>${s.d||'—'}</td><td>${s.q}</td><td>${s.p}</td><td>${f(s.ingreso_eur,0)}</td><td class="${plCls}">${sg(s.pl)}${f(s.pl,0)}</td><td style="font-family:var(--sans)">${s.tipo}</td></tr>`;
+    });
+    h += `</tbody></table></div>`;
+  }
+
+  // Botón imprimir/PDF
+  h += `<div style="margin-top:20px;margin-bottom:30px">
+    <button onclick="printReport('${tk}')" style="width:100%;padding:16px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--blue),#1e5a8a);color:#fff;font-family:var(--sans);font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(20,46,76,.3);display:flex;align-items:center;justify-content:center;gap:8px">
+      <span style="font-size:18px">📄</span> Descargar PDF / Imprimir
+    </button>
+  </div>`;
+
+  el.innerHTML = h;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  el.classList.add('on');
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.v==='valoracion'));
+  window.scrollTo({top:0});
+
+  // Renderizar gráficos
+  _rptCharts.forEach(c=>c.destroy());
+  _rptCharts = [];
+  setTimeout(()=>{
+    // Gráfico evolución coste
+    const c1 = document.getElementById('rpt-ch-cost');
+    if(c1 && costData.length > 0){
+      _rptCharts.push(new Chart(c1, {
+        type:'line',
+        data:{
+          labels:costLabels,
+          datasets:[{
+            label:'Inversión acumulada (€)',
+            data:costData,
+            borderColor:'#142e4c', backgroundColor:'rgba(20,46,76,.1)',
+            borderWidth:3, fill:true, tension:.3, pointRadius:6,
+            pointBackgroundColor:'#142e4c', pointBorderColor:'#fff', pointBorderWidth:2
+          }]
+        },
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+          scales:{y:{beginAtZero:true,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-ES')+'€'}},x:{ticks:{font:{size:10}}}}}
+      }));
+    }
+    // Gráfico coste vs valor
+    const c2 = document.getElementById('rpt-ch-cv');
+    if(c2 && m){
+      _rptCharts.push(new Chart(c2, {
+        type:'bar',
+        data:{
+          labels:['Coste','Valor actual'],
+          datasets:[{
+            data:[totalInvertido, valorActual],
+            backgroundColor:[totalInvertido > valorActual ? 'rgba(224,36,36,.7)' : 'rgba(20,46,76,.5)', valorActual >= totalInvertido ? 'rgba(13,148,72,.7)' : 'rgba(224,36,36,.5)'],
+            borderRadius:8, barPercentage:.5
+          }]
+        },
+        options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},
+          scales:{x:{beginAtZero:true,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-ES')+'€'}},y:{ticks:{font:{size:12,weight:'bold'}}}}}
+      }));
+    }
+  }, 150);
+}
+
+/* ════════════════════════════════════════════════
+   SUBIR INFORME IBKR — Actualizar posiciones
+   ════════════════════════════════════════════════ */
+async function handleIbkrReport(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const claudeKey = getClaudeKey();
+  if(!claudeKey){ toast('⚠️ Configura la clave Claude en Config para leer informes'); return; }
+
+  const zone = document.getElementById('ibkr-upload-zone');
+  const status = document.getElementById('ibkr-status');
+  zone.classList.add('processing');
+  status.innerHTML = '<div style="padding:14px;text-align:center;color:var(--acc);font-weight:700;font-size:14px">⏳ Analizando informe... puede tardar unos segundos</div>';
+
+  const IBKR_PROMPT = `Analiza este informe/extracto de Interactive Brokers (IBKR).
+Extrae los datos de TODAS las posiciones abiertas que encuentres.
+Para cada posición necesito: ticker, nombre empresa, divisa, número de acciones, precio medio de compra, precio actual/último, valor de mercado en la divisa original, coste total, P&L no realizado, dividendos cobrados si aparecen, comisiones acumuladas si aparecen, tipo de cambio si aparece.
+
+Responde SOLO con un JSON válido (sin markdown, sin backticks, sin explicaciones):
+{
+  "fecha_informe": "2026-04-14",
+  "divisa_cuenta": "EUR",
+  "valor_total_eur": 28102,
+  "posiciones": [
+    {
+      "ticker": "META",
+      "nombre": "Meta Platforms Inc",
+      "divisa": "USD",
+      "num_acciones": 10,
+      "precio_medio": 517.68,
+      "precio_actual": 575.05,
+      "coste_total_divisa": 5176.80,
+      "valor_mercado_divisa": 5750.50,
+      "coste_total_eur": 5176.80,
+      "valor_mercado_eur": 4959.00,
+      "pnl_eur": -217.80,
+      "rentabilidad_pct": -4.21,
+      "dividendos_netos_eur": 8.00,
+      "comisiones_eur": 5.20,
+      "tipo_cambio": 1.08,
+      "peso_pct": 17.7,
+      "exchange": "NASDAQ",
+      "sector": "Technology"
+    }
+  ],
+  "totales": {
+    "invertido_eur": 23786,
+    "valor_mercado_eur": 28102,
+    "pnl_total_eur": 4316,
+    "dividendos_total_eur": 1136
+  }
+}
+Incluye TODAS las posiciones que veas. Si algún dato no aparece, pon null. Mantén los tickers exactos como aparecen (ZEG, META, MSFT, CSU, AMZN, WKL, etc).
+
+IMPORTANTE - ERRORES COMUNES A EVITAR:
+- En IBKR, "PyG" o "P&G" significa "Pérdidas y Ganancias" (P&L por acción), NO es el precio medio de compra. NO lo pongas como precio_medio.
+- Si no ves el precio medio de compra explícitamente, pon precio_medio: null.
+- ZEG en LSE cotiza en PENIQUES (GBX). Si ves precio 1771 es 1771 peniques = £17.71. Convierte siempre a libras (dividir entre 100).
+- La divisa de ZEG es GBP (libras), NO EUR.
+- La divisa de WKL es EUR, NO AUD.
+- Solo incluye precio_medio si estás SEGURO de que es el coste promedio de adquisición por acción.`;
+
+  try {
+    let response;
+    if(file.type.startsWith('image/')){
+      const b64 = await fileToBase64(file);
+      response = await callClaudeVision(b64, file.type, IBKR_PROMPT);
+    } else if(file.type === 'application/pdf'){
+      const b64 = await fileToBase64(file);
+      response = await callClaudeVision(b64, 'application/pdf', IBKR_PROMPT);
+    } else {
+      const text = await file.text();
+      response = await callClaudeText(text, IBKR_PROMPT);
+    }
+
+  const report = parseClaudeJsonResponse(response);
+
+    if(!report.posiciones || !report.posiciones.length){
+      status.innerHTML = '<div style="padding:14px;text-align:center;color:var(--red);font-weight:700">⚠️ No se detectaron posiciones en el informe</div>';
+      zone.classList.remove('processing');
+      return;
+    }
+
+    // Actualizar posiciones en cartera
+    let updated = 0, added = 0;
+    report.posiciones.forEach(pos => {
+      if(!pos.ticker) return;
+      const tk = pos.ticker.toUpperCase();
+      const item = D.c.find(e => e.tk === tk);
+
+      if(item){
+        // Actualizar posición existente
+        if(pos.num_acciones != null) item.qty = pos.num_acciones;
+        if(pos.valor_mercado_eur != null) item.val = Math.round(pos.valor_mercado_eur);
+        if(pos.coste_total_eur != null) item.cost = Math.round(pos.coste_total_eur);
+        if(pos.pnl_eur != null) item.pnl = Math.round(pos.pnl_eur);
+        if(pos.peso_pct != null) item.w = pos.peso_pct;
+        if(pos.dividendos_netos_eur != null) item.divs = pos.dividendos_netos_eur;
+        // Solo actualizar precio medio si viene del informe Y es razonable (no confundir con PyG)
+        if(pos.precio_medio != null && pos.precio_medio > 1 && item.avg && Math.abs(pos.precio_medio - item.avg) / item.avg < 0.5) {
+          item.avg = pos.precio_medio;
+        }
+        if(pos.precio_actual != null) item.pr = pos.precio_actual;
+        if(pos.divisa) item.cur = pos.divisa;
+
+        // Actualizar METRICS
+        const curSym = (pos.divisa||'USD')==='GBP'?'£':(pos.divisa||'USD')==='CAD'?'C$':(pos.divisa||'USD')==='EUR'?'€':'$';
+        METRICS[tk] = {
+          costTotal: pos.coste_total_eur || item.cost,
+          valMerc: pos.valor_mercado_eur || item.val,
+          plNR: pos.pnl_eur || item.pnl,
+          rent: pos.rentabilidad_pct || (item.cost ? (item.pnl/item.cost)*100 : 0),
+          pMedio: pos.precio_medio != null ? curSym+pos.precio_medio.toLocaleString('es-ES',{minimumFractionDigits:2}) : (METRICS[tk]?METRICS[tk].pMedio:'—'),
+          pActual: pos.precio_actual != null ? curSym+pos.precio_actual.toLocaleString('es-ES',{minimumFractionDigits:2}) : (METRICS[tk]?METRICS[tk].pActual:'—'),
+          varP: pos.precio_medio && pos.precio_actual ? ((pos.precio_actual-pos.precio_medio)/pos.precio_medio)*100 : 0,
+          nAcc: pos.num_acciones || item.qty,
+          sector: pos.sector || (METRICS[tk]?METRICS[tk].sector:'—'),
+          divisa: pos.divisa || item.cur || 'USD',
+          tcambio: pos.tipo_cambio ? pos.tipo_cambio.toLocaleString('es-ES',{minimumFractionDigits:2}) : '1,00',
+          curSym: curSym
+        };
+        updated++;
+      } else {
+        // Posición nueva — añadir a cartera
+        D.c.push({
+          tk, nm: pos.nombre || tk, ex: pos.exchange || '—',
+          cur: pos.divisa || 'USD', sec: pos.sector || '—',
+          qty: pos.num_acciones || 0, avg: pos.precio_medio || 0,
+          pr: pos.precio_actual || 0,
+          cost: Math.round(pos.coste_total_eur || 0),
+          val: Math.round(pos.valor_mercado_eur || 0),
+          pnl: Math.round(pos.pnl_eur || 0),
+          w: pos.peso_pct || 0, divs: pos.dividendos_netos_eur || 0,
+          sig: null
+        });
+        added++;
+      }
+    });
+
+    save();
+    updC();
+
+    // Mostrar resumen
+    let html = `<div style="padding:14px;border-radius:12px;background:var(--green-light);border:1px solid rgba(13,148,72,.2);margin-top:12px">
+      <div style="font-weight:800;color:var(--green);font-size:15px;margin-bottom:8px">✅ Informe procesado</div>
+      <div style="font-size:13px;color:var(--ink2);line-height:1.6">`;
+    if(report.fecha_informe) html += `Fecha: <b>${report.fecha_informe}</b><br>`;
+    html += `Posiciones actualizadas: <b>${updated}</b><br>`;
+    if(added > 0) html += `Posiciones nuevas añadidas: <b>${added}</b><br>`;
+    if(report.totales){
+      if(report.totales.valor_mercado_eur) html += `Valor total: <b>€${report.totales.valor_mercado_eur.toLocaleString('es-ES')}</b><br>`;
+      if(report.totales.pnl_total_eur) html += `P&L total: <b>${report.totales.pnl_total_eur>=0?'+':''}€${report.totales.pnl_total_eur.toLocaleString('es-ES')}</b>`;
+    }
+    html += `</div></div>`;
+    status.innerHTML = html;
+    zone.classList.remove('processing');
+
+    toast(`✅ ${updated} posiciones actualizadas`);
+    // Refrescar cartera
+    if(cur === 'resumen') rResumen();
+
+  } catch(err){
+    console.error('IBKR report error:', err);
+    zone.classList.remove('processing');
+    let msg = 'Error procesando informe';
+    if(err.message.includes('401')) msg = 'Clave Claude inválida';
+    else if(err.message.includes('NO_CLAUDE_KEY')) msg = 'Configura la clave Claude primero';
+    status.innerHTML = `<div style="padding:14px;text-align:center;color:var(--red);font-weight:700">❌ ${msg}</div>`;
+    toast('❌ '+msg);
+  }
+  event.target.value = '';
+}
+
+/* ════════════════════════════════════════════════
+   IMPRIMIR / DESCARGAR PDF INFORME — 1 FOLIO A4
+   ════════════════════════════════════════════════ */
+function printReport(tk){
+  const item = [...D.c,...D.p].find(e=>e.tk===tk);
+  if(!item) return;
+  const m = METRICS[tk] || null;
+  const buys = BUYS[tk] || [];
+  const sells = SELLS[tk] || [];
+  const divs = DIVS[tk] || [];
+  const cur = item.cur || 'USD';
+  const curSym = cur==='GBP'?'£':cur==='CAD'?'C$':cur==='EUR'?'€':'$';
+  const isClosed = item.closed || item.qty === 0;
+  const totalInvertido = m ? m.costTotal : (item.cost||0);
+  const totalVendido = sells.reduce((s,v)=>s+v.ingreso_eur, 0);
+  const totalDivs = divs.reduce((s,d)=>s+d.neto, 0);
+  const totalComms = sells.reduce((s,v)=>s+(v.comision||0), 0);
+  const valorActual = isClosed ? 0 : (m ? m.valMerc : (item.val||0));
+  const plTotal = (valorActual + totalVendido + totalDivs) - totalInvertido;
+  const plPct = totalInvertido ? (plTotal / totalInvertido) * 100 : 0;
+  const totalAccC = buys.reduce((s,b)=>s+(typeof b.q==='number'?b.q:parseInt(b.q)||0), 0);
+  const ff = (n,d) => n==null?'—':Number(n).toLocaleString('es-ES',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});
+  const sg = v => v >= 0 ? '+' : '';
+  const isProfit = plTotal >= 0;
+
+  // Capturar gráficos como imágenes PNG
+  let chartCostImg = '', chartCvImg = '';
+  const c1 = document.getElementById('rpt-ch-cost');
+  if(c1) try { chartCostImg = c1.toDataURL('image/png'); } catch(e){}
+  const c2 = document.getElementById('rpt-ch-cv');
+  if(c2) try { chartCvImg = c2.toDataURL('image/png'); } catch(e){}
+
+  // Timeline events
+  const events = [];
+  buys.forEach(b => events.push({type:'buy', date:b.d, desc:'Compra '+b.q+' acc. a '+b.p, val:b.e+'€'}));
+  sells.forEach(s => events.push({type:'sell', date:s.d, desc:'Venta '+s.q+' acc. a '+s.p, val:sg(s.pl)+ff(s.pl)+'€'}));
+  divs.forEach(d => events.push({type:'div', date:d.d, desc:'Dividendo', val:'+'+ff(d.neto,2)+'€'}));
+  events.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+
+  let h = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">';
+  h += '<title>Informe '+tk+'</title>';
+  h += '<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">';
+  h += '<style>';
+  h += '@page{size:A4;margin:8mm 10mm}';
+  h += '*{margin:0;padding:0;box-sizing:border-box}';
+  h += 'body{font-family:"DM Sans",sans-serif;color:#0a1628;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}';
+  h += '.hdr{padding:22px 24px;border-radius:10px;text-align:center;position:relative;overflow:hidden;margin-bottom:14px;color:#fff}';
+  h += '.hdr.profit{background:linear-gradient(135deg,#064e3b,#059669)}.hdr.loss{background:linear-gradient(135deg,#7f1d1d,#dc2626)}';
+  h += '.hdr .wm{font-family:"DM Mono",monospace;font-size:64px;font-weight:700;opacity:.1;position:absolute;right:16px;top:4px}';
+  h += '.hdr .lb{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;opacity:.7}';
+  h += '.hdr .nm{font-size:19px;font-weight:800;margin:1px 0}';
+  h += '.hdr .big{font-family:"DM Mono",monospace;font-size:36px;font-weight:700}';
+  h += '.hdr .sub{font-size:12px;opacity:.75;margin-top:1px}';
+  h += '.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}';
+  h += '.cl{padding:10px 12px;border:1px solid #dde4ec;border-radius:7px;background:#f8fafc}';
+  h += '.cl-l{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#7a8fa3;margin-bottom:1px}';
+  h += '.cl-v{font-family:"DM Mono",monospace;font-size:15px;font-weight:700}';
+  h += '.cl-v.up{color:#0d9448}.cl-v.dn{color:#e02424}';
+  h += '.r2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}';
+  h += '.cb{border:1px solid #dde4ec;border-radius:10px;padding:12px;background:#fff}';
+  h += '.cb .t{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:#7a8fa3;margin-bottom:4px}';
+  h += '.cb img{width:100%;height:auto;border-radius:4px}';
+  h += '.st{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#142e4c;margin-bottom:5px;padding-bottom:3px;border-bottom:1.5px solid #142e4c}';
+  h += '.fl{font-size:11px;margin-bottom:6px}';
+  h += '.fr{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f0f2f5}';
+  h += '.fr:last-child{border-bottom:none}';
+  h += '.frl{color:#7a8fa3;font-weight:700}.frv{font-family:"DM Mono",monospace;font-weight:700}';
+  h += '.frt{border-top:2px solid #142e4c;padding-top:5px;margin-top:4px;font-size:13px}';
+  h += '.tl{display:flex;flex-wrap:wrap;gap:5px 18px;font-size:10px;margin-bottom:8px}';
+  h += '.ti{display:flex;align-items:center;gap:3px}';
+  h += '.td{width:9px;height:9px;border-radius:50%;flex-shrink:0}';
+  h += '.td.buy{background:#0d9448}.td.sell{background:#e02424}.td.div{background:#d4621a}';
+  h += '.tdt{font-family:"DM Mono",monospace;font-weight:700;font-size:9px;color:#0a1628}';
+  h += '.tdd{color:#3d5068;font-weight:600}';
+  h += '.tdv{font-family:"DM Mono",monospace;font-weight:700;font-size:9px}';
+  h += 'table{width:100%;border-collapse:collapse;font-size:10px;margin-bottom:8px}';
+  h += 'th{padding:6px 5px;text-align:right;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#7a8fa3;border-bottom:1.5px solid #142e4c}';
+  h += 'th:first-child{text-align:left}';
+  h += 'td{padding:5px 4px;text-align:right;font-family:"DM Mono",monospace;font-size:10px;border-top:1px solid #eef1f5}';
+  h += 'td:first-child{text-align:left;font-family:"DM Sans",sans-serif;font-weight:700}';
+  h += 'tr.tot{border-top:1.5px solid #142e4c}tr.tot td{font-weight:800}';
+  h += '.up{color:#0d9448}.dn{color:#e02424}';
+  h += '.ft{text-align:center;font-size:8px;color:#aaa;border-top:1px solid #eee;padding-top:6px;margin-top:10px}';
+  h += '</style></head><body>';
+
+  // HEADER
+  h += '<div class="hdr '+(isProfit?'profit':'loss')+'">';
+  h += '<div class="wm">'+tk+'</div>';
+  h += '<div class="lb">Informe de posición'+(isClosed?' · CERRADA':'')+'</div>';
+  h += '<div class="nm">'+item.nm+'</div>';
+  h += '<div class="big">'+sg(plTotal)+ff(plTotal)+'€</div>';
+  h += '<div class="sub">Rentabilidad total: '+sg(plPct)+ff(plPct,1)+'%</div>';
+  h += '</div>';
+
+  // METRICS 4-col
+  h += '<div class="g4">';
+  h += '<div class="cl"><div class="cl-l">Invertido</div><div class="cl-v">'+ff(totalInvertido)+'€</div></div>';
+  h += '<div class="cl"><div class="cl-l">'+(isClosed?'Vendido':'Valor actual')+'</div><div class="cl-v">'+ff(isClosed?totalVendido:valorActual)+'€</div></div>';
+  h += '<div class="cl"><div class="cl-l">Acc. compradas</div><div class="cl-v">'+totalAccC+'</div></div>';
+  h += '<div class="cl"><div class="cl-l">'+(isClosed?'Acc. vendidas':'En cartera')+'</div><div class="cl-v">'+(isClosed?sells.reduce(function(s,v){return s+v.q},0):item.qty)+'</div></div>';
+  h += '<div class="cl"><div class="cl-l">Dividendos</div><div class="cl-v '+(totalDivs>0?'up':'')+'">'+(totalDivs>0?'+':'')+ff(totalDivs,2)+'€</div></div>';
+  h += '<div class="cl"><div class="cl-l">Comisiones</div><div class="cl-v dn">'+ff(totalComms,2)+'€</div></div>';
+  if(!isClosed && m){
+    h += '<div class="cl"><div class="cl-l">Precio medio</div><div class="cl-v">'+m.pMedio+'</div></div>';
+    h += '<div class="cl"><div class="cl-l">Cotización</div><div class="cl-v '+(m.varP>=0?'up':'dn')+'">'+m.pActual+'</div></div>';
+  } else {
+    h += '<div class="cl"><div class="cl-l">Divisa</div><div class="cl-v">'+cur+'</div></div>';
+    h += '<div class="cl"><div class="cl-l">Exchange</div><div class="cl-v">'+(item.ex||'—')+'</div></div>';
+  }
+  h += '</div>';
+
+  // CHARTS side by side
+  if(chartCostImg || chartCvImg){
+    h += '<div class="r2">';
+    if(chartCostImg) h += '<div class="cb"><div class="t">📈 Evolución inversión</div><img src="'+chartCostImg+'"></div>';
+    if(chartCvImg) h += '<div class="cb"><div class="t">⚖️ Coste vs Valor</div><img src="'+chartCvImg+'"></div>';
+    if(chartCostImg && !chartCvImg) h += '<div></div>';
+    h += '</div>';
+  }
+
+  // FLOW + TIMELINE side by side
+  h += '<div class="r2">';
+  h += '<div><div class="st">💰 Flujo de capital</div><div class="fl">';
+  h += '<div class="fr"><span class="frl">Invertido</span><span class="frv" style="color:#e02424">-'+ff(totalInvertido)+'€</span></div>';
+  if(totalComms>0) h += '<div class="fr"><span class="frl">Comisiones</span><span class="frv" style="color:#e02424">-'+ff(totalComms,2)+'€</span></div>';
+  if(totalVendido>0) h += '<div class="fr"><span class="frl">Ventas</span><span class="frv" style="color:#0d9448">+'+ff(totalVendido)+'€</span></div>';
+  if(totalDivs>0) h += '<div class="fr"><span class="frl">Dividendos</span><span class="frv" style="color:#0d9448">+'+ff(totalDivs,2)+'€</span></div>';
+  if(!isClosed) h += '<div class="fr"><span class="frl">Valor actual</span><span class="frv" style="color:#142e4c">'+ff(valorActual)+'€</span></div>';
+  h += '<div class="fr frt"><span class="frl" style="color:#0a1628;font-weight:900">Resultado</span><span class="frv '+(isProfit?'up':'dn')+'" style="font-size:12px">'+sg(plTotal)+ff(plTotal)+'€</span></div>';
+  h += '</div></div>';
+
+  if(events.length){
+    h += '<div><div class="st">📅 Historial</div><div class="tl">';
+    events.forEach(function(ev){
+      h += '<div class="ti"><div class="td '+ev.type+'"></div><span class="tdt">'+(ev.date||'').slice(5)+'</span><span class="tdd">'+ev.desc+'</span><span class="tdv">'+ev.val+'</span></div>';
+    });
+    h += '</div></div>';
+  }
+  h += '</div>';
+
+  // TABLES
+  if(buys.length){
+    h += '<div class="st">🛒 Compras</div>';
+    h += '<table><thead><tr><th>Fecha</th><th>Acc.</th><th>Precio</th><th>Coste €</th><th>Valor €</th><th>P/L €</th></tr></thead><tbody>';
+    buys.forEach(function(b){h+='<tr><td>'+(b.d||'—')+'</td><td>'+b.q+'</td><td>'+b.p+'</td><td>'+b.e+'</td><td>'+(b.va||'—')+'</td><td>'+(b.pl||'—')+'</td></tr>';});
+    h+='<tr class="tot"><td>TOTAL</td><td>'+totalAccC+'</td><td></td><td>'+ff(totalInvertido)+'</td><td>'+ff(valorActual)+'</td><td>'+sg(plTotal)+ff(plTotal)+'</td></tr></tbody></table>';
+  }
+  if(sells.length){
+    h += '<div class="st">💰 Ventas</div>';
+    h += '<table><thead><tr><th>Fecha</th><th>Acc.</th><th>Precio</th><th>Ingreso €</th><th>P/L €</th><th>Tipo</th></tr></thead><tbody>';
+    sells.forEach(function(s){h+='<tr><td>'+(s.d||'—')+'</td><td>'+s.q+'</td><td>'+s.p+'</td><td>'+ff(s.ingreso_eur)+'</td><td class="'+(s.pl>=0?'up':'dn')+'">'+sg(s.pl)+ff(s.pl)+'</td><td>'+s.tipo+'</td></tr>';});
+    h+='</tbody></table>';
+  }
+
+  h += '<div class="ft">App análisis Loren · '+item.nm+' ('+tk+') · Informe generado el '+new Date().toLocaleDateString('es-ES')+' · Datos en EUR</div>';
+  h += '</body></html>';
+
+  var win = window.open('', '_blank');
+  win.document.write(h);
+  win.document.close();
+  setTimeout(function(){win.print();}, 600);
+}
+
+/* ════════════════════════════════════════════════
+   EXPORTAR / IMPORTAR DATOS
+   ════════════════════════════════════════════════ */
+function exportData(){
+  const backup = {
+    _version: 'loren-app-v3',
+    _date: new Date().toISOString(),
+    idc7: localStorage.getItem('idc7'),
+    fmpKey: localStorage.getItem('fmpKey'),
+    claudeKey: localStorage.getItem('claudeKey'),
+    brokerTariffs: localStorage.getItem('brokerTariffs'),
+  };
+  // También exportar datos de valoración IDC por empresa
+  for(let i=0; i<localStorage.length; i++){
+    const k = localStorage.key(i);
+    if(k.startsWith('idc_inputs_')) backup[k] = localStorage.getItem(k);
+  }
+  const json = JSON.stringify(backup, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'loren-app-backup-'+new Date().toISOString().split('T')[0]+'.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('✅ Datos exportados');
+}
+
+function importData(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      const backup = JSON.parse(e.target.result);
+      if(!backup._version){
+        toast('❌ Archivo no válido');
+        return;
+      }
+      let count = 0;
+      for(const [k,v] of Object.entries(backup)){
+        if(k.startsWith('_')) continue; // skip metadata
+        if(v != null){
+          localStorage.setItem(k, v);
+          count++;
+        }
+      }
+      toast('✅ Datos importados — recargando...');
+      setTimeout(()=>location.reload(), 1500);
+    } catch(err){
+      toast('❌ Error leyendo archivo: '+err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+load();updC();rResumen();
+</script>
+</body>
+</html>
