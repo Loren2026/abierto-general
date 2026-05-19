@@ -342,6 +342,17 @@ export default function HomePage() {
         return
       }
 
+      if (selectedProject.slug === 'gestactas') {
+        localStorage.setItem('gestactas_access', JSON.stringify({
+          validated: true,
+          project: 'gestactas',
+          deviceId,
+          accessId: data.access?.id || null,
+          binding: data.binding || null,
+          ts: Date.now(),
+        }))
+      }
+
       setAccessStatus({ type: 'success', message: 'Acceso validado. Redirigiendo al proyecto…' })
       window.location.href = selectedProject.redirectUrl
     } catch (error) {
