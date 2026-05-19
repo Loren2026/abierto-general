@@ -1937,7 +1937,6 @@ function confirmAddBuy(tk){
   const oldCost = item.cost || 0;
   item.qty = oldQty + qty;
   item.cost = Math.round(oldCost + costEur);
-  item.avg = item.cost / item.qty; // nuevo precio medio ponderado en EUR
   item.val = Math.round(toEur(item.qty * (item.pr||pr), cur));
   item.pnl = item.val - item.cost;
 
@@ -1963,13 +1962,14 @@ function confirmAddBuy(tk){
     m.rent = item.cost ? (item.pnl/item.cost)*100 : 0;
     m.nAcc = item.qty;
     // Recalcular precio medio en divisa original
-    const totalCostLocal = BUYS[tk].reduce((s,b)=>{
-      const pVal = parseFloat((b.p||'0').replace(/[^0-9.,-]/g,'').replace(',','.')) || 0;
-      const bq = typeof b.q==='number'?b.q:parseInt(b.q)||0;
-      return s + pVal * bq;
-    }, 0);
-    const avgLocal = item.qty ? totalCostLocal / item.qty : 0;
-    m.pMedio = curSym + avgLocal.toLocaleString('es-ES',{minimumFractionDigits:2});
+  const totalCostLocal = BUYS[tk].reduce((s,b)=>{
+    const pVal = parseFloat((b.p||'0').replace(/[^0-9.,-]/g,'').replace(',','.')) || 0;
+    const bq = typeof b.q==='number'?b.q:parseInt(b.q)||0;
+    return s + pVal * bq;
+  }, 0);
+  const avgLocal = item.qty ? totalCostLocal / item.qty : 0;
+  item.avg = avgLocal;
+  m.pMedio = curSym + avgLocal.toLocaleString('es-ES',{minimumFractionDigits:2});
   }
 
   save();
