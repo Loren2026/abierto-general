@@ -8,7 +8,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     networks:
-      - traefik-public
+      - openclaw-2ns9_default
     labels:
       - traefik.enable=true
       - traefik.http.routers.inteligencialoren-web.rule=Host(`inteligencialoren.com`) || Host(`www.inteligencialoren.com`) || Host(`panel.inteligencialoren.com`)
@@ -27,7 +27,7 @@ services:
       - ./api/.env
     restart: unless-stopped
     networks:
-      - traefik-public
+      - openclaw-2ns9_default
     labels:
       - traefik.enable=true
       - traefik.http.routers.inteligencialoren-api.rule=Host(`panel.inteligencialoren.com`) && PathPrefix(`/api`)
@@ -44,5 +44,5 @@ services:
       - traefik.http.routers.inteligencialoren-api-public.service=inteligencialoren-api
 
 networks:
-  traefik-public:
+  openclaw-2ns9_default:
     external: true
