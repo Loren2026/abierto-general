@@ -357,6 +357,20 @@ export default function HomePage() {
       }
 
       setAccessStatus({ type: 'success', message: 'Acceso validado. Redirigiendo al proyecto…' })
+
+      if (data.project?.slug === 'gestactas') {
+        const accessToken = encodeURIComponent(JSON.stringify({
+          validated: true,
+          project: 'gestactas',
+          deviceId,
+          accessId: data.access?.id || null,
+          binding: data.binding || null,
+          ts: Date.now(),
+        }))
+        window.location.href = `${resolvedProject.redirectUrl}?access_token=${accessToken}`
+        return
+      }
+
       window.location.href = resolvedProject.redirectUrl
     } catch (error) {
       setAccessStatus({
