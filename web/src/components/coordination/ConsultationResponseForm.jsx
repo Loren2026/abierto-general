@@ -21,11 +21,11 @@ export default function ConsultationResponseForm({ consultation, onSubmit, isSav
   return (
     <form className="coordination-response-form" onSubmit={handleSubmit}>
       <label>
-        <span>Estado final</span>
+        <span>Cómo queda</span>
         <select value={status} onChange={(event) => setStatus(event.target.value)}>
-          <option value="answered">Answered</option>
-          <option value="cancelled">Cancelled</option>
-          <option value="superseded">Superseded</option>
+          <option value="answered">Respondida</option>
+          <option value="cancelled">Cancelada</option>
+          <option value="superseded">Sustituida</option>
         </select>
       </label>
       <label>
@@ -34,11 +34,11 @@ export default function ConsultationResponseForm({ consultation, onSubmit, isSav
           rows="3"
           value={responseText}
           onChange={(event) => setResponseText(event.target.value)}
-          placeholder="Respuesta o cierre de la consulta"
+          placeholder="Respuesta o cierre de este recordatorio"
         />
       </label>
       <button className="cta-admin-button cta-admin-button--green" type="submit" disabled={isSaving}>
-        {isSaving ? 'Guardando...' : 'Responder consulta'}
+        {isSaving ? 'Guardando...' : 'Guardar respuesta'}
       </button>
     </form>
   )

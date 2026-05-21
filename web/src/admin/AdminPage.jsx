@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import useAuthStore from '../store/useAuthStore'
 import '../pages/Dashboard.css'
 import AdminLayout from '../components/layout/AdminLayout'
@@ -249,6 +250,17 @@ function AdminPage() {
                 <label>Email:</label>
                 <span>{user?.email}</span>
               </div>
+            </div>
+          </div>
+
+          <div className="info-card">
+            <h2>Workspace privado</h2>
+            <p className="coordination-panel-copy" style={{ marginBottom: 16 }}>
+              Nuevo espacio interno para chat, documentos, habilidades, proyectos y seguimiento operativo.
+            </p>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <Link className="cta-admin-button cta-admin-button--blue" to="/admin/workspace">Abrir workspace</Link>
+              <Link className="cta-admin-button cta-admin-button--green" to="/admin/agentes">Canal de coordinación actual</Link>
             </div>
           </div>
 

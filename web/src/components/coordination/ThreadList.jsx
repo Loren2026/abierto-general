@@ -11,6 +11,27 @@ function formatDate(value) {
   }
 }
 
+const statusLabels = {
+  open: 'Abierta',
+  pending_review: 'Pendiente de revisar',
+  blocked: 'Bloqueada',
+  closed: 'Cerrada',
+  archived: 'Archivada',
+}
+
+const priorityLabels = {
+  low: 'Baja',
+  normal: 'Normal',
+  high: 'Alta',
+  urgent: 'Urgente',
+}
+
+const originLabels = {
+  internal: 'Workspace',
+  telegram: 'Telegram',
+  web: 'Web',
+}
+
 export default function ThreadList({
   threads,
   selectedThreadId,
@@ -24,8 +45,8 @@ export default function ThreadList({
     <div className="coordination-panel coordination-panel--list">
       <div className="panel-header-row">
         <div>
-          <h2>Hilos</h2>
-          <p className="coordination-panel-copy">Listado operativo del canal interno.</p>
+          <h2>Conversaciones</h2>
+          <p className="coordination-panel-copy">Tus temas abiertos dentro del workspace.</p>
         </div>
       </div>
 
@@ -36,28 +57,28 @@ export default function ThreadList({
             type="text"
             value={filters.search}
             onChange={(event) => onFilterChange('search', event.target.value)}
-            placeholder="Título o resumen"
+            placeholder="Proyecto, tema o idea"
           />
         </label>
         <label>
           <span>Estado</span>
           <select value={filters.status} onChange={(event) => onFilterChange('status', event.target.value)}>
             <option value="">Todos</option>
-            <option value="open">Open</option>
-            <option value="pending_review">Pending review</option>
-            <option value="blocked">Blocked</option>
-            <option value="closed">Closed</option>
-            <option value="archived">Archived</option>
+            <option value="open">Abierta</option>
+            <option value="pending_review">Pendiente de revisar</option>
+            <option value="blocked">Bloqueada</option>
+            <option value="closed">Cerrada</option>
+            <option value="archived">Archivada</option>
           </select>
         </label>
         <label>
           <span>Prioridad</span>
           <select value={filters.priority} onChange={(event) => onFilterChange('priority', event.target.value)}>
             <option value="">Todas</option>
-            <option value="low">Low</option>
+            <option value="low">Baja</option>
             <option value="normal">Normal</option>
-            <option value="high">High</option>
-            <option value="urgent">Urgent</option>
+            <option value="high">Alta</option>
+            <option value="urgent">Urgente</option>
           </select>
         </label>
       </div>
@@ -65,10 +86,10 @@ export default function ThreadList({
       {error ? <div className="error-message">{error}</div> : null}
 
       <div className="thread-list">
-        {isLoading ? <div className="admin-notice">Cargando hilos...</div> : null}
+        {isLoading ? <div className="admin-notice">Cargando conversaciones...</div> : null}
 
         {!isLoading && !threads.length ? (
-          <div className="admin-notice">No hay hilos todavía con los filtros actuales.</div>
+          <div className="admin-notice">Todavía no hay conversaciones con esos filtros.</div>
         ) : null}
 
         {threads.map((thread) => (
@@ -80,11 +101,11 @@ export default function ThreadList({
           >
             <div className="thread-card__header">
               <h3>{thread.title}</h3>
-              <span className={`project-status project-status--${thread.status}`}>{thread.status}</span>
+              <span className={`project-status project-status--${thread.status}`}>{statusLabels[thread.status] || thread.status}</span>
             </div>
             <div className="thread-card__meta-row">
-              <span className="panel-header-pill">{thread.priority}</span>
-              <span className="coordination-muted">{thread.origin}</span>
+              <span className="panel-header-pill">{priorityLabels[thread.priority] || thread.priority}</span>
+              <span className="coordination-muted">{originLabels[thread.origin] || thread.origin}</span>
             </div>
             <p className="thread-card__summary">{thread.summary || 'Sin resumen todavía.'}</p>
             <div className="thread-card__footer">

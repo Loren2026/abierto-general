@@ -28,16 +28,16 @@ export default function ConsultationComposer({ selectedThread, onCreateConsultat
     <section className="coordination-subpanel">
       <div className="panel-header-row">
         <div>
-          <h3>Nueva consulta</h3>
+          <h3>Nuevo recordatorio o consulta</h3>
           <p className="coordination-panel-copy">
-            {selectedThread ? `Registrar consulta en: ${selectedThread.title}` : 'Selecciona un hilo para abrir una consulta.'}
+            {selectedThread ? `Quedará guardado dentro de: ${selectedThread.title}` : 'Selecciona una conversación para dejar un recordatorio o una consulta.'}
           </p>
         </div>
       </div>
 
       <form className="coordination-form" onSubmit={handleSubmit}>
         <label>
-          <span>Dirigida a</span>
+          <span>Dirigido a</span>
           <select
             value={form.requestedToRole}
             onChange={(event) => setForm((current) => ({ ...current, requestedToRole: event.target.value }))}
@@ -55,26 +55,26 @@ export default function ConsultationComposer({ selectedThread, onCreateConsultat
             onChange={(event) => setForm((current) => ({ ...current, consultationType: event.target.value }))}
             disabled={!selectedThread}
           >
-            <option value="review">Review</option>
-            <option value="proposal">Proposal</option>
-            <option value="risk_check">Risk check</option>
-            <option value="decision_request">Decision request</option>
-            <option value="clarification">Clarification</option>
+            <option value="review">Revisión</option>
+            <option value="proposal">Propuesta</option>
+            <option value="risk_check">Revisión de riesgo</option>
+            <option value="decision_request">Petición de decisión</option>
+            <option value="clarification">Aclaración</option>
           </select>
         </label>
         <label>
-          <span>Pregunta</span>
+          <span>Texto</span>
           <textarea
             rows="4"
             value={form.question}
             onChange={(event) => setForm((current) => ({ ...current, question: event.target.value }))}
-            placeholder="Escribe aquí la consulta"
+            placeholder="Escribe aquí la duda, decisión pendiente o seguimiento"
             disabled={!selectedThread}
             required
           />
         </label>
         <button className="cta-admin-button cta-admin-button--orange" type="submit" disabled={!selectedThread || isSaving}>
-          {isSaving ? 'Guardando...' : 'Crear consulta'}
+          {isSaving ? 'Guardando...' : 'Guardar recordatorio'}
         </button>
       </form>
     </section>

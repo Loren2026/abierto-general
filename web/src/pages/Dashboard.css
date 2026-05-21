@@ -773,10 +773,118 @@
   flex-wrap: wrap;
 }
 
+.workspace-page {
+  background: linear-gradient(180deg, #f4f7fb 0%, #eef4f8 100%);
+}
+
+.workspace-hero {
+  margin-bottom: 28px;
+}
+
+.workspace-section {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.workspace-section--compact {
+  gap: 16px;
+}
+
+.workspace-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.workspace-section__header h2,
+.workspace-quick-card h3,
+.workspace-doc-card h3,
+.workspace-chat-intro__card strong {
+  margin: 0;
+}
+
+.workspace-chat-intro {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.workspace-chat-intro__card,
+.workspace-quick-card,
+.workspace-doc-card,
+.workspace-shortcut-banner,
+.workspace-doc-toolbar {
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 22px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.workspace-chat-intro__card p,
+.workspace-quick-card p,
+.workspace-doc-card p,
+.workspace-shortcut-banner p {
+  margin: 8px 0 0;
+  color: #475569;
+  line-height: 1.65;
+}
+
+.workspace-chat-layout {
+  margin-bottom: 0;
+}
+
+.workspace-quick-grid,
+.workspace-doc-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.workspace-quick-card__header,
+.workspace-doc-card__header,
+.workspace-doc-card__footer,
+.workspace-shortcut-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.workspace-doc-toolbar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.workspace-doc-toolbar__item {
+  display: grid;
+  gap: 6px;
+}
+
+.workspace-doc-card__header p,
+.workspace-doc-card__description,
+.workspace-doc-card__footer span,
+.workspace-doc-toolbar__item span {
+  color: #64748b;
+}
+
+.workspace-doc-card__description {
+  margin: 14px 0 18px;
+}
+
 @media (max-width: 1024px) {
   .coordination-layout,
   .coordination-composer-grid,
-  .coordination-filters {
+  .coordination-filters,
+  .workspace-chat-intro,
+  .workspace-quick-grid,
+  .workspace-doc-grid,
+  .workspace-doc-toolbar {
     grid-template-columns: 1fr;
   }
 }

@@ -4,6 +4,7 @@ import LoginPage from '../auth/LoginPage'
 import RequireAuth from '../auth/RequireAuth'
 import AdminPage from '../admin/AdminPage'
 import AgentsPage from '../admin/AgentsPage'
+import WorkspacePage from '../admin/WorkspacePage'
 
 export default function AppRouter() {
   return (
@@ -24,6 +25,14 @@ export default function AppRouter() {
           element={
             <RequireAuth>
               <AgentsPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/workspace"
+          element={
+            <RequireAuth>
+              <WorkspacePage />
             </RequireAuth>
           }
         />

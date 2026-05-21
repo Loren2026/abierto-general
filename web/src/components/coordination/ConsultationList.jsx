@@ -14,6 +14,27 @@ function formatDate(value) {
   }
 }
 
+const roleLabels = {
+  turin: 'Turín',
+  loren: 'Loren',
+  claude: 'Claude',
+}
+
+const typeLabels = {
+  review: 'Revisión',
+  proposal: 'Propuesta',
+  risk_check: 'Revisión de riesgo',
+  decision_request: 'Petición de decisión',
+  clarification: 'Aclaración',
+}
+
+const statusLabels = {
+  pending: 'Pendiente',
+  answered: 'Respondida',
+  cancelled: 'Cancelada',
+  superseded: 'Sustituida',
+}
+
 export default function ConsultationList({ consultations, isLoading, error, onRespond, isSaving }) {
   const [openResponseId, setOpenResponseId] = useState(null)
 
@@ -21,24 +42,24 @@ export default function ConsultationList({ consultations, isLoading, error, onRe
     <section className="coordination-subpanel">
       <div className="panel-header-row">
         <div>
-          <h3>Consultas</h3>
-          <p className="coordination-panel-copy">Consultas abiertas y resueltas dentro del hilo.</p>
+          <h3>Recordatorios y consultas</h3>
+          <p className="coordination-panel-copy">Aquí quedan apuntadas las preguntas, decisiones y seguimientos que no conviene perder.</p>
         </div>
       </div>
 
       {error ? <div className="error-message">{error}</div> : null}
-      {isLoading ? <div className="admin-notice">Cargando consultas...</div> : null}
-      {!isLoading && !consultations.length ? <div className="admin-notice">No hay consultas registradas.</div> : null}
+      {isLoading ? <div className="admin-notice">Cargando recordatorios...</div> : null}
+      {!isLoading && !consultations.length ? <div className="admin-notice">No hay recordatorios ni consultas todavía.</div> : null}
 
       <div className="consultation-list">
         {consultations.map((consultation) => (
           <article key={consultation.id} className={`consultation-card consultation-card--${consultation.status}`}>
             <div className="consultation-card__header">
               <div>
-                <strong>{consultation.requestedByRole} → {consultation.requestedToRole}</strong>
-                <span className="coordination-muted">{consultation.consultationType}</span>
+                <strong>{roleLabels[consultation.requestedByRole] || consultation.requestedByRole} → {roleLabels[consultation.requestedToRole] || consultation.requestedToRole}</strong>
+                <span className="coordination-muted">{typeLabels[consultation.consultationType] || consultation.consultationType}</span>
               </div>
-              <span className={`project-status project-status--${consultation.status}`}>{consultation.status}</span>
+              <span className={`project-status project-status--${consultation.status}`}>{statusLabels[consultation.status] || consultation.status}</span>
             </div>
             <p className="consultation-card__question">{consultation.question}</p>
             {consultation.responseText ? (
@@ -58,7 +79,7 @@ export default function ConsultationList({ consultations, isLoading, error, onRe
                   className="cta-admin-button cta-admin-button--orange"
                   onClick={() => setOpenResponseId((current) => current === consultation.id ? null : consultation.id)}
                 >
-                  {openResponseId === consultation.id ? 'Ocultar respuesta' : 'Responder'}
+                  {openResponseId === consultation.id ? 'Ocultar respuesta' : 'Responder ahora'}
                 </button>
                 {openResponseId === consultation.id ? (
                   <ConsultationResponseForm consultation={consultation} onSubmit={onRespond} isSaving={isSaving} />
