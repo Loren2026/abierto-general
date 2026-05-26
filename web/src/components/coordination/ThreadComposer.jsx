@@ -62,7 +62,8 @@ export default function ThreadComposer({ selectedThread, onCreateThread, onCreat
   }
 
   return (
-    <div className="coordination-composer-grid">
+    <div className={selectedThread ? 'coordination-composer-grid coordination-composer-grid--single' : 'coordination-composer-grid'}>
+      {!selectedThread ? (
       <section className="coordination-subpanel">
         <div className="panel-header-row">
           <div>
@@ -108,8 +109,9 @@ export default function ThreadComposer({ selectedThread, onCreateThread, onCreat
           </button>
         </form>
       </section>
+      ) : null}
 
-      <section className="coordination-subpanel">
+      <section className="coordination-subpanel coordination-subpanel--message">
         <div className="panel-header-row">
           <div>
             <h3>Escribir en la conversación</h3>

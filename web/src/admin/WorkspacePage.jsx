@@ -17,79 +17,33 @@ import ThreadComposer from '../components/coordination/ThreadComposer'
 import ConsultationComposer from '../components/coordination/ConsultationComposer'
 import '../pages/Dashboard.css'
 
-const roadmap = [
-  {
-    title: 'Bloque 1, Workspace privado',
-    status: 'en curso',
-    items: [
-      'Chat limpio y natural dentro del panel privado',
-      'Acceso directo móvil y entrada rápida',
-      'Centro documental base para dejar de depender de Telegram',
-      'Índice rápido por proyectos y carpetas',
-    ],
-  },
-  {
-    title: 'Bloque 2, Habilidades y proyectos',
-    status: 'pendiente',
-    items: [
-      'Catálogo de habilidades con estado y descripción',
-      'Fichas de proyecto con prioridad, bloqueo y siguiente paso',
-      'Navegación por carpetas y dominios de trabajo',
-    ],
-  },
-  {
-    title: 'Bloque 3, Automatización operativa',
-    status: 'pendiente',
-    items: [
-      'Actualización diaria desde memoria y proyectos activos',
-      'Panel de estado vivo con prioridades y bloqueos',
-      'Sincronización con planning y decisiones',
-    ],
-  },
-]
-
-const quickAccessItems = [
-  {
-    title: 'Abrir chat contigo',
-    description: 'Entrar directo en la conversación interna del workspace para continuar cualquier frente.',
-    badge: 'Prioridad alta',
-  },
-  {
-    title: 'Ver documentos recientes',
-    description: 'Acceso rápido a entregables, borradores y materiales compartidos desde el panel privado.',
-    badge: 'Siguiente bloque',
-  },
-  {
-    title: 'Revisar proyectos activos',
-    description: 'Entrar por carpetas y frentes de trabajo sin perderte en una sola conversación.',
-    badge: 'Próximo',
-  },
-]
-
 const documentSeeds = [
   {
     id: 'gestactas-juntas',
-    name: 'GestActas, cierre bloque juntas',
+    name: 'acta-borrador.html',
     type: 'HTML',
     project: 'GestActas',
-    status: 'Pendiente de adjunto real',
-    description: 'Este hueco queda preparado para colgar pruebas, actas, borradores y entregables del bloque juntas.',
+    context: 'Bloque juntas',
+    recency: 'Hace 2 h',
+    primaryContext: 'Proyecto',
   },
   {
     id: 'mercado-valoracion',
-    name: 'Análisis mercado, borrador valoración',
+    name: 'borrador-valoracion.html',
     type: 'HTML',
-    project: 'Inteligencia Loren',
-    status: 'Preparado',
-    description: 'Base para ir colgando borradores de análisis y versiones revisables desde web.',
+    project: 'Análisis mercado',
+    context: 'Valoración',
+    recency: 'Ayer',
+    primaryContext: 'Proyecto',
   },
   {
     id: 'workspace-docs',
-    name: 'Workspace privado, documentación viva',
-    type: 'PDF / DOC / IMG',
-    project: 'Workspace',
-    status: 'Base inicial',
-    description: 'Espacio destinado a entregables, capturas, PDFs y materiales que Telegram no deja consumir bien.',
+    name: 'planning-v2-1-final.html',
+    type: 'HTML',
+    project: 'Home móvil',
+    context: 'Documento maestro',
+    recency: 'Hoy',
+    primaryContext: 'General',
   },
 ]
 
@@ -108,6 +62,7 @@ export default function WorkspacePage() {
   const [isLoadingConsultations, setIsLoadingConsultations] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [filters, setFilters] = useState({ search: '', status: '', priority: '' })
+  const [mobileView, setMobileView] = useState('home')
 
   const selectedThread = useMemo(
     () => threads.find((thread) => thread.id === selectedThreadId) || null,
@@ -120,6 +75,19 @@ export default function WorkspacePage() {
     blockedThreads: threads.filter((thread) => thread.status === 'blocked').length,
     pendingConsultations: consultations.filter((consultation) => consultation.status === 'pending').length,
   }), [threads, consultations])
+
+  const activeProjects = useMemo(() => (
+    threads.slice(0, 3).map((thread, index) => ({
+      id: thread.id,
+      title: thread.title,
+      status: thread.status,
+      summary: thread.summary || 'Sin resumen todavía.',
+      next: thread.lastMessageAt ? 'Retomar conversación' : 'Abrir hilo',
+      primaryDocument: documentSeeds[index] || documentSeeds[0],
+    }))
+  ), [threads])
+
+  const selectedProject = useMemo(() => activeProjects.find((project) => project.id === selectedThreadId) || null, [activeProjects, selectedThreadId])
 
   const handleLogout = async () => {
     await logout()
@@ -212,6 +180,7 @@ export default function WorkspacePage() {
       setActionMessage({ type: 'success', message: 'Conversación creada correctamente.' })
       await loadThreads()
       setSelectedThreadId(data.thread.id)
+      setMobileView('chat')
       return { success: true }
     } catch (error) {
       setActionMessage({ type: 'error', message: error.message })
@@ -280,91 +249,99 @@ export default function WorkspacePage() {
     setFilters((current) => ({ ...current, [field]: value }))
   }
 
+  function openThread(threadId) {
+    setSelectedThreadId(threadId)
+    setMobileView('chat')
+  }
+
+  function openProject(threadId) {
+    setSelectedThreadId(threadId)
+    setMobileView('project')
+  }
+
   return (
     <AdminLayout title="Workspace privado" onLogout={handleLogout}>
-      <div className="dashboard-container workspace-page">
-        <div className="dashboard-content">
-          <div className="security-banner workspace-hero">
-            <div className="security-icon">🧩</div>
-            <div className="security-text">
-              <h3>Workspace privado de Inteligencia Loren</h3>
-              <p>Tu espacio central para hablar conmigo, abrir materiales y entrar por proyectos sin perderte entre chats.</p>
-            </div>
-          </div>
-
+      <div className="dashboard-container workspace-page workspace-page--mobile-first">
+        <div className="dashboard-content workspace-content--mobile-first">
           {actionMessage.message ? (
             <div className={`admin-notice admin-notice--${actionMessage.type === 'success' ? 'success' : 'error'}`}>
               {actionMessage.message}
             </div>
           ) : null}
 
-          <section className="workspace-section workspace-section--compact">
-            <div className="workspace-section__header">
-              <div>
-                <h2>Lo que queda dentro de este primer bloque</h2>
-                <p className="coordination-panel-copy">He dejado resueltos los tres pasos base para que el workspace ya tenga forma real.</p>
-              </div>
-              <Link className="cta-admin-button cta-admin-button--blue" to="/admin">Volver al panel principal</Link>
-            </div>
+          {mobileView === 'home' ? (
+            <section className="workspace-mobile-home">
+              <header className="workspace-mobile-header">
+                <div>
+                  <strong>Workspace Turín</strong>
+                  <p>Retoma donde lo dejaste</p>
+                </div>
+                <Link className="workspace-mobile-header__link" to="/admin">Panel</Link>
+              </header>
 
-            <div className="project-list">
-              {roadmap.map((block) => (
-                <article key={block.title} className="project-card" style={{ cursor: 'default' }}>
-                  <div className="project-card__header">
-                    <h3>{block.title}</h3>
-                    <span className={`project-status project-status--${block.status === 'en curso' ? 'public' : 'draft'}`}>{block.status}</span>
-                  </div>
-                  <ul className="next-steps-list">
-                    {block.items.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                </article>
-              ))}
-            </div>
-          </section>
+              <article className="workspace-mobile-hero-card">
+                <div>
+                  <span className="workspace-mobile-eyebrow">Continuidad</span>
+                  <h1>Hablar con Turín</h1>
+                  <p>
+                    {selectedThread
+                      ? `Retoma la conversación sobre ${selectedThread.title}`
+                      : 'Entra al chat y continúa el trabajo donde lo dejaste.'}
+                  </p>
+                </div>
+                <div className="workspace-mobile-hero-card__actions">
+                  <button className="cta-admin-button cta-admin-button--blue" type="button" onClick={() => setMobileView('chat')}>
+                    Continuar
+                  </button>
+                  <button className="workspace-mobile-link" type="button" onClick={() => setMobileView('threads')}>
+                    Ver conversaciones
+                  </button>
+                </div>
+              </article>
 
-          <section className="workspace-section">
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-value">{isLoadingThreads ? '…' : metrics.totalThreads}</div>
-                <div className="stat-label">Conversaciones</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-value">{isLoadingThreads ? '…' : metrics.openThreads}</div>
-                <div className="stat-label">Abiertas</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-value">{isLoadingThreads ? '…' : metrics.blockedThreads}</div>
-                <div className="stat-label">Bloqueadas</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-value">{selectedThreadId ? metrics.pendingConsultations : '—'}</div>
-                <div className="stat-label">Recordatorios pendientes</div>
-              </div>
-            </div>
-          </section>
+              <section className="workspace-mobile-block">
+                <div className="workspace-mobile-block__header">
+                  <h2>Proyectos activos</h2>
+                  <span>{activeProjects.length || 0}</span>
+                </div>
+                <div className="workspace-mobile-projects">
+                  {activeProjects.map((project) => (
+                    <button key={project.id} type="button" className="workspace-mobile-project-card" onClick={() => openProject(project.id)}>
+                      <div className="workspace-mobile-project-card__top">
+                        <strong>{project.title}</strong>
+                        <span className={`project-status project-status--${project.status}`}>{project.status}</span>
+                      </div>
+                      <p>{project.summary}</p>
+                      <small>{project.next}</small>
+                    </button>
+                  ))}
+                  {!activeProjects.length && !isLoadingThreads ? (
+                    <div className="admin-notice">No hay proyectos activos todavía.</div>
+                  ) : null}
+                </div>
+              </section>
 
-          <section className="workspace-section workspace-section--chat">
-            <div className="workspace-section__header">
-              <div>
-                <h2>Chat del workspace</h2>
-                <p className="coordination-panel-copy">Pensado para sentirse como una conversación real contigo, no como una consola interna.</p>
-              </div>
-            </div>
+              <section className="workspace-mobile-status-card">
+                <div>
+                  <strong>Estado ahora</strong>
+                  <p>{metrics.openThreads} conversaciones abiertas, {metrics.pendingConsultations} recordatorios pendientes y material disponible cuando lo necesites.</p>
+                </div>
+                <button className="workspace-mobile-link" type="button" onClick={() => setMobileView('material')}>
+                  Ver material
+                </button>
+              </section>
+            </section>
+          ) : null}
 
-            <div className="workspace-chat-intro">
-              <div className="workspace-chat-intro__card">
-                <strong>Cómo usarlo ahora</strong>
-                <p>Abre una conversación por proyecto o por tema, escríbeme dentro y deja también decisiones o recordatorios para no perder contexto.</p>
-              </div>
-              <div className="workspace-chat-intro__card">
-                <strong>Para qué sirve mejor</strong>
-                <p>GestActas, análisis, entregables, revisiones y cualquier frente donde quieras separar mejor los temas.</p>
-              </div>
-            </div>
-
-            <div className="coordination-layout workspace-chat-layout">
+          {mobileView === 'threads' ? (
+            <section className="workspace-mobile-screen">
+              <header className="workspace-mobile-screen__header">
+                <button type="button" className="workspace-mobile-back" onClick={() => setMobileView('home')}>←</button>
+                <div>
+                  <strong>Conversaciones</strong>
+                  <p>Tus temas abiertos dentro del workspace.</p>
+                </div>
+              </header>
               <ThreadList
                 threads={threads}
                 selectedThreadId={selectedThreadId}
@@ -372,8 +349,58 @@ export default function WorkspacePage() {
                 error={threadsError}
                 filters={filters}
                 onFilterChange={handleFilterChange}
-                onSelectThread={setSelectedThreadId}
+                onSelectThread={openThread}
               />
+            </section>
+          ) : null}
+
+          {mobileView === 'project' ? (
+            <section className="workspace-mobile-screen">
+              <header className="workspace-mobile-screen__header">
+                <button type="button" className="workspace-mobile-back" onClick={() => setMobileView('home')}>←</button>
+                <div>
+                  <strong>{selectedProject?.title || 'Proyecto'}</strong>
+                  <p>{selectedProject ? 'Contexto rápido del frente' : 'Sin proyecto seleccionado'}</p>
+                </div>
+              </header>
+
+              <article className="workspace-mobile-project-focus">
+                <div>
+                  <span className="workspace-mobile-eyebrow">Proyecto</span>
+                  <h2>{selectedProject?.title || 'Proyecto general'}</h2>
+                  <p>{selectedProject?.summary || 'Sin resumen todavía.'}</p>
+                </div>
+                <button className="cta-admin-button cta-admin-button--blue" type="button" onClick={() => setMobileView('chat')}>
+                  Hablar sobre este proyecto
+                </button>
+              </article>
+
+              <section className="workspace-mobile-status-card">
+                <div>
+                  <strong>Estado breve</strong>
+                  <p>{selectedProject?.status || 'open'} · {selectedProject?.next || 'Retomar conversación'}.</p>
+                </div>
+                <button className="workspace-mobile-link" type="button" onClick={() => setMobileView('material')}>
+                  Ver material
+                </button>
+              </section>
+            </section>
+          ) : null}
+
+          {mobileView === 'chat' ? (
+            <section className="workspace-mobile-screen workspace-mobile-screen--chat">
+              <header className="workspace-mobile-screen__header">
+                <button type="button" className="workspace-mobile-back" onClick={() => setMobileView('home')}>←</button>
+                <div>
+                  <strong>{selectedThread?.title || 'Chat con Turín'}</strong>
+                  <p>{selectedThread ? 'Retomando conversación reciente' : 'Conversación general'}</p>
+                </div>
+              </header>
+
+              <div className="workspace-mobile-chat-context">
+                <span>Proyecto: {selectedThread?.title || 'General'}</span>
+                <small>{selectedThread?.summary || 'Continúa el trabajo desde aquí.'}</small>
+              </div>
 
               <ThreadDetail
                 thread={selectedThread}
@@ -386,91 +413,56 @@ export default function WorkspacePage() {
                 onRespondConsultation={handleRespondConsultation}
                 isSaving={isSaving}
               />
-            </div>
 
-            <ThreadComposer
-              selectedThread={selectedThread}
-              onCreateThread={handleCreateThread}
-              onCreateMessage={handleCreateMessage}
-              isSaving={isSaving}
-            />
-
-            <ConsultationComposer
-              selectedThread={selectedThread}
-              onCreateConsultation={handleCreateConsultation}
-              isSaving={isSaving}
-            />
-          </section>
-
-          <section className="workspace-section">
-            <div className="workspace-section__header">
-              <div>
-                <h2>Acceso directo</h2>
-                <p className="coordination-panel-copy">Base pensada para entrar rápido desde móvil y abrir justo lo importante.</p>
+              <div className="workspace-mobile-composer-stack">
+                <ThreadComposer
+                  selectedThread={selectedThread}
+                  onCreateThread={handleCreateThread}
+                  onCreateMessage={handleCreateMessage}
+                  isSaving={isSaving}
+                />
               </div>
-            </div>
 
-            <div className="workspace-quick-grid">
-              {quickAccessItems.map((item) => (
-                <article key={item.title} className="workspace-quick-card">
-                  <div className="workspace-quick-card__header">
-                    <h3>{item.title}</h3>
-                    <span className="panel-header-pill">{item.badge}</span>
-                  </div>
-                  <p>{item.description}</p>
-                </article>
-              ))}
-            </div>
+              <details className="workspace-mobile-secondary-panel">
+                <summary>Recordatorios y seguimiento</summary>
+                <ConsultationComposer
+                  selectedThread={selectedThread}
+                  onCreateConsultation={handleCreateConsultation}
+                  isSaving={isSaving}
+                />
+              </details>
+            </section>
+          ) : null}
 
-            <div className="workspace-shortcut-banner">
-              <div>
-                <strong>URL privada a fijar en pantalla de inicio</strong>
-                <p>Cuando terminemos de pulir el flujo, este workspace puede funcionar como entrada directa diaria desde el móvil.</p>
-              </div>
-              <span className="panel-header-pill">/admin/workspace</span>
-            </div>
-          </section>
-
-          <section className="workspace-section">
-            <div className="workspace-section__header">
-              <div>
-                <h2>Módulo documental</h2>
-                <p className="coordination-panel-copy">Base visible para empezar a centralizar archivos, entregables y materiales fuera de Telegram.</p>
-              </div>
-            </div>
-
-            <div className="workspace-doc-toolbar">
-              <div className="workspace-doc-toolbar__item">
-                <strong>Tipos previstos</strong>
-                <span>PDF, HTML, imágenes, Word, Excel, PowerPoint y otros adjuntos</span>
-              </div>
-              <div className="workspace-doc-toolbar__item">
-                <strong>Primer objetivo</strong>
-                <span>Listar, abrir y relacionar documentos con proyecto y conversación</span>
-              </div>
-            </div>
-
-            <div className="workspace-doc-grid">
-              {documentSeeds.map((document) => (
-                <article key={document.id} className="workspace-doc-card">
-                  <div className="workspace-doc-card__header">
+          {mobileView === 'material' ? (
+            <section className="workspace-mobile-screen">
+              <header className="workspace-mobile-screen__header">
+                <button type="button" className="workspace-mobile-back" onClick={() => setMobileView('home')}>←</button>
+                <div>
+                  <strong>Material</strong>
+                  <p>Lo último que estás usando en el workspace.</p>
+                </div>
+              </header>
+              <div className="workspace-mobile-material-list workspace-mobile-material-list--full">
+                {documentSeeds.map((document) => (
+                  <article key={document.id} className="workspace-mobile-material-item workspace-mobile-material-item--full">
                     <div>
-                      <h3>{document.name}</h3>
-                      <p>{document.project}</p>
+                      <strong>{document.name}</strong>
+                      <p>{document.type} · Vive en {document.project}</p>
+                      <small>{document.primaryContext} · Usado en: {document.context}</small>
                     </div>
-                    <span className="panel-header-pill">{document.type}</span>
-                  </div>
-                  <p className="workspace-doc-card__description">{document.description}</p>
-                  <div className="workspace-doc-card__footer">
-                    <span>{document.status}</span>
-                    <button type="button" className="cta-admin-button cta-admin-button--green" disabled>
-                      Próximo, conectar visor
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
+                    <span>{document.recency}</span>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <nav className="workspace-mobile-nav">
+            <button type="button" className={mobileView === 'home' ? 'workspace-mobile-nav__item workspace-mobile-nav__item--active' : 'workspace-mobile-nav__item'} onClick={() => setMobileView('home')}>Inicio</button>
+            <button type="button" className={mobileView === 'chat' || mobileView === 'threads' || mobileView === 'project' ? 'workspace-mobile-nav__item workspace-mobile-nav__item--active' : 'workspace-mobile-nav__item'} onClick={() => setMobileView('chat')}>Chat</button>
+            <button type="button" className={mobileView === 'material' ? 'workspace-mobile-nav__item workspace-mobile-nav__item--active' : 'workspace-mobile-nav__item'} onClick={() => setMobileView('material')}>Material</button>
+          </nav>
         </div>
       </div>
     </AdminLayout>
