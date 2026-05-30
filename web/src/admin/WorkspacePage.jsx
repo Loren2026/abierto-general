@@ -3,6 +3,10 @@ import { Link } from 'react-router-dom'
 import AdminLayout from '../components/layout/AdminLayout'
 import useAuthStore from '../store/useAuthStore'
 import {
+  createWorkspaceDocumentSignedUrl,
+  listWorkspaceDocuments,
+} from '../services/workspaceDocumentsApi'
+import {
   createThread,
   createThreadConsultation,
   createThreadMessage,
@@ -17,35 +21,6 @@ import ThreadComposer from '../components/coordination/ThreadComposer'
 import ConsultationComposer from '../components/coordination/ConsultationComposer'
 import '../pages/Dashboard.css'
 
-const documentSeeds = [
-  {
-    id: 'gestactas-juntas',
-    name: 'acta-borrador.html',
-    type: 'HTML',
-    project: 'GestActas',
-    context: 'Bloque juntas',
-    recency: 'Hace 2 h',
-    primaryContext: 'Proyecto',
-  },
-  {
-    id: 'mercado-valoracion',
-    name: 'borrador-valoracion.html',
-    type: 'HTML',
-    project: 'Análisis mercado',
-    context: 'Valoración',
-    recency: 'Ayer',
-    primaryContext: 'Proyecto',
-  },
-  {
-    id: 'workspace-docs',
-    name: 'planning-v2-1-final.html',
-    type: 'HTML',
-    project: 'Workspace',
-    context: 'Documento maestro',
-    recency: 'Hoy',
-    primaryContext: 'General',
-  },
-]
 
 export default function WorkspacePage() {
   const { session, logout } = useAuthStore()
@@ -63,6 +38,10 @@ export default function WorkspacePage() {
   const [isSaving, setIsSaving] = useState(false)
   const [filters, setFilters] = useState({ search: '', status: '', priority: '' })
   const [mobileView, setMobileView] = useState('home')
+  const [documents, setDocuments] = useState([])
+  const [documentsError, setDocumentsError] = useState('')
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState(false)
+  const [openingDocumentPath, setOpeningDocumentPath] = useState(null)
 
   const selectedThread = useMemo(
     () => threads.find((thread) => thread.id === selectedThreadId) || null,
@@ -83,9 +62,9 @@ export default function WorkspacePage() {
       status: thread.status,
       summary: thread.summary || 'Sin resumen todavía.',
       next: thread.lastMessageAt ? 'Retomar conversación' : 'Abrir hilo',
-      primaryDocument: documentSeeds[index] || documentSeeds[0],
+      primaryDocument: documents[index] || documents[0] || null,
     }))
-  ), [threads])
+  ), [threads, documents])
 
   const selectedProject = useMemo(() => activeProjects.find((project) => project.id === selectedThreadId) || null, [activeProjects, selectedThreadId])
 
@@ -170,6 +149,45 @@ export default function WorkspacePage() {
     loadThreadMessages(selectedThreadId)
     loadThreadConsultations(selectedThreadId)
   }, [selectedThreadId, session?.accessToken])
+
+  useEffect(() => {
+    loadDocuments()
+  }, [])
+
+  async function loadDocuments() {
+    setIsLoadingDocuments(true)
+    setDocumentsError('')
+
+    try {
+      const nextDocuments = await listWorkspaceDocuments()
+      setDocuments(nextDocuments)
+    } catch (error) {
+      setDocumentsError(error.message)
+      setDocuments([])
+    } finally {
+      setIsLoadingDocuments(false)
+    }
+  }
+
+  async function handleOpenDocument(document) {
+    setOpeningDocumentPath(document.path)
+    setActionMessage({ type: '', message: '' })
+
+    try {
+      const signedUrl = await createWorkspaceDocumentSignedUrl(document.path)
+      window.open(signedUrl, '_blank', 'noopener,noreferrer')
+    } catch (error) {
+      setActionMessage({ type: 'error', message: error.message })
+    } finally {
+      setOpeningDocumentPath(null)
+    }
+  }
+
+  function formatDocumentMeta(document) {
+    const size = document.size ? `${Math.ceil(document.size / 1024)} KB` : 'Tamaño no disponible'
+    const updated = document.updatedAt ? new Date(document.updatedAt).toLocaleDateString('es-ES') : 'Sin fecha'
+    return `${document.type} · ${size} · ${updated}`
+  }
 
   async function handleCreateThread(payload) {
     setIsSaving(true)
@@ -444,16 +462,35 @@ export default function WorkspacePage() {
                 </div>
               </header>
               <div className="workspace-mobile-material-list workspace-mobile-material-list--full">
-                {documentSeeds.map((document) => (
+                {isLoadingDocuments ? (
+                  <div className="admin-notice">Cargando material del workspace…</div>
+                ) : null}
+
+                {documentsError ? (
+                  <div className="admin-notice admin-notice--error">{documentsError}</div>
+                ) : null}
+
+                {!isLoadingDocuments && !documentsError && documents.length === 0 ? (
+                  <div className="admin-notice">El bucket projects está vacío o no hay documentos visibles.</div>
+                ) : null}
+
+                {!isLoadingDocuments && !documentsError ? documents.map((document) => (
                   <article key={document.id} className="workspace-mobile-material-item workspace-mobile-material-item--full">
                     <div>
                       <strong>{document.name}</strong>
-                      <p>{document.type} · Vive en {document.project}</p>
-                      <small>{document.primaryContext} · Usado en: {document.context}</small>
+                      <p>{formatDocumentMeta(document)}</p>
+                      <small>Bucket: {document.source} · Ruta: {document.path}</small>
                     </div>
-                    <span>{document.recency}</span>
+                    <button
+                      className="workspace-mobile-link"
+                      type="button"
+                      onClick={() => handleOpenDocument(document)}
+                      disabled={openingDocumentPath === document.path}
+                    >
+                      {openingDocumentPath === document.path ? 'Abriendo…' : 'Abrir'}
+                    </button>
                   </article>
-                ))}
+                )) : null}
               </div>
             </section>
           ) : null}
