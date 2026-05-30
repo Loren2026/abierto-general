@@ -29,7 +29,7 @@ const roleLabels = {
 }
 
 const originLabels = {
-  internal: 'Workspace privado',
+  internal: 'Workspace',
   telegram: 'Telegram',
   web: 'Web',
 }

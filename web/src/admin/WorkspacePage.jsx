@@ -40,7 +40,7 @@ const documentSeeds = [
     id: 'workspace-docs',
     name: 'planning-v2-1-final.html',
     type: 'HTML',
-    project: 'Home móvil',
+    project: 'Workspace',
     context: 'Documento maestro',
     recency: 'Hoy',
     primaryContext: 'General',
@@ -260,7 +260,7 @@ export default function WorkspacePage() {
   }
 
   return (
-    <AdminLayout title="Workspace privado" onLogout={handleLogout}>
+    <AdminLayout title="Workspace" onLogout={handleLogout}>
       <div className="dashboard-container workspace-page workspace-page--mobile-first">
         <div className="dashboard-content workspace-content--mobile-first">
           {actionMessage.message ? (

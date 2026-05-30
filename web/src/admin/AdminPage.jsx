@@ -254,7 +254,7 @@ function AdminPage() {
           </div>
 
           <div className="info-card">
-            <h2>Workspace privado</h2>
+            <h2>Workspace</h2>
             <p className="coordination-panel-copy" style={{ marginBottom: 16 }}>
               Nuevo espacio interno para chat, documentos, habilidades, proyectos y seguimiento operativo.
             </p>
