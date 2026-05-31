@@ -90,6 +90,7 @@ export default function WorkspacePage() {
   const [actionMessage, setActionMessage] = useState({ type: '', message: '' })
   const [isLoadingThreads, setIsLoadingThreads] = useState(true)
   const [isLoadingProjects, setIsLoadingProjects] = useState(true)
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false)
   const [mobileView, setMobileView] = useState('home')
   const [documents, setDocuments] = useState([])
   const [documentsError, setDocumentsError] = useState('')
