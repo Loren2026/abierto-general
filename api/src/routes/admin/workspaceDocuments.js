@@ -21,7 +21,9 @@ router.get('/documents', async (req, res) => {
 
 router.post('/signed-url', async (req, res) => {
   try {
-    const signedUrl = await createWorkspaceDocumentSignedUrl(req.body?.path)
+    const signedUrl = await createWorkspaceDocumentSignedUrl(req.body?.path, {
+      download: req.body?.disposition === 'attachment',
+    })
     return res.json({ success: true, signedUrl })
   } catch (error) {
     console.error('Error creando URL firmada del workspace:', error)

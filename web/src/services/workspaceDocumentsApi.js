@@ -31,10 +31,13 @@ export async function listWorkspaceDocuments(session) {
   return data.documents || []
 }
 
-export async function createWorkspaceDocumentSignedUrl(session, path) {
+export async function createWorkspaceDocumentSignedUrl(session, path, options = {}) {
   const data = await workspaceDocumentsFetch(session, '/api/admin/workspace/signed-url', {
     method: 'POST',
-    body: JSON.stringify({ path }),
+    body: JSON.stringify({
+      path,
+      disposition: options.download ? 'attachment' : 'inline',
+    }),
   })
 
   if (!data.signedUrl) {

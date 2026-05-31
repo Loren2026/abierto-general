@@ -21,6 +21,18 @@ import ThreadComposer from '../components/coordination/ThreadComposer'
 import ConsultationComposer from '../components/coordination/ConsultationComposer'
 import '../pages/Dashboard.css'
 
+const BROWSER_PREVIEW_TYPES = new Set(['JSON', 'PDF', 'PNG', 'JPG', 'JPEG', 'GIF', 'WEBP', 'SVG', 'TXT', 'MD'])
+const OFFICE_PREVIEW_TYPES = new Set(['DOC', 'DOCX', 'XLS', 'XLSX', 'PPT', 'PPTX'])
+const OFFICE_VIEWER_URL = 'https://view.officeapps.live.com/op/view.aspx?src='
+
+function canPreviewInBrowser(document) {
+  return BROWSER_PREVIEW_TYPES.has(document.type)
+}
+
+function canPreviewWithOffice(document) {
+  return OFFICE_PREVIEW_TYPES.has(document.type)
+}
+
 
 export default function WorkspacePage() {
   const { session, logout } = useAuthStore()
@@ -172,12 +184,56 @@ export default function WorkspacePage() {
   }
 
   async function handleOpenDocument(document) {
-    setOpeningDocumentPath(document.path)
+    if (canPreviewWithOffice(document)) {
+      await handleDownloadDocument(document)
+      return
+    }
+
+    setOpeningDocumentPath(`open:${document.path}`)
     setActionMessage({ type: '', message: '' })
 
     try {
       const signedUrl = await createWorkspaceDocumentSignedUrl(session, document.path)
       window.open(signedUrl, '_blank', 'noopener,noreferrer')
+    } catch (error) {
+      setActionMessage({ type: 'error', message: error.message })
+    } finally {
+      setOpeningDocumentPath(null)
+    }
+  }
+
+  async function handlePreviewOfficeDocument(document) {
+    const confirmed = window.confirm('Para previsualizar este documento se enviará temporalmente a Microsoft. ¿Continuar?')
+
+    if (!confirmed) return
+
+    setOpeningDocumentPath(`preview:${document.path}`)
+    setActionMessage({ type: '', message: '' })
+
+    try {
+      const signedUrl = await createWorkspaceDocumentSignedUrl(session, document.path)
+      window.open(`${OFFICE_VIEWER_URL}${encodeURIComponent(signedUrl)}`, '_blank', 'noopener,noreferrer')
+    } catch (error) {
+      setActionMessage({ type: 'error', message: error.message })
+    } finally {
+      setOpeningDocumentPath(null)
+    }
+  }
+
+  async function handleDownloadDocument(document) {
+    setOpeningDocumentPath(`download:${document.path}`)
+    setActionMessage({ type: '', message: '' })
+
+    try {
+      const signedUrl = await createWorkspaceDocumentSignedUrl(session, document.path, { download: true })
+      const link = window.document.createElement('a')
+      link.href = signedUrl
+      link.download = document.name
+      link.rel = 'noopener noreferrer'
+      link.target = '_blank'
+      window.document.body.appendChild(link)
+      link.click()
+      window.document.body.removeChild(link)
     } catch (error) {
       setActionMessage({ type: 'error', message: error.message })
     } finally {
@@ -483,14 +539,38 @@ export default function WorkspacePage() {
                       <p>{formatDocumentMeta(document)}</p>
                       <small>Bucket: {document.source} · Ruta: {document.path}</small>
                     </div>
-                    <button
-                      className="workspace-mobile-link"
-                      type="button"
-                      onClick={() => handleOpenDocument(document)}
-                      disabled={openingDocumentPath === document.path}
-                    >
-                      {openingDocumentPath === document.path ? 'Abriendo…' : 'Abrir'}
-                    </button>
+                    <div className="workspace-mobile-hero-card__actions">
+                      {canPreviewInBrowser(document) ? (
+                        <button
+                          className="workspace-mobile-link"
+                          type="button"
+                          onClick={() => handleOpenDocument(document)}
+                          disabled={openingDocumentPath === `open:${document.path}`}
+                        >
+                          {openingDocumentPath === `open:${document.path}` ? 'Abriendo…' : 'Abrir'}
+                        </button>
+                      ) : null}
+
+                      {canPreviewWithOffice(document) ? (
+                        <button
+                          className="workspace-mobile-link"
+                          type="button"
+                          onClick={() => handlePreviewOfficeDocument(document)}
+                          disabled={openingDocumentPath === `preview:${document.path}`}
+                        >
+                          {openingDocumentPath === `preview:${document.path}` ? 'Preparando…' : 'Previsualizar'}
+                        </button>
+                      ) : null}
+
+                      <button
+                        className="workspace-mobile-link"
+                        type="button"
+                        onClick={() => handleDownloadDocument(document)}
+                        disabled={openingDocumentPath === `download:${document.path}`}
+                      >
+                        {openingDocumentPath === `download:${document.path}` ? 'Descargando…' : 'Descargar'}
+                      </button>
+                    </div>
                   </article>
                 )) : null}
               </div>

@@ -53,16 +53,18 @@ export async function listWorkspaceDocuments() {
     .map((item) => formatDocument(item))
 }
 
-export async function createWorkspaceDocumentSignedUrl(path) {
+export async function createWorkspaceDocumentSignedUrl(path, options = {}) {
   if (!isValidWorkspacePath(path)) {
     const error = new Error('Ruta de documento no válida.')
     error.status = 400
     throw error
   }
 
+  const signedUrlOptions = options.download ? { download: true } : undefined
+
   const { data, error } = await supabaseAdmin.storage
     .from(WORKSPACE_BUCKET)
-    .createSignedUrl(path, SIGNED_URL_EXPIRES_IN_SECONDS)
+    .createSignedUrl(path, SIGNED_URL_EXPIRES_IN_SECONDS, signedUrlOptions)
 
   if (error) {
     throw new Error(error.message || 'No se pudo abrir el documento.')
