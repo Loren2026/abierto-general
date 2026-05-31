@@ -200,6 +200,26 @@ export async function createThreadMessage(req, res) {
   }
 }
 
+export async function deleteMessage(req, res) {
+  const { messageId } = req.params
+
+  try {
+    const message = await getMessageById(messageId)
+    if (!message) return res.status(404).json({ error: 'message not found' })
+
+    const { error } = await supabaseAdmin
+      .from('coordination_messages')
+      .delete()
+      .eq('id', messageId)
+
+    if (handleSupabaseError(error, res)) return
+
+    return res.json({ success: true })
+  } catch (error) {
+    return handleSupabaseError(error, res)
+  }
+}
+
 export async function listThreadConsultations(req, res) {
   const { threadId } = req.params
   const { limit, offset } = parseListParams(req.query, 20, 100)

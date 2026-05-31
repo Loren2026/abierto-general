@@ -1171,3 +1171,72 @@
 .workspace-chat-input-placeholder strong { color: #f6f0ff; }
 .workspace-chat-input-placeholder p { margin: 4px 0 0; color: #a99bc4; font-size: 13px; }
 .workspace-chat-input-placeholder button { border: 1px solid rgba(156, 95, 255, 0.22); border-radius: 14px; padding: 10px 12px; color: #8f83a9; background: rgba(18, 23, 38, 0.8); }
+
+.message-bubble__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.message-bubble__actions button {
+  border: 1px solid rgba(246, 240, 255, 0.18);
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.message-bubble__actions button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.workspace-chat-composer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: end;
+  position: relative;
+}
+
+.workspace-chat-composer textarea {
+  min-height: 42px;
+  max-height: 120px;
+  resize: vertical;
+  border: 1px solid rgba(156, 95, 255, 0.24);
+  border-radius: 16px;
+  padding: 11px 13px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+  font: inherit;
+}
+
+.workspace-chat-composer textarea::placeholder {
+  color: #8f83a9;
+}
+
+.workspace-chat-clip,
+.workspace-chat-send {
+  border: 1px solid rgba(156, 95, 255, 0.24);
+  border-radius: 16px;
+  min-height: 42px;
+  padding: 0 13px;
+  color: #f6f0ff;
+  background: rgba(18, 23, 38, 0.9);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.workspace-chat-send {
+  background: linear-gradient(135deg, rgba(117, 43, 181, 0.96), rgba(45, 18, 85, 0.96));
+}
+
+.workspace-chat-composer__notice {
+  grid-column: 2 / 4;
+  color: #00f58a;
+  font-size: 12px;
+  margin-top: 6px;
+}

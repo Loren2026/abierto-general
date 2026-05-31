@@ -64,6 +64,12 @@ export function createThreadMessage(session, threadId, payload) {
   })
 }
 
+export function deleteThreadMessage(session, messageId) {
+  return coordinationFetch(session, `/api/admin/coordination/messages/${messageId}`, {
+    method: 'DELETE',
+  })
+}
+
 export function listThreadConsultations(session, threadId, params = {}) {
   return coordinationFetch(session, `/api/admin/coordination/threads/${threadId}/consultations${buildQuery(params)}`)
 }

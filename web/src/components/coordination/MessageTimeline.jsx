@@ -27,7 +27,25 @@ function getBubbleSide(message) {
   return 'left'
 }
 
-export default function MessageTimeline({ messages, isLoading, error }) {
+async function copyMessageText(text, onCopied) {
+  try {
+    await navigator.clipboard.writeText(text)
+  } catch {
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.setAttribute('readonly', '')
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textarea)
+  }
+
+  onCopied?.()
+}
+
+export default function MessageTimeline({ messages, isLoading, error, copiedMessageId, deletingMessageId, onCopyMessage, onDeleteMessage }) {
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -60,8 +78,21 @@ export default function MessageTimeline({ messages, isLoading, error }) {
               <p>{message.body}</p>
               <div className="message-bubble__footer">
                 <span>{typeLabels[message.messageType] || message.messageType}</span>
-                {message.isActionable ? <span>Acción pendiente</span> : null}
-                {message.requiresResponse ? <span>Necesita respuesta</span> : null}
+                <div className="message-bubble__actions">
+                  <button
+                    type="button"
+                    onClick={() => copyMessageText(message.body, () => onCopyMessage?.(message.id))}
+                  >
+                    {copiedMessageId === message.id ? 'Copiado' : 'Copiar'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDeleteMessage?.(message)}
+                    disabled={deletingMessageId === message.id}
+                  >
+                    {deletingMessageId === message.id ? 'Eliminando…' : 'Eliminar'}
+                  </button>
+                </div>
               </div>
             </article>
           )

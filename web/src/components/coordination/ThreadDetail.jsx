@@ -30,6 +30,10 @@ export default function ThreadDetail({
   messages,
   isLoadingMessages,
   messagesError,
+  copiedMessageId,
+  deletingMessageId,
+  onCopyMessage,
+  onDeleteMessage,
 }) {
   if (!thread) {
     return (
@@ -56,7 +60,15 @@ export default function ThreadDetail({
         <span>Última actividad: {formatDate(thread.lastMessageAt || thread.createdAt)}</span>
       </div>
 
-      <MessageTimeline messages={messages} isLoading={isLoadingMessages} error={messagesError} />
+      <MessageTimeline
+        messages={messages}
+        isLoading={isLoadingMessages}
+        error={messagesError}
+        copiedMessageId={copiedMessageId}
+        deletingMessageId={deletingMessageId}
+        onCopyMessage={onCopyMessage}
+        onDeleteMessage={onDeleteMessage}
+      />
     </div>
   )
 }

@@ -7,6 +7,7 @@ import {
   listWorkspaceDocuments,
 } from '../services/workspaceDocumentsApi'
 import {
+  deleteThreadMessage,
   listThreadMessages,
   listThreads,
   listWorkspaceProjects,
@@ -84,6 +85,8 @@ export default function WorkspacePage() {
   const [threadsError, setThreadsError] = useState('')
   const [messagesError, setMessagesError] = useState('')
   const [projectsError, setProjectsError] = useState('')
+  const [copiedMessageId, setCopiedMessageId] = useState(null)
+  const [deletingMessageId, setDeletingMessageId] = useState(null)
   const [actionMessage, setActionMessage] = useState({ type: '', message: '' })
   const [isLoadingThreads, setIsLoadingThreads] = useState(true)
   const [isLoadingProjects, setIsLoadingProjects] = useState(true)
@@ -282,6 +285,29 @@ export default function WorkspacePage() {
     return `${document.type} · ${size} · ${updated}`
   }
 
+  function handleCopyMessage(messageId) {
+    setCopiedMessageId(messageId)
+    window.setTimeout(() => setCopiedMessageId(null), 1800)
+  }
+
+  async function handleDeleteMessage(message) {
+    const confirmed = window.confirm('¿Eliminar este mensaje?')
+    if (!confirmed) return
+
+    setDeletingMessageId(message.id)
+    setActionMessage({ type: '', message: '' })
+
+    try {
+      await deleteThreadMessage(session, message.id)
+      setActionMessage({ type: 'success', message: 'Mensaje eliminado.' })
+      await loadThreadMessages(selectedThread)
+    } catch (error) {
+      setActionMessage({ type: 'error', message: error.message })
+    } finally {
+      setDeletingMessageId(null)
+    }
+  }
+
   function openThread(threadId) {
     setSelectedThreadId(threadId)
     setMobileView('chat')
@@ -450,6 +476,10 @@ export default function WorkspacePage() {
                 messages={messages}
                 isLoadingMessages={isLoadingMessages || isLoadingThreads || isLoadingProjects}
                 messagesError={messagesError}
+                copiedMessageId={copiedMessageId}
+                deletingMessageId={deletingMessageId}
+                onCopyMessage={handleCopyMessage}
+                onDeleteMessage={handleDeleteMessage}
               />
 
               <div className="workspace-mobile-composer-stack">
