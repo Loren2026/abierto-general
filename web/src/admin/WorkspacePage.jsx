@@ -324,9 +324,20 @@ export default function WorkspacePage() {
     setMobileView('chat')
   }
 
+  function goBackFromCurrentView() {
+    if (mobileView === 'material') {
+      setMobileView('chat')
+      return
+    }
+
+    setMobileView('home')
+  }
+
+  const shouldHideAdminHeader = mobileView === 'chat' || mobileView === 'material'
+
   return (
     <AdminLayout title="Workspace" onLogout={handleLogout}>
-      <div className="dashboard-container workspace-page workspace-page--mobile-first">
+      <div className={shouldHideAdminHeader ? 'dashboard-container workspace-page workspace-page--mobile-first workspace-page--hide-admin-header' : 'dashboard-container workspace-page workspace-page--mobile-first'}>
         <div className="dashboard-content workspace-content--mobile-first">
           {actionMessage.message ? (
             <div className={`admin-notice admin-notice--${actionMessage.type === 'success' ? 'success' : 'error'}`}>
@@ -447,7 +458,7 @@ export default function WorkspacePage() {
           {mobileView === 'chat' ? (
             <section className="workspace-mobile-screen workspace-mobile-screen--chat">
               <header className="workspace-mobile-screen__header">
-                <button type="button" className="workspace-mobile-back" onClick={() => setMobileView('home')}>←</button>
+                <button type="button" className="workspace-mobile-back" onClick={goBackFromCurrentView}>←</button>
                 <div>
                   <strong>{selectedThread?.title || 'Chat con Turín'}</strong>
                   <p>{selectedThread ? 'Retomando conversación reciente' : 'Conversación general'}</p>
@@ -492,7 +503,7 @@ export default function WorkspacePage() {
           {mobileView === 'material' ? (
             <section className="workspace-mobile-screen">
               <header className="workspace-mobile-screen__header">
-                <button type="button" className="workspace-mobile-back" onClick={() => setMobileView('home')}>←</button>
+                <button type="button" className="workspace-mobile-back" onClick={goBackFromCurrentView}>←</button>
                 <div>
                   <strong>Material</strong>
                   <p>Lo último que estás usando en el workspace.</p>
