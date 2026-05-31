@@ -38,6 +38,10 @@ export async function coordinationFetch(session, path, options = {}) {
   return data
 }
 
+export function listWorkspaceProjects(session) {
+  return coordinationFetch(session, '/api/admin/projects')
+}
+
 export function listThreads(session, params = {}) {
   return coordinationFetch(session, `/api/admin/coordination/threads${buildQuery(params)}`)
 }

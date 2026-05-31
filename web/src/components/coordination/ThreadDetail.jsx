@@ -1,8 +1,7 @@
 import MessageTimeline from './MessageTimeline'
-import ConsultationList from './ConsultationList'
 
 function formatDate(value) {
-  if (!value) return 'No disponible'
+  if (!value) return 'Sin actividad todavía'
 
   try {
     return new Intl.DateTimeFormat('es-ES', {
@@ -15,79 +14,49 @@ function formatDate(value) {
 }
 
 const statusLabels = {
+  general: 'General',
   open: 'Abierta',
-  pending_review: 'Pendiente de revisar',
+  pending_review: 'Pendiente',
   blocked: 'Bloqueada',
   closed: 'Cerrada',
   archived: 'Archivada',
-}
-
-const roleLabels = {
-  turin: 'Turín',
-  loren: 'Loren',
-  claude: 'Claude',
-}
-
-const originLabels = {
-  internal: 'Workspace',
-  telegram: 'Telegram',
-  web: 'Web',
+  public: 'Publicado',
+  private: 'Privado',
+  draft: 'Borrador',
 }
 
 export default function ThreadDetail({
   thread,
   messages,
-  consultations,
   isLoadingMessages,
-  isLoadingConsultations,
   messagesError,
-  consultationsError,
-  onRespondConsultation,
-  isSaving,
 }) {
   if (!thread) {
     return (
-      <div className="coordination-panel coordination-panel--detail">
-        <div className="info-card">
-          <h2>Abre una conversación</h2>
-          <p className="agents-placeholder-copy">
-            Elige una conversación para seguir hablando conmigo desde aquí.
-          </p>
+      <div className="workspace-chat-panel workspace-chat-panel--empty">
+        <div className="workspace-chat-empty">
+          <strong>Chat libre/general</strong>
+          <p>Elige una conversación del desplegable para verla aquí.</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="coordination-panel coordination-panel--detail">
-      <div className="selected-project-banner selected-project-banner--compact">
+    <div className="workspace-chat-shell">
+      <div className="workspace-chat-titlebar">
         <div>
           <strong>{thread.title}</strong>
-          <p className="coordination-panel-copy">{thread.summary || 'Seguimos desde el último punto.'}</p>
+          <p>{thread.summary || 'Conversación continua del proyecto.'}</p>
         </div>
-        <div className="thread-detail__badges">
-          <span className={`project-status project-status--${thread.status}`}>{statusLabels[thread.status] || thread.status}</span>
-        </div>
+        <span className={`project-status project-status--${thread.status}`}>{statusLabels[thread.status] || thread.status}</span>
       </div>
 
       <div className="thread-detail__meta-inline">
-        <span>{roleLabels[thread.assignedTo] || thread.assignedTo || 'Sin asignar'}</span>
-        <span>•</span>
-        <span>{originLabels[thread.origin] || thread.origin}</span>
-        <span>•</span>
-        <span>{formatDate(thread.lastMessageAt || thread.createdAt)}</span>
+        <span>Última actividad: {formatDate(thread.lastMessageAt || thread.createdAt)}</span>
       </div>
 
-      <div className="coordination-detail-stack">
-        <MessageTimeline messages={messages} isLoading={isLoadingMessages} error={messagesError} />
-        <ConsultationList
-          consultations={consultations}
-          isLoading={isLoadingConsultations}
-          error={consultationsError}
-          onRespond={onRespondConsultation}
-          isSaving={isSaving}
-        />
-      </div>
+      <MessageTimeline messages={messages} isLoading={isLoadingMessages} error={messagesError} />
     </div>
   )
 }

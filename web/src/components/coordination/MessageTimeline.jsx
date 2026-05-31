@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react'
+
 function formatDate(value) {
   if (!value) return 'Sin fecha'
 
@@ -16,39 +18,55 @@ const typeLabels = {
   note: 'Nota',
   proposal: 'Propuesta',
   decision: 'Decisión',
+  system: 'Sistema',
+}
+
+function getBubbleSide(message) {
+  if (message.authorRole === 'loren') return 'right'
+  if (message.authorRole === 'system') return 'center'
+  return 'left'
 }
 
 export default function MessageTimeline({ messages, isLoading, error }) {
-  return (
-    <section className="coordination-subpanel">
-      <div className="panel-header-row">
-        <div>
-          <h3>Mensajes</h3>
-          <p className="coordination-panel-copy">La conversación tal y como va quedando en este tema.</p>
-        </div>
-      </div>
+  const bottomRef = useRef(null)
 
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ block: 'end' })
+  }, [messages.length, isLoading])
+
+  return (
+    <section className="workspace-chat-panel">
       {error ? <div className="error-message">{error}</div> : null}
       {isLoading ? <div className="admin-notice">Cargando mensajes...</div> : null}
-      {!isLoading && !messages.length ? <div className="admin-notice">Todavía no hay mensajes en esta conversación.</div> : null}
+      {!isLoading && !messages.length ? (
+        <div className="workspace-chat-empty">
+          <strong>Chat listo.</strong>
+          <p>F1 solo prepara la estructura. El envío real a Turín llegará en F2.</p>
+        </div>
+      ) : null}
 
-      <div className="message-timeline">
-        {messages.map((message) => (
-          <article key={message.id} className={`message-bubble message-bubble--${message.authorRole}`}>
-            <div className="message-bubble__header">
-              <div>
+      <div className="message-timeline message-timeline--chat">
+        {messages.map((message) => {
+          const side = getBubbleSide(message)
+          return (
+            <article
+              key={message.id}
+              className={`message-bubble message-bubble--${message.authorRole} message-bubble--${side}`}
+            >
+              <div className="message-bubble__header">
                 <strong>{message.authorLabel}</strong>
-                <span className="coordination-muted">{typeLabels[message.messageType] || message.messageType}</span>
+                <span>{formatDate(message.createdAt)}</span>
               </div>
-              <span className="coordination-muted">{formatDate(message.createdAt)}</span>
-            </div>
-            <p>{message.body}</p>
-            <div className="message-bubble__footer">
-              {message.isActionable ? <span className="panel-header-pill">Acción pendiente</span> : null}
-              {message.requiresResponse ? <span className="panel-header-pill">Necesita respuesta</span> : null}
-            </div>
-          </article>
-        ))}
+              <p>{message.body}</p>
+              <div className="message-bubble__footer">
+                <span>{typeLabels[message.messageType] || message.messageType}</span>
+                {message.isActionable ? <span>Acción pendiente</span> : null}
+                {message.requiresResponse ? <span>Necesita respuesta</span> : null}
+              </div>
+            </article>
+          )
+        })}
+        <div ref={bottomRef} />
       </div>
     </section>
   )

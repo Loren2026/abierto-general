@@ -7,18 +7,12 @@ import {
   listWorkspaceDocuments,
 } from '../services/workspaceDocumentsApi'
 import {
-  createThread,
-  createThreadConsultation,
-  createThreadMessage,
-  listThreadConsultations,
   listThreadMessages,
   listThreads,
-  respondConsultation,
+  listWorkspaceProjects,
 } from '../services/coordinationApi'
-import ThreadList from '../components/coordination/ThreadList'
 import ThreadDetail from '../components/coordination/ThreadDetail'
 import ThreadComposer from '../components/coordination/ThreadComposer'
-import ConsultationComposer from '../components/coordination/ConsultationComposer'
 import '../pages/Dashboard.css'
 
 const BROWSER_PREVIEW_TYPES = new Set(['JSON', 'PDF', 'PNG', 'JPG', 'JPEG', 'GIF', 'WEBP', 'SVG', 'TXT', 'MD'])
@@ -33,52 +27,111 @@ function canPreviewWithOffice(document) {
   return OFFICE_PREVIEW_TYPES.has(document.type)
 }
 
+const GENERAL_CHAT_ID = 'general-chat'
+const GENERAL_CHAT = {
+  id: GENERAL_CHAT_ID,
+  title: 'Chat libre/general',
+  status: 'general',
+  summary: 'Conversación libre del Workspace. El envío real llegará en F2.',
+  lastMessageAt: null,
+  createdAt: null,
+}
+
+const PROJECT_STATUS_ORDER = {
+  in_progress: 1,
+  active: 1,
+  construction: 1,
+  open: 1,
+  draft: 2,
+  private: 2,
+  pending_review: 3,
+  blocked: 4,
+  public: 5,
+  closed: 6,
+  archived: 7,
+  finished: 7,
+  completed: 7,
+}
+
+function normalizeProject(project) {
+  return {
+    id: `project:${project.id}`,
+    projectId: project.id,
+    title: project.name || project.title || project.slug || 'Proyecto sin nombre',
+    status: project.status || 'private',
+    summary: project.description || 'Conversación continua del proyecto.',
+    lastMessageAt: null,
+    createdAt: project.created_at || project.published_at || null,
+  }
+}
+
+function sortConversations(conversations) {
+  return [...conversations].sort((first, second) => {
+    const firstOrder = PROJECT_STATUS_ORDER[first.status] ?? 3
+    const secondOrder = PROJECT_STATUS_ORDER[second.status] ?? 3
+    if (firstOrder !== secondOrder) return firstOrder - secondOrder
+    return first.title.localeCompare(second.title, 'es')
+  })
+}
+
 
 export default function WorkspacePage() {
   const { session, logout } = useAuthStore()
   const [threads, setThreads] = useState([])
-  const [selectedThreadId, setSelectedThreadId] = useState(null)
+  const [projects, setProjects] = useState([])
+  const [selectedThreadId, setSelectedThreadId] = useState(GENERAL_CHAT_ID)
   const [messages, setMessages] = useState([])
-  const [consultations, setConsultations] = useState([])
   const [threadsError, setThreadsError] = useState('')
   const [messagesError, setMessagesError] = useState('')
-  const [consultationsError, setConsultationsError] = useState('')
+  const [projectsError, setProjectsError] = useState('')
   const [actionMessage, setActionMessage] = useState({ type: '', message: '' })
   const [isLoadingThreads, setIsLoadingThreads] = useState(true)
-  const [isLoadingMessages, setIsLoadingMessages] = useState(false)
-  const [isLoadingConsultations, setIsLoadingConsultations] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [filters, setFilters] = useState({ search: '', status: '', priority: '' })
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true)
   const [mobileView, setMobileView] = useState('home')
   const [documents, setDocuments] = useState([])
   const [documentsError, setDocumentsError] = useState('')
   const [isLoadingDocuments, setIsLoadingDocuments] = useState(false)
   const [openingDocumentPath, setOpeningDocumentPath] = useState(null)
 
+  const projectConversations = useMemo(
+    () => sortConversations(projects.map(normalizeProject)),
+    [projects],
+  )
+
+  const threadConversations = useMemo(
+    () => sortConversations(threads.map((thread) => ({ ...thread, id: `thread:${thread.id}`, threadId: thread.id }))),
+    [threads],
+  )
+
+  const conversations = useMemo(
+    () => [GENERAL_CHAT, ...projectConversations, ...threadConversations],
+    [projectConversations, threadConversations],
+  )
+
   const selectedThread = useMemo(
-    () => threads.find((thread) => thread.id === selectedThreadId) || null,
-    [threads, selectedThreadId],
+    () => conversations.find((thread) => thread.id === selectedThreadId) || GENERAL_CHAT,
+    [conversations, selectedThreadId],
   )
 
   const metrics = useMemo(() => ({
-    totalThreads: threads.length,
-    openThreads: threads.filter((thread) => thread.status === 'open').length,
-    blockedThreads: threads.filter((thread) => thread.status === 'blocked').length,
-    pendingConsultations: consultations.filter((consultation) => consultation.status === 'pending').length,
-  }), [threads, consultations])
+    totalThreads: conversations.length,
+    openThreads: conversations.filter((thread) => ['open', 'active', 'in_progress', 'construction', 'private'].includes(thread.status)).length,
+    blockedThreads: conversations.filter((thread) => thread.status === 'blocked').length,
+    pendingConsultations: 0,
+  }), [conversations])
 
   const activeProjects = useMemo(() => (
-    threads.slice(0, 3).map((thread, index) => ({
+    conversations.slice(1, 4).map((thread, index) => ({
       id: thread.id,
       title: thread.title,
       status: thread.status,
       summary: thread.summary || 'Sin resumen todavía.',
-      next: thread.lastMessageAt ? 'Retomar conversación' : 'Abrir hilo',
+      next: thread.lastMessageAt ? 'Retomar conversación' : 'Abrir conversación',
       primaryDocument: documents[index] || documents[0] || null,
     }))
-  ), [threads, documents])
+  ), [conversations, documents])
 
-  const selectedProject = useMemo(() => activeProjects.find((project) => project.id === selectedThreadId) || null, [activeProjects, selectedThreadId])
+  const selectedProject = useMemo(() => conversations.find((project) => project.id === selectedThreadId) || GENERAL_CHAT, [conversations, selectedThreadId])
 
   const handleLogout = async () => {
     await logout()
@@ -91,23 +144,8 @@ export default function WorkspacePage() {
     setThreadsError('')
 
     try {
-      const data = await listThreads(session, {
-        search: filters.search,
-        status: filters.status,
-        priority: filters.priority,
-        limit: 50,
-        offset: 0,
-      })
-      const nextThreads = data.threads || []
-      setThreads(nextThreads)
-
-      if (!selectedThreadId && nextThreads.length) {
-        setSelectedThreadId(nextThreads[0].id)
-      }
-
-      if (selectedThreadId && !nextThreads.some((thread) => thread.id === selectedThreadId)) {
-        setSelectedThreadId(nextThreads[0]?.id || null)
-      }
+      const data = await listThreads(session, { limit: 100, offset: 0 })
+      setThreads(data.threads || [])
     } catch (error) {
       setThreadsError(error.message)
     } finally {
@@ -115,8 +153,24 @@ export default function WorkspacePage() {
     }
   }
 
-  async function loadThreadMessages(threadId) {
-    if (!threadId || !session?.accessToken) {
+  async function loadProjects() {
+    if (!session?.accessToken) return
+
+    setIsLoadingProjects(true)
+    setProjectsError('')
+
+    try {
+      const data = await listWorkspaceProjects(session)
+      setProjects(data.projects || [])
+    } catch (error) {
+      setProjectsError(error.message)
+    } finally {
+      setIsLoadingProjects(false)
+    }
+  }
+
+  async function loadThreadMessages(conversation) {
+    if (!conversation?.threadId || !session?.accessToken) {
       setMessages([])
       return
     }
@@ -125,7 +179,7 @@ export default function WorkspacePage() {
     setMessagesError('')
 
     try {
-      const data = await listThreadMessages(session, threadId, { limit: 200, offset: 0 })
+      const data = await listThreadMessages(session, conversation.threadId, { limit: 200, offset: 0 })
       setMessages(data.messages || [])
     } catch (error) {
       setMessagesError(error.message)
@@ -134,33 +188,14 @@ export default function WorkspacePage() {
     }
   }
 
-  async function loadThreadConsultations(threadId) {
-    if (!threadId || !session?.accessToken) {
-      setConsultations([])
-      return
-    }
-
-    setIsLoadingConsultations(true)
-    setConsultationsError('')
-
-    try {
-      const data = await listThreadConsultations(session, threadId, { limit: 100, offset: 0 })
-      setConsultations(data.consultations || [])
-    } catch (error) {
-      setConsultationsError(error.message)
-    } finally {
-      setIsLoadingConsultations(false)
-    }
-  }
-
   useEffect(() => {
     loadThreads()
-  }, [session?.accessToken, filters.search, filters.status, filters.priority])
+    loadProjects()
+  }, [session?.accessToken])
 
   useEffect(() => {
-    loadThreadMessages(selectedThreadId)
-    loadThreadConsultations(selectedThreadId)
-  }, [selectedThreadId, session?.accessToken])
+    loadThreadMessages(selectedThread)
+  }, [selectedThread?.id, session?.accessToken])
 
   useEffect(() => {
     loadDocuments()
@@ -247,84 +282,6 @@ export default function WorkspacePage() {
     return `${document.type} · ${size} · ${updated}`
   }
 
-  async function handleCreateThread(payload) {
-    setIsSaving(true)
-    setActionMessage({ type: '', message: '' })
-
-    try {
-      const data = await createThread(session, payload)
-      setActionMessage({ type: 'success', message: 'Conversación creada correctamente.' })
-      await loadThreads()
-      setSelectedThreadId(data.thread.id)
-      setMobileView('chat')
-      return { success: true }
-    } catch (error) {
-      setActionMessage({ type: 'error', message: error.message })
-      return { success: false }
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  async function handleCreateMessage(payload) {
-    if (!selectedThreadId) return { success: false }
-
-    setIsSaving(true)
-    setActionMessage({ type: '', message: '' })
-
-    try {
-      await createThreadMessage(session, selectedThreadId, payload)
-      setActionMessage({ type: 'success', message: 'Mensaje enviado.' })
-      await Promise.all([loadThreads(), loadThreadMessages(selectedThreadId)])
-      return { success: true }
-    } catch (error) {
-      setActionMessage({ type: 'error', message: error.message })
-      return { success: false }
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  async function handleCreateConsultation(payload) {
-    if (!selectedThreadId) return { success: false }
-
-    setIsSaving(true)
-    setActionMessage({ type: '', message: '' })
-
-    try {
-      await createThreadConsultation(session, selectedThreadId, payload)
-      setActionMessage({ type: 'success', message: 'Recordatorio guardado.' })
-      await loadThreadConsultations(selectedThreadId)
-      return { success: true }
-    } catch (error) {
-      setActionMessage({ type: 'error', message: error.message })
-      return { success: false }
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  async function handleRespondConsultation(consultationId, payload) {
-    setIsSaving(true)
-    setActionMessage({ type: '', message: '' })
-
-    try {
-      await respondConsultation(session, consultationId, payload)
-      setActionMessage({ type: 'success', message: 'Recordatorio actualizado.' })
-      await loadThreadConsultations(selectedThreadId)
-      return { success: true }
-    } catch (error) {
-      setActionMessage({ type: 'error', message: error.message })
-      return { success: false }
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  function handleFilterChange(field, value) {
-    setFilters((current) => ({ ...current, [field]: value }))
-  }
-
   function openThread(threadId) {
     setSelectedThreadId(threadId)
     setMobileView('chat')
@@ -333,6 +290,11 @@ export default function WorkspacePage() {
   function openProject(threadId) {
     setSelectedThreadId(threadId)
     setMobileView('project')
+  }
+
+  function handleConversationChange(event) {
+    setSelectedThreadId(event.target.value)
+    setMobileView('chat')
   }
 
   return (
@@ -415,18 +377,10 @@ export default function WorkspacePage() {
                 <button type="button" className="workspace-mobile-back" onClick={() => setMobileView('home')}>←</button>
                 <div>
                   <strong>Conversaciones</strong>
-                  <p>Tus temas abiertos dentro del workspace.</p>
+                  <p>Elige el proyecto desde el desplegable del chat.</p>
                 </div>
               </header>
-              <ThreadList
-                threads={threads}
-                selectedThreadId={selectedThreadId}
-                isLoading={isLoadingThreads}
-                error={threadsError}
-                filters={filters}
-                onFilterChange={handleFilterChange}
-                onSelectThread={openThread}
-              />
+              <div className="admin-notice">La navegación principal de F1 está en el selector superior del Chat.</div>
             </section>
           ) : null}
 
@@ -473,40 +427,34 @@ export default function WorkspacePage() {
                 </div>
               </header>
 
+              <label className="workspace-chat-selector">
+                <span>Conversación</span>
+                <select value={selectedThreadId} onChange={handleConversationChange}>
+                  {conversations.map((conversation) => (
+                    <option key={conversation.id} value={conversation.id}>{conversation.title}</option>
+                  ))}
+                </select>
+              </label>
+
+              {(threadsError || projectsError) ? (
+                <div className="admin-notice admin-notice--error">{threadsError || projectsError}</div>
+              ) : null}
+
               <div className="workspace-mobile-chat-context">
-                <span>Proyecto: {selectedThread?.title || 'General'}</span>
+                <span>Proyecto: {selectedThread?.title || 'Chat libre/general'}</span>
                 <small>{selectedThread?.summary || 'Continúa el trabajo desde aquí.'}</small>
               </div>
 
               <ThreadDetail
                 thread={selectedThread}
                 messages={messages}
-                consultations={consultations}
-                isLoadingMessages={isLoadingMessages}
-                isLoadingConsultations={isLoadingConsultations}
+                isLoadingMessages={isLoadingMessages || isLoadingThreads || isLoadingProjects}
                 messagesError={messagesError}
-                consultationsError={consultationsError}
-                onRespondConsultation={handleRespondConsultation}
-                isSaving={isSaving}
               />
 
               <div className="workspace-mobile-composer-stack">
-                <ThreadComposer
-                  selectedThread={selectedThread}
-                  onCreateThread={handleCreateThread}
-                  onCreateMessage={handleCreateMessage}
-                  isSaving={isSaving}
-                />
+                <ThreadComposer selectedThread={selectedThread} />
               </div>
-
-              <details className="workspace-mobile-secondary-panel">
-                <summary>Recordatorios y seguimiento</summary>
-                <ConsultationComposer
-                  selectedThread={selectedThread}
-                  onCreateConsultation={handleCreateConsultation}
-                  isSaving={isSaving}
-                />
-              </details>
             </section>
           ) : null}
 
