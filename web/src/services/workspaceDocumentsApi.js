@@ -1,56 +1,44 @@
-import { supabase } from './supabase'
-
-const WORKSPACE_BUCKET = 'projects'
-const SIGNED_URL_EXPIRES_IN_SECONDS = 60 * 10
-
-function getDocumentType(name) {
-  const extension = name.split('.').pop()?.toUpperCase()
-  return extension && extension !== name.toUpperCase() ? extension : 'FILE'
+async function readJson(response) {
+  return response.json().catch(() => ({}))
 }
 
-function formatDocument(file) {
-  const path = file.name
-
-  return {
-    id: path,
-    name: file.name,
-    type: getDocumentType(file.name),
-    path,
-    source: WORKSPACE_BUCKET,
-    size: file.metadata?.size || 0,
-    updatedAt: file.updated_at || file.created_at || null,
+async function workspaceDocumentsFetch(session, path, options = {}) {
+  const headers = {
+    Authorization: `Bearer ${session?.accessToken}`,
+    ...(options.headers || {}),
   }
+
+  if (options.body && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json'
+  }
+
+  const response = await fetch(path, {
+    ...options,
+    headers,
+  })
+
+  const data = await readJson(response)
+
+  if (!response.ok) {
+    throw new Error(data.error || 'No se pudo cargar el material del workspace.')
+  }
+
+  return data
 }
 
-export async function listWorkspaceDocuments() {
-  const { data, error } = await supabase.storage
-    .from(WORKSPACE_BUCKET)
-    .list('', {
-      limit: 100,
-      offset: 0,
-      sortBy: { column: 'name', order: 'asc' },
-    })
-
-  if (error) {
-    throw new Error(error.message || 'No se pudo cargar el material del workspace.')
-  }
-
-  return (data || [])
-    .filter((item) => item.id && item.name)
-    .map(formatDocument)
+export async function listWorkspaceDocuments(session) {
+  const data = await workspaceDocumentsFetch(session, '/api/admin/workspace/documents')
+  return data.documents || []
 }
 
-export async function createWorkspaceDocumentSignedUrl(path) {
-  const { data, error } = await supabase.storage
-    .from(WORKSPACE_BUCKET)
-    .createSignedUrl(path, SIGNED_URL_EXPIRES_IN_SECONDS)
+export async function createWorkspaceDocumentSignedUrl(session, path) {
+  const data = await workspaceDocumentsFetch(session, '/api/admin/workspace/signed-url', {
+    method: 'POST',
+    body: JSON.stringify({ path }),
+  })
 
-  if (error) {
-    throw new Error(error.message || 'No se pudo abrir el documento.')
-  }
-
-  if (!data?.signedUrl) {
-    throw new Error('Supabase no devolvió una URL firmada para este documento.')
+  if (!data.signedUrl) {
+    throw new Error('El backend no devolvió una URL firmada para este documento.')
   }
 
   return data.signedUrl

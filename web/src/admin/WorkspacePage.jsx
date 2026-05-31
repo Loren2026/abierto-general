@@ -152,14 +152,16 @@ export default function WorkspacePage() {
 
   useEffect(() => {
     loadDocuments()
-  }, [])
+  }, [session?.accessToken])
 
   async function loadDocuments() {
+    if (!session?.accessToken) return
+
     setIsLoadingDocuments(true)
     setDocumentsError('')
 
     try {
-      const nextDocuments = await listWorkspaceDocuments()
+      const nextDocuments = await listWorkspaceDocuments(session)
       setDocuments(nextDocuments)
     } catch (error) {
       setDocumentsError(error.message)
@@ -174,7 +176,7 @@ export default function WorkspacePage() {
     setActionMessage({ type: '', message: '' })
 
     try {
-      const signedUrl = await createWorkspaceDocumentSignedUrl(document.path)
+      const signedUrl = await createWorkspaceDocumentSignedUrl(session, document.path)
       window.open(signedUrl, '_blank', 'noopener,noreferrer')
     } catch (error) {
       setActionMessage({ type: 'error', message: error.message })

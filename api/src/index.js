@@ -11,11 +11,12 @@ import adminProjectsRoutes from './routes/admin/projects.js';
 import adminAccessRoutes from './routes/admin/accesses.js';
 import adminDeviceRoutes from './routes/admin/devices.js';
 import adminCoordinationRoutes from './routes/admin/coordination.js';
+import adminWorkspaceDocumentsRoutes from './routes/admin/workspaceDocuments.js';
 import publicProjectRoutes from './routes/public/projects.js';
 import publicDownloadRoutes from './routes/public/downloads.js';
 import webauthnRoutes from './routes/auth/webauthn.js';
 import { requireAdminSession } from './middleware/requireAdminSession.js';
-import { resolveSessionUser } from './middleware/requireSession.js';
+import { requireSession, resolveSessionUser } from './middleware/requireSession.js';
 
 // Solo cargar .env en desarrollo local. En producción, jamás leer /app/.env interno.
 const isProduction = process.env.NODE_ENV === 'production';
@@ -282,6 +283,7 @@ app.post('/api/admin/example', verifySession, csrfProtection, async (req, res) =
 });
 
 // Rutas Fase 4B
+app.use('/api/admin/workspace', requireSession, adminWorkspaceDocumentsRoutes);
 app.use('/api/admin', requireAdminSession, adminProjectsRoutes);
 app.use('/api/admin', requireAdminSession, adminAccessRoutes);
 app.use('/api/admin', requireAdminSession, adminDeviceRoutes);
