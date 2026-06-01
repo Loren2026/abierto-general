@@ -57,6 +57,10 @@ export function listThreadMessages(session, threadId, params = {}) {
   return coordinationFetch(session, `/api/admin/coordination/threads/${threadId}/messages${buildQuery(params)}`)
 }
 
+export function getGatewayBridgeStatus(session) {
+  return coordinationFetch(session, '/api/admin/coordination/gateway/status')
+}
+
 export function createThreadMessage(session, threadId, payload) {
   return coordinationFetch(session, `/api/admin/coordination/threads/${threadId}/messages`, {
     method: 'POST',
@@ -67,6 +71,13 @@ export function createThreadMessage(session, threadId, payload) {
 export function deleteThreadMessage(session, messageId) {
   return coordinationFetch(session, `/api/admin/coordination/messages/${messageId}`, {
     method: 'DELETE',
+  })
+}
+
+export function sendThreadMessageToTurin(session, threadId, payload) {
+  return coordinationFetch(session, `/api/admin/coordination/threads/${threadId}/messages/send-to-turin`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
   })
 }
 

@@ -25,6 +25,10 @@ import {
   validateMessagePayload,
   validateThreadPayload,
 } from '../../utils/coordination.js'
+import {
+  getWorkspaceGatewayStatus,
+  sendWorkspaceMessageToGateway,
+} from '../../services/openclawGatewayService.js'
 
 function handleSupabaseError(error, res) {
   if (!error) return false
@@ -197,6 +201,90 @@ export async function createThreadMessage(req, res) {
     return res.status(201).json({ message: mapMessage(data) })
   } catch (error) {
     return handleSupabaseError(error, res)
+  }
+}
+
+export async function getGatewayBridgeStatus(req, res) {
+  return res.json({ gateway: getWorkspaceGatewayStatus() })
+}
+
+export async function sendThreadMessageToTurin(req, res) {
+  const { threadId } = req.params
+  const body = req.body?.body?.toString().trim()
+
+  if (!body) return res.status(400).json({ error: 'body is required' })
+
+  try {
+    const thread = await getThreadById(threadId)
+    if (!thread) return res.status(404).json({ error: 'thread not found' })
+
+    const lorenPayload = {
+      messageType: 'message',
+      authorType: 'human',
+      authorRole: 'loren',
+      authorLabel: 'Loren',
+      body,
+      bodyFormat: 'plain_text',
+      visibility: 'internal',
+      metadata: {
+        source: 'workspace-chat',
+      },
+    }
+
+    const { data: lorenData, error: lorenError } = await supabaseAdmin
+      .from('coordination_messages')
+      .insert(buildMessageInsert(threadId, lorenPayload))
+      .select('*')
+      .single()
+
+    if (handleSupabaseError(lorenError, res)) return
+
+    const gatewayResponse = await sendWorkspaceMessageToGateway({
+      threadId,
+      messageId: lorenData.id,
+      body,
+    })
+
+    const turinPayload = {
+      messageType: 'message',
+      authorType: 'assistant',
+      authorRole: 'turin',
+      authorLabel: 'Turín',
+      body: gatewayResponse.text,
+      bodyFormat: 'markdown',
+      visibility: 'internal',
+      parentMessageId: lorenData.id,
+      metadata: {
+        source: 'openclaw-gateway',
+        runId: gatewayResponse.runId,
+        runStatus: gatewayResponse.status,
+        sessionKey: gatewayResponse.sessionKey,
+        usage: gatewayResponse.usage,
+      },
+    }
+
+    const { data: turinData, error: turinError } = await supabaseAdmin
+      .from('coordination_messages')
+      .insert(buildMessageInsert(threadId, turinPayload))
+      .select('*')
+      .single()
+
+    if (handleSupabaseError(turinError, res)) return
+
+    return res.status(201).json({
+      lorenMessage: mapMessage(lorenData),
+      turinMessage: mapMessage(turinData),
+      gateway: {
+        runId: gatewayResponse.runId,
+        status: gatewayResponse.status,
+      },
+    })
+  } catch (error) {
+    const statusCode = error.statusCode || 500
+    return res.status(statusCode).json({
+      error: error.message || 'Error enviando mensaje a Turín',
+      code: error.code,
+    })
   }
 }
 

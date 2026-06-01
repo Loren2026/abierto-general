@@ -8,9 +8,11 @@ import {
 } from '../services/workspaceDocumentsApi'
 import {
   deleteThreadMessage,
+  getGatewayBridgeStatus,
   listThreadMessages,
   listThreads,
   listWorkspaceProjects,
+  sendThreadMessageToTurin,
 } from '../services/coordinationApi'
 import ThreadDetail from '../components/coordination/ThreadDetail'
 import ThreadComposer from '../components/coordination/ThreadComposer'
@@ -91,6 +93,8 @@ export default function WorkspacePage() {
   const [isLoadingThreads, setIsLoadingThreads] = useState(true)
   const [isLoadingProjects, setIsLoadingProjects] = useState(true)
   const [isLoadingMessages, setIsLoadingMessages] = useState(false)
+  const [isSendingMessage, setIsSendingMessage] = useState(false)
+  const [isGatewayBridgeEnabled, setIsGatewayBridgeEnabled] = useState(false)
   const [mobileView, setMobileView] = useState('home')
   const [documents, setDocuments] = useState([])
   const [documentsError, setDocumentsError] = useState('')
@@ -195,6 +199,7 @@ export default function WorkspacePage() {
   useEffect(() => {
     loadThreads()
     loadProjects()
+    loadGatewayBridgeStatus()
   }, [session?.accessToken])
 
   useEffect(() => {
@@ -204,6 +209,17 @@ export default function WorkspacePage() {
   useEffect(() => {
     loadDocuments()
   }, [session?.accessToken])
+
+  async function loadGatewayBridgeStatus() {
+    if (!session?.accessToken) return
+
+    try {
+      const data = await getGatewayBridgeStatus(session)
+      setIsGatewayBridgeEnabled(Boolean(data.gateway?.enabled && data.gateway?.configured))
+    } catch {
+      setIsGatewayBridgeEnabled(false)
+    }
+  }
 
   async function loadDocuments() {
     if (!session?.accessToken) return
@@ -289,6 +305,27 @@ export default function WorkspacePage() {
   function handleCopyMessage(messageId) {
     setCopiedMessageId(messageId)
     window.setTimeout(() => setCopiedMessageId(null), 1800)
+  }
+
+  async function handleSendMessageToTurin(body) {
+    if (!selectedThread?.threadId || !session?.accessToken) {
+      setActionMessage({ type: 'error', message: 'El envío real estará disponible en F2.' })
+      return false
+    }
+
+    setIsSendingMessage(true)
+    setActionMessage({ type: '', message: '' })
+
+    try {
+      await sendThreadMessageToTurin(session, selectedThread.threadId, { body })
+      await Promise.all([loadThreadMessages(selectedThread), loadThreads()])
+      return true
+    } catch (error) {
+      setActionMessage({ type: 'error', message: error.message })
+      return false
+    } finally {
+      setIsSendingMessage(false)
+    }
   }
 
   async function handleDeleteMessage(message) {
@@ -495,7 +532,12 @@ export default function WorkspacePage() {
               />
 
               <div className="workspace-mobile-composer-stack">
-                <ThreadComposer selectedThread={selectedThread} />
+                <ThreadComposer
+                  selectedThread={selectedThread}
+                  isBridgeEnabled={isGatewayBridgeEnabled}
+                  isSending={isSendingMessage}
+                  onSendMessage={handleSendMessageToTurin}
+                />
               </div>
             </section>
           ) : null}
