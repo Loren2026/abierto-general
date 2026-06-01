@@ -1,122 +1,92 @@
-const DEFAULT_GATEWAY_URL = 'ws://127.0.0.1:18789'
-const DEFAULT_AGENT_ID = 'main'
-const DEFAULT_TIMEOUT_MS = 120_000
+const DEFAULT_BRIDGE_TIMEOUT_MS = 120_000
 
 function isEnabled(value) {
   return ['1', 'true', 'yes', 'on', 'enabled'].includes(String(value || '').toLowerCase())
 }
 
-function buildSessionKey(threadId) {
-  return `workspace-thread:${threadId}`
-}
-
-function resolveGatewayConfig() {
+function resolveBridgeConfig() {
   return {
     enabled: isEnabled(process.env.WORKSPACE_TURIN_GATEWAY_ENABLED),
-    url: process.env.OPENCLAW_GATEWAY_URL || DEFAULT_GATEWAY_URL,
-    token: process.env.OPENCLAW_GATEWAY_TOKEN,
-    agentId: process.env.OPENCLAW_WORKSPACE_AGENT_ID || DEFAULT_AGENT_ID,
-    timeoutMs: Number.parseInt(process.env.OPENCLAW_GATEWAY_TIMEOUT_MS || `${DEFAULT_TIMEOUT_MS}`, 10),
+    url: process.env.WORKSPACE_BRIDGE_URL,
+    token: process.env.WORKSPACE_BRIDGE_TOKEN,
+    timeoutMs: Number.parseInt(process.env.WORKSPACE_BRIDGE_TIMEOUT_MS || `${DEFAULT_BRIDGE_TIMEOUT_MS}`, 10),
   }
 }
 
-function normalizeGatewayError(error) {
-  if (error?.code === 'ERR_MODULE_NOT_FOUND' || error?.code === 'MODULE_NOT_FOUND') {
-    return new Error('@openclaw/sdk no está instalado en el backend. Pendiente de instalar dependencia antes de activar F2.')
-  }
-
-  return error instanceof Error ? error : new Error('Error desconocido hablando con OpenClaw Gateway')
-}
-
-function extractResultText(result) {
-  if (typeof result?.output?.text === 'string' && result.output.text.trim()) {
-    return result.output.text.trim()
-  }
-
-  const lastTextMessage = [...(result?.output?.messages || [])]
-    .reverse()
-    .find((message) => typeof message?.text === 'string' && message.text.trim())
-
-  if (lastTextMessage) return lastTextMessage.text.trim()
-
-  if (typeof result?.text === 'string' && result.text.trim()) return result.text.trim()
-
-  return ''
+function buildBridgeError(message, statusCode, code) {
+  const error = new Error(message)
+  error.statusCode = statusCode
+  error.code = code
+  return error
 }
 
 export function getWorkspaceGatewayStatus() {
-  const config = resolveGatewayConfig()
+  const config = resolveBridgeConfig()
 
   return {
     enabled: config.enabled,
-    configured: Boolean(config.token),
-    url: config.url,
-    agentId: config.agentId,
+    configured: Boolean(config.url && config.token),
     timeoutMs: config.timeoutMs,
   }
 }
 
 export async function sendWorkspaceMessageToGateway({ threadId, messageId, body }) {
-  const config = resolveGatewayConfig()
+  const config = resolveBridgeConfig()
 
   if (!config.enabled) {
-    const error = new Error('El puente Workspace ↔ Turín está desactivado.')
-    error.statusCode = 503
-    error.code = 'WORKSPACE_GATEWAY_DISABLED'
-    throw error
+    throw buildBridgeError('El puente Workspace ↔ Turín está desactivado.', 503, 'WORKSPACE_GATEWAY_DISABLED')
+  }
+
+  if (!config.url) {
+    throw buildBridgeError('WORKSPACE_BRIDGE_URL no está configurado en el backend.', 503, 'WORKSPACE_BRIDGE_URL_MISSING')
   }
 
   if (!config.token) {
-    const error = new Error('OPENCLAW_GATEWAY_TOKEN no está configurado en el backend.')
-    error.statusCode = 503
-    error.code = 'OPENCLAW_GATEWAY_TOKEN_MISSING'
-    throw error
+    throw buildBridgeError('WORKSPACE_BRIDGE_TOKEN no está configurado en el backend.', 503, 'WORKSPACE_BRIDGE_TOKEN_MISSING')
   }
 
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), config.timeoutMs)
+
   try {
-    const { OpenClaw } = await import('@openclaw/sdk')
-    const oc = new OpenClaw({
-      url: config.url,
-      token: config.token,
-      requestTimeoutMs: Math.min(config.timeoutMs, 30_000),
-    })
-
-    await oc.connect()
-
-    const sessionKey = buildSessionKey(threadId)
-    const agent = await oc.agents.get(config.agentId)
-    const run = await agent.run({
-      input: body,
-      sessionKey,
-      timeoutMs: config.timeoutMs,
-      metadata: {
-        source: 'inteligencialoren-workspace',
-        threadId,
-        messageId,
-        idempotencyKey: `workspace-message:${messageId}`,
+    const response = await fetch(`${config.url.replace(/\/$/, '')}/workspace-chat/send`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.token}`,
+        'Content-Type': 'application/json',
       },
-      idempotencyKey: `workspace-message:${messageId}`,
+      body: JSON.stringify({ threadId, messageId, body }),
+      signal: controller.signal,
     })
 
-    const result = await run.wait({ timeoutMs: config.timeoutMs })
-    const text = extractResultText(result)
+    const data = await response.json().catch(() => ({}))
 
-    if (!text) {
-      const error = new Error('OpenClaw Gateway no devolvió texto de respuesta.')
-      error.statusCode = 502
-      error.code = 'OPENCLAW_EMPTY_RESPONSE'
-      error.result = result
-      throw error
+    if (!response.ok) {
+      throw buildBridgeError(
+        data.error || 'Error hablando con el puente interno de OpenClaw.',
+        response.status,
+        data.code || 'WORKSPACE_BRIDGE_ERROR',
+      )
+    }
+
+    if (!data.text?.trim()) {
+      throw buildBridgeError('El puente interno no devolvió texto de respuesta.', 502, 'WORKSPACE_BRIDGE_EMPTY_RESPONSE')
     }
 
     return {
-      text,
-      runId: result?.runId || run?.id || null,
-      status: result?.status || null,
-      sessionKey,
-      usage: result?.usage || null,
+      text: data.text.trim(),
+      runId: data.runId || null,
+      status: data.status || null,
+      sessionKey: data.sessionKey || `workspace-thread:${threadId}`,
+      usage: data.usage || null,
     }
   } catch (error) {
-    throw normalizeGatewayError(error)
+    if (error.name === 'AbortError') {
+      throw buildBridgeError('Timeout esperando respuesta del puente interno de OpenClaw.', 504, 'WORKSPACE_BRIDGE_TIMEOUT')
+    }
+
+    throw error
+  } finally {
+    clearTimeout(timeout)
   }
 }

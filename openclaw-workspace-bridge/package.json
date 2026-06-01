@@ -1,0 +1,15 @@
+{
+  "name": "openclaw-workspace-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Internal Workspace-to-OpenClaw Gateway bridge for InteligenciaLoren",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "check": "node --check src/server.js && node --check src/openclawGatewayClient.js"
+  },
+  "dependencies": {
+    "ws": "8.20.1"
+  }
+}
