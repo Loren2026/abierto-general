@@ -1423,3 +1423,26 @@
   font-weight: 950;
   line-height: 1;
 }
+
+/* Workspace chat high-contrast readability override */
+.workspace-page .admin-notice--error,
+.workspace-page .error-message {
+  background: #fff1f2 !important;
+  color: #7f1d1d !important;
+  border: 2px solid #ef4444 !important;
+  font-size: 15.5px !important;
+  font-weight: 950 !important;
+  line-height: 1.5 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+.workspace-page .workspace-chat-panel {
+  background: #020617 !important;
+  border-color: rgba(226, 232, 240, 0.28) !important;
+}
+.workspace-page .message-bubble p {
+  color: #f8fafc !important;
+  font-size: 16.5px !important;
+  line-height: 1.58 !important;
+}
