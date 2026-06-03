@@ -95,7 +95,7 @@ const apiLimiter = rateLimit({
 // Rate limiting para rutas de admin
 const adminLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,   // 1 hora
-  max: 50,                       // máximo 50 requests (más restrictivo)
+  max: 5000,                     // máximo 5000 requests/hora para uso normal del Workspace
   message: {
     error: 'Demasiadas requests de administración. Intenta de nuevo en 1 hora.',
     retryAfter: 3600
