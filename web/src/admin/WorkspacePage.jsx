@@ -130,7 +130,7 @@ export default function WorkspacePage() {
   const threadConversations = useMemo(
     () => sortConversations(
       threads
-        .filter((thread) => !thread.projectId && thread.id !== generalThread?.id && thread.threadKey !== GENERAL_CHAT_THREAD_KEY)
+        .filter((thread) => !thread.projectId && thread.id !== generalThread?.id && thread.threadKey !== GENERAL_CHAT_THREAD_KEY && thread.title !== GENERAL_CHAT.title && thread.title !== 'Pendientes inmediatos')
         .map((thread) => ({ ...thread, id: `thread:${thread.id}`, threadId: thread.id })),
     ),
     [threads],
