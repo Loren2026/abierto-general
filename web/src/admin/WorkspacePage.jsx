@@ -554,6 +554,14 @@ export default function WorkspacePage() {
     setIsChatNavHidden(currentTop > 48)
   }
 
+  function preventChatOverscroll(event) {
+    const target = event.currentTarget
+    const atTop = target.scrollTop <= 0
+    const atBottom = target.scrollTop + target.clientHeight >= target.scrollHeight
+    const deltaY = event.deltaY || 0
+    if ((atTop && deltaY < 0) || (atBottom && deltaY > 0)) event.preventDefault()
+  }
+
   function openUnreadConversation(conversation) {
     selectConversation(conversation.id)
   }
@@ -717,7 +725,7 @@ export default function WorkspacePage() {
                 <div className="admin-notice admin-notice--error workspace-chat-floating-error">{threadsError || projectsError}</div>
               ) : null}
 
-              <div className="workspace-chat-scroll-zone" onScroll={handleChatScroll}>
+              <div className="workspace-chat-scroll-zone" onScroll={handleChatScroll} onWheel={preventChatOverscroll}>
                 <ThreadDetail
                 thread={selectedThread}
                 messages={messages}

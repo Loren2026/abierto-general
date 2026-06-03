@@ -49,6 +49,7 @@ export default function MessageTimeline({
 }) {
   const bottomRef = useRef(null)
   const longPressTimerRef = useRef(null)
+  const actionCardTimerRef = useRef(null)
   const [activeMessageId, setActiveMessageId] = useState(null)
   const [editingMessage, setEditingMessage] = useState(null)
   const [editDraft, setEditDraft] = useState('')
@@ -60,7 +61,17 @@ export default function MessageTimeline({
     bottomRef.current?.scrollIntoView({ block: 'end' })
   }, [messages.length, isLoading])
 
-  useEffect(() => () => window.clearTimeout(longPressTimerRef.current), [])
+  useEffect(() => () => {
+    window.clearTimeout(longPressTimerRef.current)
+    window.clearTimeout(actionCardTimerRef.current)
+  }, [])
+
+  useEffect(() => {
+    window.clearTimeout(actionCardTimerRef.current)
+    if (activeMessageId) {
+      actionCardTimerRef.current = window.setTimeout(() => setActiveMessageId(null), 1000)
+    }
+  }, [activeMessageId])
 
   function startLongPress(message) {
     window.clearTimeout(longPressTimerRef.current)
@@ -92,7 +103,7 @@ export default function MessageTimeline({
     setIsSubmittingAction(true)
     const sent = await onSendMessage?.(body)
     setIsSubmittingAction(false)
-    if (sent) {
+    if (sent !== false) {
       setEditingMessage(null)
       setEditDraft('')
     }
@@ -105,7 +116,7 @@ export default function MessageTimeline({
     setIsSubmittingAction(true)
     const sent = await onSendMessage?.(body, { replyTo: replyingTo })
     setIsSubmittingAction(false)
-    if (sent) {
+    if (sent !== false) {
       setReplyingTo(null)
       setReplyDraft('')
     }
@@ -148,10 +159,10 @@ export default function MessageTimeline({
                 <p>{message.body}</p>
                 {isActive ? (
                   <div className="message-action-card">
-                    <button type="button" onClick={() => copyMessageText(message.body, () => onCopyMessage?.(message.id))}>
+                    <button type="button" onClick={() => { setActiveMessageId(null); copyMessageText(message.body, () => onCopyMessage?.(message.id)) }}>
                       {copiedMessageId === message.id ? 'Copiado' : 'Copiar'}
                     </button>
-                    <button type="button" onClick={() => onDeleteMessage?.(message)} disabled={deletingMessageId === message.id}>
+                    <button type="button" onClick={() => { setActiveMessageId(null); onDeleteMessage?.(message) }} disabled={deletingMessageId === message.id}>
                       {deletingMessageId === message.id ? 'Eliminando…' : 'Eliminar'}
                     </button>
                     <button type="button" onClick={() => startEdit(message)}>Editar</button>
