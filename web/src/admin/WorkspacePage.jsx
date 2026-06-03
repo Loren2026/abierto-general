@@ -109,6 +109,13 @@ export default function WorkspacePage() {
   const [documentsError, setDocumentsError] = useState('')
   const [isLoadingDocuments, setIsLoadingDocuments] = useState(false)
   const [openingDocumentPath, setOpeningDocumentPath] = useState(null)
+  const [seenMessagesByThreadId, setSeenMessagesByThreadId] = useState(() => {
+    try {
+      return JSON.parse(window.localStorage.getItem(SEEN_MESSAGES_STORAGE_KEY) || '{}')
+    } catch {
+      return {}
+    }
+  })
 
   const projectConversations = useMemo(() => {
     const threadsByProjectId = new Map(
@@ -123,7 +130,7 @@ export default function WorkspacePage() {
   const threadConversations = useMemo(
     () => sortConversations(
       threads
-        .filter((thread) => !thread.projectId)
+        .filter((thread) => !thread.projectId && thread.id !== generalThread?.id && thread.threadKey !== GENERAL_CHAT_THREAD_KEY)
         .map((thread) => ({ ...thread, id: `thread:${thread.id}`, threadId: thread.id })),
     ),
     [threads],
@@ -158,6 +165,25 @@ export default function WorkspacePage() {
   ), [conversations, documents])
 
   const selectedProject = useMemo(() => conversations.find((project) => project.id === selectedThreadId) || GENERAL_CHAT, [conversations, selectedThreadId])
+
+  const unreadConversations = useMemo(() => conversations.filter((conversation) => {
+    if (!conversation.threadId || !conversation.lastMessageAt) return false
+    const seenAt = seenMessagesByThreadId[conversation.threadId]
+    return !seenAt || new Date(conversation.lastMessageAt).getTime() > new Date(seenAt).getTime()
+  }), [conversations, seenMessagesByThreadId])
+
+  const unreadMessagesCount = unreadConversations.length
+
+  function markThreadSeen(conversation) {
+    if (!conversation?.threadId) return
+    const seenAt = conversation.lastMessageAt || new Date().toISOString()
+    setSeenMessagesByThreadId((current) => {
+      if (current[conversation.threadId] === seenAt) return current
+      const next = { ...current, [conversation.threadId]: seenAt }
+      window.localStorage.setItem(SEEN_MESSAGES_STORAGE_KEY, JSON.stringify(next))
+      return next
+    })
+  }
 
   const handleLogout = async () => {
     await logout()
@@ -216,6 +242,7 @@ export default function WorkspacePage() {
       const nextMessages = data.messages || []
       setMessages(nextMessages)
       setMessagesByThreadId((current) => ({ ...current, [conversation.threadId]: nextMessages }))
+      markThreadSeen({ ...conversation, lastMessageAt: nextMessages[nextMessages.length - 1]?.createdAt || conversation.lastMessageAt })
     } catch (error) {
       setMessagesError(error.message)
     } finally {
@@ -499,6 +526,11 @@ export default function WorkspacePage() {
     setMobileView('chat')
   }
 
+  function openUnreadConversation(conversation) {
+    setSelectedThreadId(conversation.id)
+    setMobileView('chat')
+  }
+
   function goBackFromCurrentView() {
     if (mobileView === 'material') {
       setMobileView('chat')
@@ -649,6 +681,18 @@ export default function WorkspacePage() {
                 </select>
               </label>
 
+              {unreadConversations.length ? (
+                <div className="workspace-unread-list">
+                  <strong>Mensajes nuevos</strong>
+                  {unreadConversations.map((conversation) => (
+                    <button key={conversation.id} type="button" onClick={() => openUnreadConversation(conversation)}>
+                      <span>{conversation.title}</span>
+                      <small>{conversation.lastMessageAt ? new Date(conversation.lastMessageAt).toLocaleString('es-ES') : 'Nuevo mensaje'}</small>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
               {(threadsError || projectsError) ? (
                 <div className="admin-notice admin-notice--error">{threadsError || projectsError}</div>
               ) : null}
@@ -750,7 +794,7 @@ export default function WorkspacePage() {
 
           <nav className="workspace-mobile-nav">
             <button type="button" className={mobileView === 'home' ? 'workspace-mobile-nav__item workspace-mobile-nav__item--active' : 'workspace-mobile-nav__item'} onClick={() => setMobileView('home')}>Inicio</button>
-            <button type="button" className={mobileView === 'chat' || mobileView === 'threads' || mobileView === 'project' ? 'workspace-mobile-nav__item workspace-mobile-nav__item--active' : 'workspace-mobile-nav__item'} onClick={() => setMobileView('chat')}>Chat</button>
+            <button type="button" className={mobileView === 'chat' || mobileView === 'threads' || mobileView === 'project' ? 'workspace-mobile-nav__item workspace-mobile-nav__item--active' : 'workspace-mobile-nav__item'} onClick={() => setMobileView('chat')}>Chat{unreadMessagesCount ? <span className="workspace-mobile-nav__badge">{unreadMessagesCount}</span> : null}</button>
             <button type="button" className={mobileView === 'material' ? 'workspace-mobile-nav__item workspace-mobile-nav__item--active' : 'workspace-mobile-nav__item'} onClick={() => setMobileView('material')}>Material</button>
           </nav>
         </div>
