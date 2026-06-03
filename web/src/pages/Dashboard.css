@@ -1176,14 +1176,14 @@
 .workspace-chat-input-placeholder p { margin: 4px 0 0; color: #a99bc4; font-size: 13px; }
 .workspace-chat-input-placeholder button { border: 1px solid rgba(156, 95, 255, 0.22); border-radius: 14px; padding: 10px 12px; color: #8f83a9; background: rgba(18, 23, 38, 0.8); }
 
-.message-bubble__actions {
+.message-action-card {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   margin-left: auto;
 }
 
-.message-bubble__actions button {
+.message-action-card button {
   border: 1px solid rgba(246, 240, 255, 0.18);
   border-radius: 999px;
   padding: 5px 9px;
@@ -1194,7 +1194,7 @@
   cursor: pointer;
 }
 
-.message-bubble__actions button:disabled {
+.message-action-card button:disabled {
   cursor: wait;
   opacity: 0.62;
 }
@@ -1292,3 +1292,31 @@
 .admin-layout:has(.workspace-page--hide-admin-header) .workspace-page--hide-admin-header::before {
   display: none;
 }
+
+.message-action-card {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(4, 6, 14, 0.72);
+  border: 1px solid rgba(246, 240, 255, 0.14);
+}
+
+.message-inline-editor {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(18, 23, 38, 0.94);
+  border: 1px solid rgba(156, 95, 255, 0.26);
+}
+
+.message-inline-editor strong { color: #f6f0ff; }
+.message-inline-editor blockquote { margin: 0; padding: 8px 10px; border-left: 3px solid #00f58a; color: #cbd5e1; background: rgba(255, 255, 255, 0.06); border-radius: 10px; }
+.message-inline-editor textarea { width: 100%; border: 1px solid rgba(156, 95, 255, 0.24); border-radius: 12px; padding: 10px; font: inherit; color: #f8fafc; background: rgba(255, 255, 255, 0.08); }
+.message-inline-editor div { display: flex; justify-content: flex-end; gap: 8px; }
+.message-inline-editor button { border: 1px solid rgba(246, 240, 255, 0.18); border-radius: 999px; padding: 8px 12px; background: rgba(255, 255, 255, 0.08); color: #fff; font-weight: 800; }
+.message-inline-editor button:last-child { background: linear-gradient(135deg, #00a86b, #007a4e); border-color: rgba(0, 245, 138, 0.34); }
