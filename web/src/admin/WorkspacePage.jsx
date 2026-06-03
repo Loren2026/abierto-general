@@ -92,6 +92,7 @@ export default function WorkspacePage() {
   const [projects, setProjects] = useState([])
   const [selectedThreadId, setSelectedThreadId] = useState(GENERAL_CHAT_ID)
   const [messages, setMessages] = useState([])
+  const [messagesByThreadId, setMessagesByThreadId] = useState({})
   const [threadsError, setThreadsError] = useState('')
   const [messagesError, setMessagesError] = useState('')
   const [projectsError, setProjectsError] = useState('')
@@ -196,9 +197,14 @@ export default function WorkspacePage() {
     }
   }
 
-  async function loadThreadMessages(conversation) {
+  async function loadThreadMessages(conversation, options = {}) {
     if (!conversation?.threadId || !session?.accessToken) {
       setMessages([])
+      return
+    }
+
+    if (!options.force && messagesByThreadId[conversation.threadId]) {
+      setMessages(messagesByThreadId[conversation.threadId])
       return
     }
 
@@ -207,7 +213,9 @@ export default function WorkspacePage() {
 
     try {
       const data = await listThreadMessages(session, conversation.threadId, { limit: 200, offset: 0 })
-      setMessages(data.messages || [])
+      const nextMessages = data.messages || []
+      setMessages(nextMessages)
+      setMessagesByThreadId((current) => ({ ...current, [conversation.threadId]: nextMessages }))
     } catch (error) {
       setMessagesError(error.message)
     } finally {
@@ -433,8 +441,22 @@ export default function WorkspacePage() {
       }
 
       const messageBody = options.replyTo ? `> ${options.replyTo.authorLabel}: ${options.replyTo.body}\n\n${body}` : body
-      await sendThreadMessageToTurin(session, conversationThread.threadId, { body: messageBody })
-      await Promise.all([loadThreadMessages(conversationThread), loadThreads()])
+      const data = await sendThreadMessageToTurin(session, conversationThread.threadId, { body: messageBody })
+      const appendedMessages = [data.lorenMessage, data.turinMessage].filter(Boolean)
+      if (appendedMessages.length) {
+        setMessages((currentMessages) => {
+          const knownIds = new Set(currentMessages.map((message) => message.id))
+          const nextMessages = [...currentMessages, ...appendedMessages.filter((message) => !knownIds.has(message.id))]
+          setMessagesByThreadId((current) => ({ ...current, [conversationThread.threadId]: nextMessages }))
+          return nextMessages
+        })
+        const lastMessageAt = appendedMessages[appendedMessages.length - 1]?.createdAt || new Date().toISOString()
+        setThreads((currentThreads) => currentThreads.map((thread) => (
+          thread.id === conversationThread.threadId ? { ...thread, lastMessageAt } : thread
+        )))
+      } else {
+        await loadThreadMessages(conversationThread, { force: true })
+      }
       return true
     } catch (error) {
       setActionMessage({ type: 'error', message: error.message })
@@ -454,7 +476,7 @@ export default function WorkspacePage() {
     try {
       await deleteThreadMessage(session, message.id)
       setActionMessage({ type: 'success', message: 'Mensaje eliminado.' })
-      await loadThreadMessages(selectedThread)
+      await loadThreadMessages(selectedThread, { force: true })
     } catch (error) {
       setActionMessage({ type: 'error', message: error.message })
     } finally {
