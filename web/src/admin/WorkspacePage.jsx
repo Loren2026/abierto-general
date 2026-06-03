@@ -172,7 +172,20 @@ export default function WorkspacePage() {
     return !seenAt || new Date(conversation.lastMessageAt).getTime() > new Date(seenAt).getTime()
   }), [conversations, seenMessagesByThreadId])
 
-  const unreadMessagesCount = unreadConversations.length
+  function getUnreadCount(conversation) {
+    if (!conversation?.threadId || !conversation?.lastMessageAt) return 0
+    const seenAt = seenMessagesByThreadId[conversation.threadId]
+    if (seenAt && new Date(conversation.lastMessageAt).getTime() <= new Date(seenAt).getTime()) return 0
+
+    const cachedMessages = messagesByThreadId[conversation.threadId] || []
+    if (!cachedMessages.length || !seenAt) return 1
+
+    return cachedMessages.filter((message) => (
+      message.createdAt && new Date(message.createdAt).getTime() > new Date(seenAt).getTime()
+    )).length || 1
+  }
+
+  const unreadMessagesCount = unreadConversations.reduce((total, conversation) => total + getUnreadCount(conversation), 0)
 
   function markThreadSeen(conversation) {
     if (!conversation?.threadId) return
@@ -687,7 +700,10 @@ export default function WorkspacePage() {
                   {unreadConversations.map((conversation) => (
                     <button key={conversation.id} type="button" onClick={() => openUnreadConversation(conversation)}>
                       <span>{conversation.title}</span>
-                      <small>{conversation.lastMessageAt ? new Date(conversation.lastMessageAt).toLocaleString('es-ES') : 'Nuevo mensaje'}</small>
+                      <span className="workspace-unread-list__meta">
+                        <small>{conversation.lastMessageAt ? new Date(conversation.lastMessageAt).toLocaleString('es-ES') : 'Nuevo mensaje'}</small>
+                        <b className="workspace-unread-list__badge">{getUnreadCount(conversation)}</b>
+                      </span>
                     </button>
                   ))}
                 </div>
