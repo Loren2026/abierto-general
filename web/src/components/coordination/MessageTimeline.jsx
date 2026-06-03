@@ -71,27 +71,29 @@ export default function MessageTimeline({ messages, isLoading, error, copiedMess
               key={message.id}
               className={`message-bubble message-bubble--${message.authorRole} message-bubble--${side}`}
             >
-              <div className="message-bubble__header">
-                <strong>{message.authorLabel}</strong>
-                <span>{formatDate(message.createdAt)}</span>
-              </div>
-              <p>{message.body}</p>
-              <div className="message-bubble__footer">
-                <span>{typeLabels[message.messageType] || message.messageType}</span>
-                <div className="message-bubble__actions">
-                  <button
-                    type="button"
-                    onClick={() => copyMessageText(message.body, () => onCopyMessage?.(message.id))}
-                  >
-                    {copiedMessageId === message.id ? 'Copiado' : 'Copiar'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDeleteMessage?.(message)}
-                    disabled={deletingMessageId === message.id}
-                  >
-                    {deletingMessageId === message.id ? 'Eliminando…' : 'Eliminar'}
-                  </button>
+              <div className="message-bubble__content">
+                <div className="message-bubble__header">
+                  <strong>{message.authorLabel}</strong>
+                  <span>{formatDate(message.createdAt)}</span>
+                </div>
+                <p>{message.body}</p>
+                <div className="message-bubble__footer">
+                  <span>{typeLabels[message.messageType] || message.messageType}</span>
+                  <div className="message-bubble__actions">
+                    <button
+                      type="button"
+                      onClick={() => copyMessageText(message.body, () => onCopyMessage?.(message.id))}
+                    >
+                      {copiedMessageId === message.id ? 'Copiado' : 'Copiar'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteMessage?.(message)}
+                      disabled={deletingMessageId === message.id}
+                    >
+                      {deletingMessageId === message.id ? 'Eliminando…' : 'Eliminar'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </article>

@@ -1149,17 +1149,21 @@
 .message-timeline--chat { display: flex; flex-direction: column; gap: 12px; }
 .message-bubble--left,
 .message-bubble--right,
-.message-bubble--center { max-width: 82%; padding: 12px 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24); }
-.message-bubble--left { align-self: flex-start; border-bottom-left-radius: 6px; }
-.message-bubble--right { align-self: flex-end; border-bottom-right-radius: 6px; text-align: left; }
-.message-bubble--center { align-self: center; max-width: 92%; }
-.message-bubble--turin,
-.message-bubble--claude { background: linear-gradient(180deg, rgba(34, 45, 73, 0.98), rgba(19, 25, 41, 0.98)); border-color: rgba(97, 181, 255, 0.22); }
-.message-bubble--loren { background: linear-gradient(180deg, rgba(58, 148, 105, 0.95), rgba(24, 87, 58, 0.98)); border-color: rgba(0, 245, 138, 0.28); }
+.message-bubble--center { width: 100%; display: flex; border: 0; background: transparent; box-shadow: none; padding: 0; }
+.message-bubble--left { justify-content: flex-start; }
+.message-bubble--right { justify-content: flex-end; text-align: left; }
+.message-bubble--center { justify-content: center; }
+.message-bubble__content { max-width: min(78%, 920px); width: fit-content; padding: 12px 14px; border: 1px solid rgba(246, 240, 255, 0.12); border-radius: 18px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24); }
+.message-bubble--left .message-bubble__content { border-bottom-left-radius: 6px; }
+.message-bubble--right .message-bubble__content { border-bottom-right-radius: 6px; }
+.message-bubble--center .message-bubble__content { max-width: 92%; }
+.message-bubble--turin .message-bubble__content,
+.message-bubble--claude .message-bubble__content { background: linear-gradient(180deg, rgba(34, 72, 112, 0.98), rgba(20, 42, 72, 0.98)); border-color: rgba(97, 181, 255, 0.28); }
+.message-bubble--loren .message-bubble__content { background: linear-gradient(180deg, rgba(58, 148, 105, 0.95), rgba(24, 87, 58, 0.98)); border-color: rgba(0, 245, 138, 0.28); }
 .message-bubble__header,
 .message-bubble__footer { color: rgba(246, 240, 255, 0.74); font-size: 11px; }
 .message-bubble__header strong { color: #ffffff; }
-.message-bubble p { margin: 8px 0; color: #f8fafc; white-space: pre-wrap; }
+.message-bubble p { margin: 8px 0; color: #f8fafc; white-space: pre-wrap; overflow-wrap: anywhere; }
 .workspace-chat-empty { display: grid; gap: 6px; place-items: center; min-height: 220px; text-align: center; color: #a99bc4; }
 .workspace-chat-empty strong { color: #f6f0ff; }
 .workspace-chat-empty p { margin: 0; }
