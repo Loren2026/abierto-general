@@ -109,6 +109,8 @@ export default function WorkspacePage() {
   const [documentsError, setDocumentsError] = useState('')
   const [isLoadingDocuments, setIsLoadingDocuments] = useState(false)
   const [openingDocumentPath, setOpeningDocumentPath] = useState(null)
+  const [isProjectPickerOpen, setIsProjectPickerOpen] = useState(false)
+  const [isChatNavHidden, setIsChatNavHidden] = useState(false)
   const [seenMessagesByThreadId, setSeenMessagesByThreadId] = useState(() => {
     try {
       return JSON.parse(window.localStorage.getItem(SEEN_MESSAGES_STORAGE_KEY) || '{}')
@@ -534,14 +536,23 @@ export default function WorkspacePage() {
     setMobileView('project')
   }
 
-  function handleConversationChange(event) {
-    setSelectedThreadId(event.target.value)
+  function selectConversation(conversationId) {
+    setSelectedThreadId(conversationId)
     setMobileView('chat')
+    setIsProjectPickerOpen(false)
+  }
+
+  function handleConversationChange(event) {
+    selectConversation(event.target.value)
+  }
+
+  function handleChatScroll(event) {
+    const currentTop = event.currentTarget.scrollTop
+    setIsChatNavHidden(currentTop > 48)
   }
 
   function openUnreadConversation(conversation) {
-    setSelectedThreadId(conversation.id)
-    setMobileView('chat')
+    selectConversation(conversation.id)
   }
 
   function goBackFromCurrentView() {
@@ -677,48 +688,34 @@ export default function WorkspacePage() {
 
           {mobileView === 'chat' ? (
             <section className="workspace-mobile-screen workspace-mobile-screen--chat">
-              <header className="workspace-mobile-screen__header">
+              <header className="workspace-chat-fixed-header">
                 <button type="button" className="workspace-mobile-back" onClick={goBackFromCurrentView}>←</button>
-                <div>
+                <button type="button" className="workspace-chat-title-select" onClick={() => setIsProjectPickerOpen((current) => !current)}>
                   <strong>{selectedThread?.title || 'Chat con Turín'}</strong>
-                  <p>{selectedThread ? 'Retomando conversación reciente' : 'Conversación general'}</p>
-                </div>
+                  <span>▾</span>
+                </button>
               </header>
 
-              <label className="workspace-chat-selector">
-                <span>Conversación</span>
-                <select value={selectedThreadId} onChange={handleConversationChange}>
-                  {conversations.map((conversation) => (
-                    <option key={conversation.id} value={conversation.id}>{conversation.title}</option>
-                  ))}
-                </select>
-              </label>
-
-              {unreadConversations.length ? (
-                <div className="workspace-unread-list">
-                  <strong>Mensajes nuevos</strong>
-                  {unreadConversations.map((conversation) => (
-                    <button key={conversation.id} type="button" onClick={() => openUnreadConversation(conversation)}>
-                      <span>{conversation.title}</span>
-                      <span className="workspace-unread-list__meta">
-                        <small>{conversation.lastMessageAt ? new Date(conversation.lastMessageAt).toLocaleString('es-ES') : 'Nuevo mensaje'}</small>
-                        <b className="workspace-unread-list__badge">{getUnreadCount(conversation)}</b>
-                      </span>
-                    </button>
-                  ))}
+              {isProjectPickerOpen ? (
+                <div className="workspace-project-picker">
+                  {conversations.map((conversation) => {
+                    const unreadCount = getUnreadCount(conversation)
+                    return (
+                      <button key={conversation.id} type="button" onClick={() => selectConversation(conversation.id)}>
+                        <span>{conversation.title}</span>
+                        {unreadCount ? <b>{unreadCount}</b> : <i aria-hidden="true" />}
+                      </button>
+                    )
+                  })}
                 </div>
               ) : null}
 
               {(threadsError || projectsError) ? (
-                <div className="admin-notice admin-notice--error">{threadsError || projectsError}</div>
+                <div className="admin-notice admin-notice--error workspace-chat-floating-error">{threadsError || projectsError}</div>
               ) : null}
 
-              <div className="workspace-mobile-chat-context">
-                <span>Proyecto: {selectedThread?.title || 'Chat libre/general'}</span>
-                <small>{selectedThread?.summary || 'Continúa el trabajo desde aquí.'}</small>
-              </div>
-
-              <ThreadDetail
+              <div className="workspace-chat-scroll-zone" onScroll={handleChatScroll}>
+                <ThreadDetail
                 thread={selectedThread}
                 messages={messages}
                 isLoadingMessages={isLoadingMessages || isLoadingThreads || isLoadingProjects}
@@ -728,9 +725,10 @@ export default function WorkspacePage() {
                 onCopyMessage={handleCopyMessage}
                 onDeleteMessage={handleDeleteMessage}
                 onSendMessage={handleSendMessageToTurin}
-              />
+                />
+              </div>
 
-              <div className="workspace-mobile-composer-stack">
+              <div className="workspace-mobile-composer-stack workspace-mobile-composer-stack--fixed">
                 <ThreadComposer
                   selectedThread={selectedThread}
                   isBridgeEnabled={isGatewayBridgeEnabled}
@@ -808,7 +806,7 @@ export default function WorkspacePage() {
             </section>
           ) : null}
 
-          <nav className="workspace-mobile-nav">
+          <nav className={isChatNavHidden && mobileView === 'chat' ? 'workspace-mobile-nav workspace-mobile-nav--hidden' : 'workspace-mobile-nav'}>
             <button type="button" className={mobileView === 'home' ? 'workspace-mobile-nav__item workspace-mobile-nav__item--active' : 'workspace-mobile-nav__item'} onClick={() => setMobileView('home')}>Inicio</button>
             <button type="button" className={mobileView === 'chat' || mobileView === 'threads' || mobileView === 'project' ? 'workspace-mobile-nav__item workspace-mobile-nav__item--active' : 'workspace-mobile-nav__item'} onClick={() => setMobileView('chat')}>Chat{unreadMessagesCount ? <span className="workspace-mobile-nav__badge">{unreadMessagesCount}</span> : null}</button>
             <button type="button" className={mobileView === 'material' ? 'workspace-mobile-nav__item workspace-mobile-nav__item--active' : 'workspace-mobile-nav__item'} onClick={() => setMobileView('material')}>Material</button>
