@@ -33,6 +33,7 @@ function canPreviewWithOffice(document) {
 
 const GENERAL_CHAT_ID = 'general-chat'
 const GENERAL_CHAT_THREAD_KEY = 'workspace-general:pendientes-inmediatos'
+const SEEN_MESSAGES_STORAGE_KEY = 'workspace-chat-seen-messages-v1'
 const GENERAL_CHAT = {
   id: GENERAL_CHAT_ID,
   title: 'Chat libre/general',
@@ -122,20 +123,20 @@ export default function WorkspacePage() {
   const projectConversations = useMemo(() => {
     const threadsByProjectId = new Map(
       threads
-        .filter((thread) => thread.projectId)
+        .filter((thread) => thread?.projectId)
         .map((thread) => [thread.projectId, thread]),
     )
 
-    return sortConversations(projects.map((project) => normalizeProject(project, threadsByProjectId.get(project.id))))
+    return sortConversations(projects.filter(Boolean).map((project) => normalizeProject(project, threadsByProjectId.get(project.id))))
   }, [projects, threads])
 
   const threadConversations = useMemo(
     () => sortConversations(
       threads
-        .filter((thread) => !thread.projectId && thread.id !== generalThread?.id && thread.threadKey !== GENERAL_CHAT_THREAD_KEY && thread.title !== GENERAL_CHAT.title && thread.title !== 'Pendientes inmediatos')
+        .filter((thread) => thread && !thread.projectId && thread.id !== generalThread?.id && thread.threadKey !== GENERAL_CHAT_THREAD_KEY && thread.title !== GENERAL_CHAT.title && thread.title !== 'Pendientes inmediatos')
         .map((thread) => ({ ...thread, id: `thread:${thread.id}`, threadId: thread.id })),
     ),
-    [threads],
+    [threads, generalThread?.id],
   )
 
   const conversations = useMemo(
@@ -272,7 +273,7 @@ export default function WorkspacePage() {
   }, [session?.accessToken])
 
   useEffect(() => {
-    ensureGeneralThread()
+    ensureGeneralThread().catch((error) => setThreadsError(error.message))
   }, [session?.accessToken, threads.length])
 
   useEffect(() => {
@@ -406,6 +407,7 @@ export default function WorkspacePage() {
     try {
       const data = await createThread(session, payload)
       const thread = data.thread
+      if (!thread?.id) throw new Error('No se pudo crear el hilo general del Workspace')
       setGeneralThread(thread)
       setThreads((currentThreads) => [thread, ...currentThreads.filter((currentThread) => currentThread.id !== thread.id)])
       if (selectedThreadId === GENERAL_CHAT_ID) setSelectedThreadId(`thread:${thread.id}`)
@@ -413,8 +415,8 @@ export default function WorkspacePage() {
     } catch (error) {
       if (error.message !== 'threadKey already exists' && error.message !== 'resource already exists') throw error
       const data = await listThreads(session, { search: 'Pendientes inmediatos', limit: 10, offset: 0 })
-      const thread = data.threads?.find((candidate) => candidate.threadKey === GENERAL_CHAT_THREAD_KEY) || data.threads?.[0]
-      if (!thread) throw error
+      const thread = data.threads?.find((candidate) => candidate?.threadKey === GENERAL_CHAT_THREAD_KEY) || data.threads?.find(Boolean)
+      if (!thread?.id) throw error
       setGeneralThread(thread)
       setThreads((currentThreads) => [thread, ...currentThreads.filter((currentThread) => currentThread.id !== thread.id)])
       if (selectedThreadId === GENERAL_CHAT_ID) setSelectedThreadId(`thread:${thread.id}`)
@@ -446,6 +448,7 @@ export default function WorkspacePage() {
     try {
       const data = await createThread(session, payload)
       const thread = data.thread
+      if (!thread?.id) throw new Error('No se pudo crear el hilo del proyecto')
       setThreads((currentThreads) => [
         thread,
         ...currentThreads.filter((currentThread) => currentThread.id !== thread.id),
@@ -455,8 +458,8 @@ export default function WorkspacePage() {
     } catch (error) {
       if (error.message !== 'threadKey already exists' && error.message !== 'resource already exists') throw error
       const data = await listThreads(session, { projectId: conversation.projectId, limit: 1, offset: 0 })
-      const thread = data.threads?.[0]
-      if (!thread) throw error
+      const thread = data.threads?.find(Boolean)
+      if (!thread?.id) throw error
       setThreads((currentThreads) => [
         thread,
         ...currentThreads.filter((currentThread) => currentThread.id !== thread.id),
