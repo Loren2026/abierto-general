@@ -167,11 +167,11 @@ export default function MessageTimeline({
 
       {editingMessage ? (
         <div className="message-inline-editor">
-          <strong>Editar y reenviar</strong>
+          <strong>Editar mensaje</strong>
           <textarea value={editDraft} onChange={(event) => setEditDraft(event.target.value)} rows="3" />
           <div>
             <button type="button" onClick={() => setEditingMessage(null)}>Cancelar</button>
-            <button type="button" onClick={submitEdit} disabled={isSubmittingAction || !editDraft.trim()}>Guardar/reenviar</button>
+            <button type="button" onClick={submitEdit} disabled={isSubmittingAction || !editDraft.trim()}>Enviar</button>
           </div>
         </div>
       ) : null}

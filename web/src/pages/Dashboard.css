@@ -1322,3 +1322,17 @@
 .message-inline-editor div { display: flex; justify-content: flex-end; gap: 8px; }
 .message-inline-editor button { border: 1px solid rgba(246, 240, 255, 0.18); border-radius: 999px; padding: 8px 12px; background: rgba(255, 255, 255, 0.08); color: #fff; font-weight: 800; }
 .message-inline-editor button:last-child { background: linear-gradient(135deg, #00a86b, #007a4e); border-color: rgba(0, 245, 138, 0.34); }
+
+.workspace-chat-send,
+.workspace-chat-composer .workspace-chat-send,
+.workspace-chat-input-placeholder .workspace-chat-send {
+  background: #00a86b !important;
+  border-color: #00d084 !important;
+  color: #ffffff !important;
+}
+.workspace-chat-send:disabled {
+  background: #11875f !important;
+  border-color: #11875f !important;
+  color: rgba(255,255,255,.72) !important;
+  opacity: .72;
+}
