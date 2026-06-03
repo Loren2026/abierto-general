@@ -1559,3 +1559,8 @@
   pointer-events: none;
 }
 .workspace-chat-floating-error { margin: 0 0 10px; }
+
+.workspace-project-picker__item--active {
+  border-color: rgba(0, 245, 138, 0.48) !important;
+  background: rgba(6, 78, 59, 0.72) !important;
+}

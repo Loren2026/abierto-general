@@ -701,7 +701,7 @@ export default function WorkspacePage() {
                   {conversations.map((conversation) => {
                     const unreadCount = getUnreadCount(conversation)
                     return (
-                      <button key={conversation.id} type="button" onClick={() => selectConversation(conversation.id)}>
+                      <button key={conversation.id} type="button" className={conversation.id === selectedThreadId ? 'workspace-project-picker__item workspace-project-picker__item--active' : 'workspace-project-picker__item'} onClick={() => selectConversation(conversation.id)}>
                         <span>{conversation.title}</span>
                         {unreadCount ? <b>{unreadCount}</b> : <i aria-hidden="true" />}
                       </button>
