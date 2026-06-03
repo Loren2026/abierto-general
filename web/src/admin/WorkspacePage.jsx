@@ -7,6 +7,7 @@ import {
   listWorkspaceDocuments,
 } from '../services/workspaceDocumentsApi'
 import {
+  createThread,
   deleteThreadMessage,
   getGatewayBridgeStatus,
   listThreadMessages,
@@ -35,7 +36,7 @@ const GENERAL_CHAT = {
   id: GENERAL_CHAT_ID,
   title: 'Chat libre/general',
   status: 'general',
-  summary: 'Conversación libre del Workspace. El envío real llegará en F2.',
+  summary: 'Conversación libre del Workspace.',
   lastMessageAt: null,
   createdAt: null,
 }
@@ -56,15 +57,19 @@ const PROJECT_STATUS_ORDER = {
   completed: 7,
 }
 
-function normalizeProject(project) {
+function normalizeProject(project, thread = null) {
   return {
-    id: `project:${project.id}`,
+    id: thread ? `thread:${thread.id}` : `project:${project.id}`,
+    syntheticId: `project:${project.id}`,
+    conversationType: thread ? 'thread' : 'project',
     projectId: project.id,
-    title: project.name || project.title || project.slug || 'Proyecto sin nombre',
-    status: project.status || 'private',
-    summary: project.description || 'Conversación continua del proyecto.',
-    lastMessageAt: null,
-    createdAt: project.created_at || project.published_at || null,
+    threadId: thread?.id || null,
+    threadKey: thread?.threadKey || null,
+    title: thread?.title || project.name || project.title || project.slug || 'Proyecto sin nombre',
+    status: thread?.status || project.status || 'private',
+    summary: thread?.summary || project.description || 'Conversación continua del proyecto.',
+    lastMessageAt: thread?.lastMessageAt || null,
+    createdAt: thread?.createdAt || project.created_at || project.published_at || null,
   }
 }
 
@@ -101,13 +106,22 @@ export default function WorkspacePage() {
   const [isLoadingDocuments, setIsLoadingDocuments] = useState(false)
   const [openingDocumentPath, setOpeningDocumentPath] = useState(null)
 
-  const projectConversations = useMemo(
-    () => sortConversations(projects.map(normalizeProject)),
-    [projects],
-  )
+  const projectConversations = useMemo(() => {
+    const threadsByProjectId = new Map(
+      threads
+        .filter((thread) => thread.projectId)
+        .map((thread) => [thread.projectId, thread]),
+    )
+
+    return sortConversations(projects.map((project) => normalizeProject(project, threadsByProjectId.get(project.id))))
+  }, [projects, threads])
 
   const threadConversations = useMemo(
-    () => sortConversations(threads.map((thread) => ({ ...thread, id: `thread:${thread.id}`, threadId: thread.id }))),
+    () => sortConversations(
+      threads
+        .filter((thread) => !thread.projectId)
+        .map((thread) => ({ ...thread, id: `thread:${thread.id}`, threadId: thread.id })),
+    ),
     [threads],
   )
 
@@ -307,9 +321,52 @@ export default function WorkspacePage() {
     window.setTimeout(() => setCopiedMessageId(null), 1800)
   }
 
+  async function ensureConversationThread(conversation) {
+    if (conversation?.threadId) return conversation
+    if (!conversation?.projectId) return null
+
+    const payload = {
+      projectId: conversation.projectId,
+      threadKey: `workspace-project:${conversation.projectId}`,
+      title: conversation.title,
+      summary: conversation.summary || `Conversación continua del proyecto ${conversation.title}.`,
+      status: 'open',
+      priority: 'normal',
+      origin: 'internal',
+      createdByType: 'system',
+      createdByLabel: 'Workspace Turín',
+      metadata: {
+        source: 'workspace-f2-auto-thread',
+        syntheticConversationId: conversation.syntheticId || conversation.id,
+      },
+    }
+
+    try {
+      const data = await createThread(session, payload)
+      const thread = data.thread
+      setThreads((currentThreads) => [
+        thread,
+        ...currentThreads.filter((currentThread) => currentThread.id !== thread.id),
+      ])
+      setSelectedThreadId(`thread:${thread.id}`)
+      return { ...conversation, id: `thread:${thread.id}`, threadId: thread.id, threadKey: thread.threadKey }
+    } catch (error) {
+      if (error.message !== 'threadKey already exists' && error.message !== 'resource already exists') throw error
+      const data = await listThreads(session, { projectId: conversation.projectId, limit: 1, offset: 0 })
+      const thread = data.threads?.[0]
+      if (!thread) throw error
+      setThreads((currentThreads) => [
+        thread,
+        ...currentThreads.filter((currentThread) => currentThread.id !== thread.id),
+      ])
+      setSelectedThreadId(`thread:${thread.id}`)
+      return { ...conversation, id: `thread:${thread.id}`, threadId: thread.id, threadKey: thread.threadKey }
+    }
+  }
+
   async function handleSendMessageToTurin(body) {
-    if (!selectedThread?.threadId || !session?.accessToken) {
-      setActionMessage({ type: 'error', message: 'El envío real estará disponible en F2.' })
+    if (!session?.accessToken) {
+      setActionMessage({ type: 'error', message: 'Sesión no disponible.' })
       return false
     }
 
@@ -317,8 +374,14 @@ export default function WorkspacePage() {
     setActionMessage({ type: '', message: '' })
 
     try {
-      await sendThreadMessageToTurin(session, selectedThread.threadId, { body })
-      await Promise.all([loadThreadMessages(selectedThread), loadThreads()])
+      const conversationThread = await ensureConversationThread(selectedThread)
+      if (!conversationThread?.threadId) {
+        setActionMessage({ type: 'error', message: 'Esta conversación todavía no tiene hilo real.' })
+        return false
+      }
+
+      await sendThreadMessageToTurin(session, conversationThread.threadId, { body })
+      await Promise.all([loadThreadMessages(conversationThread), loadThreads()])
       return true
     } catch (error) {
       setActionMessage({ type: 'error', message: error.message })

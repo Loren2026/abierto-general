@@ -17,8 +17,13 @@ export default function ThreadComposer({
   async function handleSend() {
     const body = draft.trim()
 
-    if (!isBridgeEnabled || !selectedThread?.threadId) {
-      showPlaceholder('Enviar estará disponible en F2.')
+    if (!isBridgeEnabled) {
+      showPlaceholder('El puente con Turín no está disponible ahora.')
+      return
+    }
+
+    if (!selectedThread?.threadId && !selectedThread?.projectId) {
+      showPlaceholder('Esta conversación todavía no tiene hilo real.')
       return
     }
 
@@ -57,7 +62,7 @@ export default function ThreadComposer({
         className="workspace-chat-send"
         type="button"
         onClick={handleSend}
-        disabled={isSending || (isBridgeEnabled && selectedThread?.threadId && !draft.trim())}
+        disabled={isSending || (isBridgeEnabled && !draft.trim())}
       >
         {isSending ? 'Enviando…' : 'Enviar'}
       </button>
