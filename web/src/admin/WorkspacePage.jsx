@@ -32,11 +32,13 @@ function canPreviewWithOffice(document) {
 }
 
 const GENERAL_CHAT_ID = 'general-chat'
+const GENERAL_CHAT_THREAD_KEY = 'workspace-general:pendientes-inmediatos'
 const GENERAL_CHAT = {
   id: GENERAL_CHAT_ID,
   title: 'Chat libre/general',
   status: 'general',
-  summary: 'Conversación libre del Workspace.',
+  summary: 'Pendientes inmediatos del Workspace Turín.',
+  threadKey: GENERAL_CHAT_THREAD_KEY,
   lastMessageAt: null,
   createdAt: null,
 }
@@ -86,6 +88,7 @@ function sortConversations(conversations) {
 export default function WorkspacePage() {
   const { session, logout } = useAuthStore()
   const [threads, setThreads] = useState([])
+  const [generalThread, setGeneralThread] = useState(null)
   const [projects, setProjects] = useState([])
   const [selectedThreadId, setSelectedThreadId] = useState(GENERAL_CHAT_ID)
   const [messages, setMessages] = useState([])
@@ -126,8 +129,8 @@ export default function WorkspacePage() {
   )
 
   const conversations = useMemo(
-    () => [GENERAL_CHAT, ...projectConversations, ...threadConversations],
-    [projectConversations, threadConversations],
+    () => [generalThread ? { ...GENERAL_CHAT, ...generalThread, id: `thread:${generalThread.id}`, threadId: generalThread.id } : GENERAL_CHAT, ...projectConversations, ...threadConversations],
+    [generalThread, projectConversations, threadConversations],
   )
 
   const selectedThread = useMemo(
@@ -167,7 +170,9 @@ export default function WorkspacePage() {
 
     try {
       const data = await listThreads(session, { limit: 100, offset: 0 })
-      setThreads(data.threads || [])
+      const nextThreads = data.threads || []
+      setThreads(nextThreads)
+      setGeneralThread(nextThreads.find((thread) => thread.threadKey === GENERAL_CHAT_THREAD_KEY) || null)
     } catch (error) {
       setThreadsError(error.message)
     } finally {
@@ -215,6 +220,10 @@ export default function WorkspacePage() {
     loadProjects()
     loadGatewayBridgeStatus()
   }, [session?.accessToken])
+
+  useEffect(() => {
+    ensureGeneralThread()
+  }, [session?.accessToken, threads.length])
 
   useEffect(() => {
     loadThreadMessages(selectedThread)
@@ -321,8 +330,51 @@ export default function WorkspacePage() {
     window.setTimeout(() => setCopiedMessageId(null), 1800)
   }
 
+
+  async function ensureGeneralThread() {
+    if (!session?.accessToken || generalThread) return generalThread
+
+    const existingThread = threads.find((thread) => thread.threadKey === GENERAL_CHAT_THREAD_KEY)
+    if (existingThread) {
+      setGeneralThread(existingThread)
+      if (selectedThreadId === GENERAL_CHAT_ID) setSelectedThreadId(`thread:${existingThread.id}`)
+      return existingThread
+    }
+
+    const payload = {
+      threadKey: GENERAL_CHAT_THREAD_KEY,
+      title: 'Pendientes inmediatos',
+      summary: 'Chat libre/general para pendientes inmediatos del Workspace Turín.',
+      status: 'open',
+      priority: 'normal',
+      origin: 'internal',
+      createdByType: 'system',
+      createdByLabel: 'Workspace Turín',
+      metadata: { source: 'workspace-f2-general-chat' },
+    }
+
+    try {
+      const data = await createThread(session, payload)
+      const thread = data.thread
+      setGeneralThread(thread)
+      setThreads((currentThreads) => [thread, ...currentThreads.filter((currentThread) => currentThread.id !== thread.id)])
+      if (selectedThreadId === GENERAL_CHAT_ID) setSelectedThreadId(`thread:${thread.id}`)
+      return thread
+    } catch (error) {
+      if (error.message !== 'threadKey already exists' && error.message !== 'resource already exists') throw error
+      const data = await listThreads(session, { search: 'Pendientes inmediatos', limit: 10, offset: 0 })
+      const thread = data.threads?.find((candidate) => candidate.threadKey === GENERAL_CHAT_THREAD_KEY) || data.threads?.[0]
+      if (!thread) throw error
+      setGeneralThread(thread)
+      setThreads((currentThreads) => [thread, ...currentThreads.filter((currentThread) => currentThread.id !== thread.id)])
+      if (selectedThreadId === GENERAL_CHAT_ID) setSelectedThreadId(`thread:${thread.id}`)
+      return thread
+    }
+  }
+
   async function ensureConversationThread(conversation) {
     if (conversation?.threadId) return conversation
+    if (conversation?.id === GENERAL_CHAT_ID || conversation?.threadKey === GENERAL_CHAT_THREAD_KEY) return ensureGeneralThread()
     if (!conversation?.projectId) return null
 
     const payload = {
@@ -364,7 +416,7 @@ export default function WorkspacePage() {
     }
   }
 
-  async function handleSendMessageToTurin(body) {
+  async function handleSendMessageToTurin(body, options = {}) {
     if (!session?.accessToken) {
       setActionMessage({ type: 'error', message: 'Sesión no disponible.' })
       return false
@@ -380,7 +432,8 @@ export default function WorkspacePage() {
         return false
       }
 
-      await sendThreadMessageToTurin(session, conversationThread.threadId, { body })
+      const messageBody = options.replyTo ? `> ${options.replyTo.authorLabel}: ${options.replyTo.body}\n\n${body}` : body
+      await sendThreadMessageToTurin(session, conversationThread.threadId, { body: messageBody })
       await Promise.all([loadThreadMessages(conversationThread), loadThreads()])
       return true
     } catch (error) {
@@ -592,6 +645,7 @@ export default function WorkspacePage() {
                 deletingMessageId={deletingMessageId}
                 onCopyMessage={handleCopyMessage}
                 onDeleteMessage={handleDeleteMessage}
+                onSendMessage={handleSendMessageToTurin}
               />
 
               <div className="workspace-mobile-composer-stack">
