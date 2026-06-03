@@ -1213,13 +1213,13 @@
   border: 1px solid rgba(156, 95, 255, 0.24);
   border-radius: 16px;
   padding: 11px 13px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #f8fafc;
+  background: #ffffff;
+  color: #0f172a;
   font: inherit;
 }
 
 .workspace-chat-composer textarea::placeholder {
-  color: #8f83a9;
+  color: #64748b;
 }
 
 .workspace-chat-clip,
@@ -1235,7 +1235,9 @@
 }
 
 .workspace-chat-send {
-  background: linear-gradient(135deg, rgba(117, 43, 181, 0.96), rgba(45, 18, 85, 0.96));
+  background: linear-gradient(135deg, #00a86b, #007a4e);
+  border-color: rgba(0, 245, 138, 0.34);
+  color: #ffffff;
 }
 
 .workspace-chat-composer__notice {
