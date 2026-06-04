@@ -1,9 +1,13 @@
 # Routes
 
-En fases posteriores aquí vivirán las rutas HTTP del backend independiente de Análisis Mercado.
+Rutas HTTP del backend independiente de Análisis Mercado.
 
-Plan previsto:
+Implementado en Fase 2:
 
-- Rutas de datos financieros FMP proxyficadas desde backend.
-- Rutas de lectura/análisis documental con Claude sin exponer clave en navegador.
-- Rutas futuras de opciones financieras, siempre solo lectura y sin ejecución de órdenes.
+- `GET /api/fmp/quote/:symbol`
+- `GET /api/fmp/income-statement/:symbol`
+- `GET /api/fmp/balance-sheet/:symbol`
+- `GET /api/fmp/cash-flow/:symbol`
+- `POST /api/analysis`
+
+Las claves externas se leen solo desde variables de entorno del backend y nunca deben viajar al navegador.

@@ -1,10 +1,14 @@
 # Services
 
-En fases posteriores aquí vivirán los clientes y servicios internos.
+Clientes y servicios internos server-side.
 
-Plan previsto:
+Implementado en Fase 2:
 
-- Cliente FMP server-side.
-- Cliente Claude/Anthropic server-side.
-- Normalizadores de datos financieros.
-- Servicios de análisis y, más adelante, datos de opciones financieras.
+- `fmpService.js`: proxy server-side hacia Financial Modeling Prep.
+- `claudeService.js`: proxy server-side hacia Claude/Anthropic.
+
+Notas de seguridad:
+
+- No loguear claves.
+- No devolver stacks completos al cliente.
+- Añadir rate limiting antes de exposición pública.
