@@ -10,4 +10,8 @@ Implementado en Fase 2:
 - `GET /api/fmp/cash-flow/:symbol`
 - `POST /api/analysis`
 
+Implementado en Fase 3:
+
+- `POST /api/recommendations/analyze`
+
 Las claves externas se leen solo desde variables de entorno del backend y nunca deben viajar al navegador.
