@@ -11,9 +11,12 @@ import adminProjectsRoutes from './routes/admin/projects.js';
 import adminAccessRoutes from './routes/admin/accesses.js';
 import adminDeviceRoutes from './routes/admin/devices.js';
 import adminCoordinationRoutes from './routes/admin/coordination.js';
+import adminAccessRequestRoutes from './routes/admin/accessRequests.js';
+import adminInvitationLifecycleRoutes from './routes/admin/invitationLifecycle.js';
 import adminWorkspaceDocumentsRoutes from './routes/admin/workspaceDocuments.js';
 import publicProjectRoutes from './routes/public/projects.js';
 import publicDownloadRoutes from './routes/public/downloads.js';
+import publicAccessRequestRoutes from './routes/public/accessRequests.js';
 import webauthnRoutes from './routes/auth/webauthn.js';
 import { requireAdminSession } from './middleware/requireAdminSession.js';
 import { requireSession, resolveSessionUser } from './middleware/requireSession.js';
@@ -288,8 +291,11 @@ app.use('/api/admin', requireAdminSession, adminProjectsRoutes);
 app.use('/api/admin', requireAdminSession, adminAccessRoutes);
 app.use('/api/admin', requireAdminSession, adminDeviceRoutes);
 app.use('/api/admin', requireAdminSession, adminCoordinationRoutes);
+app.use('/api/admin', requireAdminSession, adminAccessRequestRoutes);
+app.use('/api/admin', requireAdminSession, adminInvitationLifecycleRoutes);
 app.use('/api', publicProjectRoutes);
 app.use('/api', publicDownloadRoutes);
+app.use('/api', publicAccessRequestRoutes);
 
 // 404 handler
 app.use((req, res) => {

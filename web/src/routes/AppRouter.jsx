@@ -5,6 +5,7 @@ import RequireAuth from '../auth/RequireAuth'
 import AdminPage from '../admin/AdminPage'
 import AgentsPage from '../admin/AgentsPage'
 import WorkspacePage from '../admin/WorkspacePage'
+import InvitationInboxPage from '../admin/InvitationInboxPage'
 
 export default function AppRouter() {
   return (
@@ -33,6 +34,14 @@ export default function AppRouter() {
           element={
             <RequireAuth>
               <WorkspacePage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/invitaciones"
+          element={
+            <RequireAuth>
+              <InvitationInboxPage />
             </RequireAuth>
           }
         />
