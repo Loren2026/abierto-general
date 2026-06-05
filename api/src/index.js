@@ -293,9 +293,10 @@ app.use('/api/admin', requireAdminSession, adminDeviceRoutes);
 app.use('/api/admin', requireAdminSession, adminCoordinationRoutes);
 app.use('/api/admin', requireAdminSession, adminAccessRequestRoutes);
 app.use('/api/admin', requireAdminSession, adminInvitationLifecycleRoutes);
+// Rutas públicas específicas antes de rutas genéricas como GET /projects/:slug.
+app.use('/api', publicAccessRequestRoutes);
 app.use('/api', publicProjectRoutes);
 app.use('/api', publicDownloadRoutes);
-app.use('/api', publicAccessRequestRoutes);
 
 // 404 handler
 app.use((req, res) => {
