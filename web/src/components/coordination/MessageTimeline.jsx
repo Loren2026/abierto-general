@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 function formatDate(value) {
   if (!value) return 'Sin fecha'
@@ -11,14 +11,6 @@ function formatDate(value) {
   } catch {
     return value
   }
-}
-
-const typeLabels = {
-  message: 'Mensaje',
-  note: 'Nota',
-  proposal: 'Propuesta',
-  decision: 'Decisión',
-  system: 'Sistema',
 }
 
 function getBubbleSide(message) {
@@ -45,60 +37,167 @@ async function copyMessageText(text, onCopied) {
   onCopied?.()
 }
 
-export default function MessageTimeline({ messages, isLoading, error, copiedMessageId, deletingMessageId, onCopyMessage, onDeleteMessage }) {
+export default function MessageTimeline({
+  messages,
+  isLoading,
+  error,
+  copiedMessageId,
+  deletingMessageId,
+  onCopyMessage,
+  onDeleteMessage,
+  onSendMessage,
+}) {
   const bottomRef = useRef(null)
+  const longPressTimerRef = useRef(null)
+  const actionCardTimerRef = useRef(null)
+  const [activeMessageId, setActiveMessageId] = useState(null)
+  const [editingMessage, setEditingMessage] = useState(null)
+  const [editDraft, setEditDraft] = useState('')
+  const [replyingTo, setReplyingTo] = useState(null)
+  const [replyDraft, setReplyDraft] = useState('')
+  const [isSubmittingAction, setIsSubmittingAction] = useState(false)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' })
   }, [messages.length, isLoading])
 
+  useEffect(() => () => {
+    window.clearTimeout(longPressTimerRef.current)
+    window.clearTimeout(actionCardTimerRef.current)
+  }, [])
+
+  useEffect(() => {
+    window.clearTimeout(actionCardTimerRef.current)
+    if (activeMessageId) {
+      actionCardTimerRef.current = window.setTimeout(() => setActiveMessageId(null), 1000)
+    }
+  }, [activeMessageId])
+
+  function startLongPress(message) {
+    window.clearTimeout(longPressTimerRef.current)
+    longPressTimerRef.current = window.setTimeout(() => setActiveMessageId(message.id), 520)
+  }
+
+  function cancelLongPress() {
+    window.clearTimeout(longPressTimerRef.current)
+  }
+
+  function startEdit(message) {
+    setActiveMessageId(null)
+    setReplyingTo(null)
+    setEditingMessage(message)
+    setEditDraft(message.body)
+  }
+
+  function startReply(message) {
+    setActiveMessageId(null)
+    setEditingMessage(null)
+    setReplyingTo(message)
+    setReplyDraft('')
+  }
+
+  async function submitEdit() {
+    const body = editDraft.trim()
+    if (!body || isSubmittingAction) return
+
+    setIsSubmittingAction(true)
+    const sent = await onSendMessage?.(body)
+    setIsSubmittingAction(false)
+    if (sent !== false) {
+      setEditingMessage(null)
+      setEditDraft('')
+    }
+  }
+
+  async function submitReply() {
+    const body = replyDraft.trim()
+    if (!body || !replyingTo || isSubmittingAction) return
+
+    setIsSubmittingAction(true)
+    const sent = await onSendMessage?.(body, { replyTo: replyingTo })
+    setIsSubmittingAction(false)
+    if (sent !== false) {
+      setReplyingTo(null)
+      setReplyDraft('')
+    }
+  }
+
   return (
-    <section className="workspace-chat-panel">
+    <section className="workspace-chat-panel" onClick={() => setActiveMessageId(null)}>
       {error ? <div className="error-message">{error}</div> : null}
       {isLoading ? <div className="admin-notice">Cargando mensajes...</div> : null}
       {!isLoading && !messages.length ? (
         <div className="workspace-chat-empty">
           <strong>Chat listo.</strong>
-          <p>F1 solo prepara la estructura. El envío real a Turín llegará en F2.</p>
+          <p>Escribe el primer mensaje para iniciar la conversación real con Turín.</p>
         </div>
       ) : null}
 
       <div className="message-timeline message-timeline--chat">
         {messages.map((message) => {
           const side = getBubbleSide(message)
+          const isActive = activeMessageId === message.id
           return (
             <article
               key={message.id}
               className={`message-bubble message-bubble--${message.authorRole} message-bubble--${side}`}
+              onMouseDown={() => startLongPress(message)}
+              onMouseUp={cancelLongPress}
+              onMouseLeave={cancelLongPress}
+              onTouchStart={() => startLongPress(message)}
+              onTouchEnd={cancelLongPress}
+              onContextMenu={(event) => {
+                event.preventDefault()
+                setActiveMessageId(message.id)
+              }}
             >
-              <div className="message-bubble__header">
-                <strong>{message.authorLabel}</strong>
-                <span>{formatDate(message.createdAt)}</span>
-              </div>
-              <p>{message.body}</p>
-              <div className="message-bubble__footer">
-                <span>{typeLabels[message.messageType] || message.messageType}</span>
-                <div className="message-bubble__actions">
-                  <button
-                    type="button"
-                    onClick={() => copyMessageText(message.body, () => onCopyMessage?.(message.id))}
-                  >
-                    {copiedMessageId === message.id ? 'Copiado' : 'Copiar'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDeleteMessage?.(message)}
-                    disabled={deletingMessageId === message.id}
-                  >
-                    {deletingMessageId === message.id ? 'Eliminando…' : 'Eliminar'}
-                  </button>
+              <div className="message-bubble__content" onClick={(event) => event.stopPropagation()}>
+                <div className="message-bubble__header">
+                  <strong>{message.authorLabel}</strong>
+                  <span>{formatDate(message.createdAt)}</span>
                 </div>
+                <p>{message.body}</p>
+                {isActive ? (
+                  <div className="message-action-card">
+                    <button type="button" onClick={() => { setActiveMessageId(null); copyMessageText(message.body, () => onCopyMessage?.(message.id)) }}>
+                      {copiedMessageId === message.id ? 'Copiado' : 'Copiar'}
+                    </button>
+                    <button type="button" onClick={() => { setActiveMessageId(null); onDeleteMessage?.(message) }} disabled={deletingMessageId === message.id}>
+                      {deletingMessageId === message.id ? 'Eliminando…' : 'Eliminar'}
+                    </button>
+                    <button type="button" onClick={() => startEdit(message)}>Editar</button>
+                    <button type="button" onClick={() => startReply(message)}>Responder</button>
+                  </div>
+                ) : null}
               </div>
             </article>
           )
         })}
         <div ref={bottomRef} />
       </div>
+
+      {editingMessage ? (
+        <div className="message-inline-editor">
+          <strong>Editar mensaje</strong>
+          <textarea value={editDraft} onChange={(event) => setEditDraft(event.target.value)} rows="3" />
+          <div>
+            <button type="button" onClick={() => setEditingMessage(null)}>Cancelar</button>
+            <button type="button" onClick={submitEdit} disabled={isSubmittingAction || !editDraft.trim()}>Enviar</button>
+          </div>
+        </div>
+      ) : null}
+
+      {replyingTo ? (
+        <div className="message-inline-editor">
+          <strong>Responder a {replyingTo.authorLabel}</strong>
+          <blockquote>{replyingTo.body}</blockquote>
+          <textarea value={replyDraft} onChange={(event) => setReplyDraft(event.target.value)} rows="3" />
+          <div>
+            <button type="button" onClick={() => setReplyingTo(null)}>Cancelar</button>
+            <button type="button" onClick={submitReply} disabled={isSubmittingAction || !replyDraft.trim()}>Responder</button>
+          </div>
+        </div>
+      ) : null}
     </section>
   )
 }

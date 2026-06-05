@@ -34,6 +34,7 @@ export default function ThreadDetail({
   deletingMessageId,
   onCopyMessage,
   onDeleteMessage,
+  onSendMessage,
 }) {
   if (!thread) {
     return (
@@ -68,6 +69,7 @@ export default function ThreadDetail({
         deletingMessageId={deletingMessageId}
         onCopyMessage={onCopyMessage}
         onDeleteMessage={onDeleteMessage}
+        onSendMessage={onSendMessage}
       />
     </div>
   )

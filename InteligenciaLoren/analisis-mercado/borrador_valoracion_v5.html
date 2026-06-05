@@ -377,26 +377,47 @@ const IP=[
 ];
 
 /* ════════════════════════════════════════════════
-   FMP API — Motor de valoración IDC
+   BACKEND API — Motor de valoración IDC
    ════════════════════════════════════════════════ */
-function getFmpKey(){ return localStorage.getItem('fmpKey')||''; }
-function setFmpKey(k){ localStorage.setItem('fmpKey',k); }
+// Local por defecto. En producción se configurará con la URL real del backend/subdominio autorizado.
+window.BACKEND_URL = window.BACKEND_URL || 'http://localhost:3001';
 
-async function fmpFetch(endpoint, tk, extraParams={}){
-  const key = getFmpKey();
-  if(!key) throw new Error('NO_KEY');
-  // FMP Stable API: https://financialmodelingprep.com/stable/endpoint?symbol=TK&apikey=KEY
-  const params = new URLSearchParams({symbol: tk, apikey: key, ...extraParams});
-  const url = `https://financialmodelingprep.com/stable/${endpoint}?${params}`;
-  const r = await fetch(url);
+function backendUrl(path){ return window.BACKEND_URL.replace(/\/$/, '') + path; }
+
+async function backendFetch(path, options={}){
+  const r = await fetch(backendUrl(path), {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...(options.headers||{}) }
+  });
+  const data = await r.json().catch(()=>null);
   if(!r.ok){
-    const txt = await r.text().catch(()=>'');
-    throw new Error(`FMP ${r.status}: ${txt.slice(0,200)}`);
+    const msg = data?.message || `Backend ${r.status}`;
+    throw new Error(msg);
   }
-  return r.json();
+  return data;
+}
+
+async function fmpFetch(endpoint, tk){
+  const endpointMap = {
+    'quote': 'quote',
+    'income-statement': 'income-statement',
+    'balance-sheet-statement': 'balance-sheet',
+    'cash-flow-statement': 'cash-flow'
+  };
+  const backendEndpoint = endpointMap[endpoint];
+  if(!backendEndpoint) throw new Error('Endpoint FMP no soportado por backend: '+endpoint);
+  return backendFetch(`/api/fmp/${backendEndpoint}/${encodeURIComponent(tk)}`);
 }
 
 // Obtener todos los datos necesarios de FMP para una empresa
+
+async function fetchBackendRecommendation(tk){
+  return backendFetch('/api/recommendations/analyze', {
+    method: 'POST',
+    body: JSON.stringify({ symbol: tk })
+  });
+}
+
 async function fetchAllFmpData(tk){
   const [quote, is, bs, cf] = await Promise.all([
     fmpFetch('quote', tk),
@@ -1147,7 +1168,6 @@ function rResumen(){
 
 function rValoracion(){
   let h=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><h2 style="font-size:22px;font-weight:900;color:var(--blue)">Valoración IDC</h2><button style="padding:6px 14px;font-size:12px;font-weight:800;font-family:var(--sans);border-radius:8px;border:1.5px solid var(--acc);background:transparent;color:var(--acc);cursor:pointer" onclick="openM('p')">+ Añadir</button></div>`;
-  if(!getFmpKey()) h+=`<div class="card" style="text-align:center;padding:24px;border:2px dashed var(--acc)"><div style="font-size:28px;margin-bottom:8px">🔑</div><div style="font-size:15px;font-weight:700;color:var(--acc)">Configura tu API Key de FMP</div><div style="font-size:13px;color:var(--ink3);margin-top:4px">Ve a Config → FMP API Key</div></div>`;
 
   // ═══ EN CARTERA ═══
   h+=`<div class="card"><div class="card-t">En cartera · ${D.c.length}</div>`;
@@ -1190,9 +1210,6 @@ function rValoracion(){
 
 // ═══ INICIAR VALORACIÓN ═══
 async function startValoracion(tk, backTo){
-  const key = getFmpKey();
-  if(!key){ toast('⚠️ Introduce tu API Key en Config'); go('config'); return; }
-
   const el = document.getElementById('v-valoracion');
   el.innerHTML = `<div class="loader-wrap"><div class="loader"></div><div class="loader-txt">Analizando ${tk}...<br>Descargando datos de FMP</div></div>`;
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
@@ -1203,6 +1220,19 @@ async function startValoracion(tk, backTo){
     if(!data.is || !data.is.length) throw new Error('Sin datos financieros');
     const v = calcIDC(data);
 
+    // Recomendación backend/Claude: si falla, se conserva valoración IDC local y se avisa sin exponer claves.
+    try {
+      const rec = await fetchBackendRecommendation(tk);
+      if(rec && rec.recomendacion){
+        v.backendRecommendation = rec;
+        if(rec.recomendacion==='comprar') v.signal='buy';
+        else if(rec.recomendacion==='mantener') v.signal='hold';
+        else if(rec.recomendacion==='vender') v.signal='sell';
+      }
+    } catch(recErr){
+      console.warn('Recomendación backend no disponible:', recErr.message);
+    }
+
     // Guardar señal en la empresa
     const item = [...D.c,...D.p].find(e=>e.tk===tk);
     if(item){ item.sig = v.signal; save(); }
@@ -1210,17 +1240,14 @@ async function startValoracion(tk, backTo){
     renderValoracionIDC(v, el, backTo);
   } catch(err) {
     let msg = 'Error al obtener datos';
-    if(err.message==='NO_KEY') msg='Introduce tu API Key de FMP en Config';
-    else if(err.message.includes('403')) msg='API Key inválida o sin permisos';
-    else if(err.message.includes('429')) msg='Límite de peticiones alcanzado (250/día)';
+    if(err.message.includes('403') || err.message.includes('401')) msg='Backend sin permisos o clave inválida';
+    else if(err.message.includes('429')) msg='Límite de peticiones alcanzado';
     else if(err.message.includes('Sin datos')) msg=`${tk}: sin datos financieros en FMP (¿empresa no-US?)`;
     el.innerHTML=`<button class="det-back" onclick="go('${backTo}')">← Volver</button><div class="card" style="text-align:center;padding:40px 20px"><div style="font-size:40px;margin-bottom:12px">⚠️</div><div style="font-size:17px;font-weight:800;color:var(--red);margin-bottom:8px">${msg}</div><div style="font-size:13px;color:var(--ink3)">${err.message}</div></div>`;
   }
 }
 
 function rConfig(){
-  const savedKey = getFmpKey();
-  const claudeKey = getClaudeKey();
   const brokerData = getBrokerTariffs();
   const hasBroker = brokerData && Object.keys(brokerData).length > 0;
 
@@ -1236,17 +1263,8 @@ function rConfig(){
   }
 
   document.getElementById('v-config').innerHTML=`<h2 style="font-size:22px;font-weight:900;color:var(--blue);margin-bottom:14px">Configuración</h2>
-  <div class="card"><div class="card-t">🔑 Conexiones</div>
-    <div style="font-size:12px;color:var(--ink3);margin-bottom:12px;line-height:1.5"><b>FMP</b> — Datos financieros de empresas (precios, balances, ratios). Gratis hasta 250 consultas/día.</div>
-    <div class="fld"><label>Clave FMP (datos financieros)</label><input id="cfg-fmp" value="${savedKey}" placeholder="Tu clave de financialmodelingprep.com" style="width:100%;padding:14px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;font-size:15px"></div>
-    <button onclick="setFmpKey(document.getElementById('cfg-fmp').value.trim());toast('✅ Clave FMP guardada')" style="width:100%;padding:14px;border:none;border-radius:12px;background:var(--acc);color:#fff;font-family:var(--sans);font-size:15px;font-weight:800;cursor:pointer;margin-top:4px">Guardar clave FMP</button>
-    ${savedKey?'<div style="margin-top:8px;font-size:12px;color:var(--green);font-weight:700">✅ Conectado</div>':''}
-    <div style="margin-top:14px;border-top:1.5px solid var(--border);padding-top:14px">
-    <div style="font-size:12px;color:var(--ink3);margin-bottom:12px;line-height:1.5"><b>Claude IA</b> — Lectura automática de documentos: capturas de compras del broker, contratos de tarifas, etc. <b>Opcional</b> — sin ella puedes meter los datos a mano.</div>
-    <div class="fld"><label>Clave Claude IA (lectura de documentos)</label><input id="cfg-claude" value="${claudeKey}" placeholder="sk-ant-..." style="width:100%;padding:14px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;font-size:15px" type="password"></div>
-    <button onclick="setClaudeKey(document.getElementById('cfg-claude').value.trim());toast('✅ Clave Claude guardada')" style="width:100%;padding:14px;border:none;border-radius:12px;background:#142e4c;color:#fff;font-family:var(--sans);font-size:15px;font-weight:800;cursor:pointer;margin-top:4px">Guardar clave Claude</button>
-    ${claudeKey?'<div style="margin-top:8px;font-size:12px;color:var(--green);font-weight:700">✅ Conectado</div>':''}
-    </div>
+  <div class="card"><div class="card-t">🔌 Conexiones backend</div>
+    <div style="font-size:13px;color:var(--ink3);line-height:1.5">Las claves de FMP y Claude ya no se introducen en el navegador. Viven en el backend seguro. Backend actual: <b>${window.BACKEND_URL}</b></div>
   </div>
 
   <div class="card"><div class="card-t">📋 Tarifas del broker</div>
@@ -1270,7 +1288,7 @@ function rConfig(){
   </div>
 
   <div class="card"><div class="card-t">💾 Tus datos</div>
-    <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;line-height:1.5">Exporta una copia de todos tus datos (posiciones, compras, dividendos, valoraciones, claves). Impórtalos en una versión nueva para no perder nada.</div>
+    <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;line-height:1.5">Exporta una copia de todos tus datos (posiciones, compras, dividendos, valoraciones). Impórtalos en una versión nueva para no perder nada.</div>
     <button onclick="exportData()" style="width:100%;padding:16px;border:1.5px solid var(--green);border-radius:14px;background:var(--green-light);font-family:var(--sans);font-size:15px;font-weight:800;color:var(--green);cursor:pointer;margin-bottom:8px">📥 Exportar mis datos (JSON)</button>
     <div style="position:relative">
       <button onclick="document.getElementById('import-file').click()" style="width:100%;padding:16px;border:1.5px solid var(--blue);border-radius:14px;background:#eef6ff;font-family:var(--sans);font-size:15px;font-weight:800;color:var(--blue);cursor:pointer">📤 Importar datos de versión anterior</button>
@@ -1376,8 +1394,6 @@ function saveFxRates(){
 }
 
 async function refreshFxRates(){
- const key = getFmpKey();
- if(!key) return;
  try{
    const [eurusdData, gbpusdData, usdcadData] = await Promise.all([
      fmpFetch('quote', 'EURUSD'),
@@ -1406,54 +1422,23 @@ function toEur(amount, cur){ const fx=getFx(cur); return cur==='EUR' ? amount : 
 /* ════════════════════════════════════════════════
    CLAUDE API — Lectura de documentos
    ════════════════════════════════════════════════ */
-function getClaudeKey(){ return localStorage.getItem('claudeKey')||''; }
-function setClaudeKey(k){ localStorage.setItem('claudeKey',k); }
 function getBrokerTariffs(){ try{return JSON.parse(localStorage.getItem('brokerTariffs'))||null;}catch(e){return null;} }
 function setBrokerTariffs(data){ localStorage.setItem('brokerTariffs',JSON.stringify(data)); }
 
 async function callClaudeVision(base64Data, mediaType, prompt){
-  const key = getClaudeKey();
-  if(!key) throw new Error('NO_CLAUDE_KEY');
-  const body = {
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 1500,
-    messages: [{
-      role: 'user',
-      content: [
-        { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64Data } },
-        { type: 'text', text: prompt }
-      ]
-    }]
-  };
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
+  const result = await backendFetch('/api/analysis', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-    body: JSON.stringify(body)
+    body: JSON.stringify({ prompt, context: { mediaType, base64Data } })
   });
-  if(!r.ok){ const t=await r.text().catch(()=>''); throw new Error(`Claude API ${r.status}: ${t.slice(0,300)}`); }
-  const data = await r.json();
-  return data.content.map(c=>c.text||'').join('');
+  return result.analysis || '';
 }
 
 async function callClaudeText(textContent, prompt){
-  const key = getClaudeKey();
-  if(!key) throw new Error('NO_CLAUDE_KEY');
-  const body = {
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 1500,
-    messages: [{
-      role: 'user',
-      content: prompt + '\n\n--- DOCUMENTO ---\n' + textContent.slice(0, 15000)
-    }]
-  };
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
+  const result = await backendFetch('/api/analysis', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-    body: JSON.stringify(body)
+    body: JSON.stringify({ prompt, context: { textContent: textContent.slice(0, 15000) } })
   });
-  if(!r.ok){ const t=await r.text().catch(()=>''); throw new Error(`Claude API ${r.status}: ${t.slice(0,300)}`); }
-  const data = await r.json();
-  return data.content.map(c=>c.text||'').join('');
+  return result.analysis || '';
 }
 
 function parseClaudeJsonResponse(responseText){
@@ -1491,8 +1476,6 @@ function fileToBase64(file){
 async function handleBrokerUpload(event){
   const file = event.target.files[0];
   if(!file) return;
-  const claudeKey = getClaudeKey();
-  if(!claudeKey){ toast('⚠️ Para leer documentos, añade la clave Claude en Config'); return; }
 
   const zone = document.getElementById('broker-upload-zone');
   zone.classList.add('processing');
@@ -1537,10 +1520,8 @@ Si un campo no aparece en el documento, pon "No especificado". Si encuentras tar
     rConfig(); // re-renderizar config
   } catch(err){
     console.error('Broker upload error:', err);
-    if(err.message.includes('NO_CLAUDE_KEY')){
-      toast('⚠️ Clave Claude necesaria — ve a Config');
-    } else if(err.message.includes('401')){
-      toast('❌ Claude API Key inválida');
+    if(err.message.includes('401')){
+      toast('❌ Backend Claude sin permisos');
     } else {
       toast('❌ Error analizando documento: ' + err.message.slice(0,80));
     }
@@ -1557,8 +1538,6 @@ Si un campo no aparece en el documento, pon "No especificado". Si encuentras tar
 async function readCommissionCapture(event, context){
   const file = event.target.files[0];
   if(!file) return;
-  const claudeKey = getClaudeKey();
-  if(!claudeKey){ toast('⚠️ Configura la clave Claude en Config para leer capturas'); return; }
 
   const btn = document.getElementById(context+'-attach-btn');
   const textEl = document.getElementById(context+'-attach-text');
@@ -1601,9 +1580,7 @@ Si no encuentras comisión clara, pon {"comision_eur": 0, "detalle": "No se pudo
     console.error('Commission read error:', err);
     btn.classList.remove('reading');
     textEl.textContent = '📎 Adjuntar captura de comisión';
-    if(err.message.includes('NO_CLAUDE_KEY')){
-      toast('⚠️ Configura la clave Claude en Config para leer capturas');
-    } else {
+    {
       toast('❌ Error leyendo captura: ' + err.message.slice(0,80));
     }
   }
@@ -1617,8 +1594,6 @@ Si no encuentras comisión clara, pon {"comision_eur": 0, "detalle": "No se pudo
 async function readTradeCapture(event, tk, targetPrefix){
   const file = event.target.files[0];
   if(!file) return;
-  const claudeKey = getClaudeKey();
-  if(!claudeKey){ toast('⚠️ Configura la clave Claude en Config para leer capturas'); return; }
 
   const btn = document.getElementById(
     targetPrefix==='buy' ? 'buy-trade-btn' : targetPrefix+'-attach-btn'
@@ -2170,8 +2145,6 @@ function closeExitM(){
 async function readTradeCaptureFromExit(event, tk){
   const file = event.target.files[0];
   if(!file) return;
-  const claudeKey = getClaudeKey();
-  if(!claudeKey){ toast('⚠️ Configura la clave Claude en Config para leer capturas'); return; }
 
   const descEl = document.getElementById('exit-capture-desc');
   if(descEl) descEl.textContent = '⏳ Leyendo captura...';
@@ -2437,8 +2410,6 @@ function showReport(tk){
 async function handleIbkrReport(event){
   const file = event.target.files[0];
   if(!file) return;
-  const claudeKey = getClaudeKey();
-  if(!claudeKey){ toast('⚠️ Configura la clave Claude en Config para leer informes'); return; }
 
   const zone = document.getElementById('ibkr-upload-zone');
   const status = document.getElementById('ibkr-status');
@@ -2596,8 +2567,7 @@ IMPORTANTE - ERRORES COMUNES A EVITAR:
     console.error('IBKR report error:', err);
     zone.classList.remove('processing');
     let msg = 'Error procesando informe';
-    if(err.message.includes('401')) msg = 'Clave Claude inválida';
-    else if(err.message.includes('NO_CLAUDE_KEY')) msg = 'Configura la clave Claude primero';
+    if(err.message.includes('401')) msg = 'Backend Claude sin permisos';
     status.innerHTML = `<div style="padding:14px;text-align:center;color:var(--red);font-weight:700">❌ ${msg}</div>`;
     toast('❌ '+msg);
   }
@@ -2775,8 +2745,6 @@ function exportData(){
     _version: 'loren-app-v3',
     _date: new Date().toISOString(),
     idc7: localStorage.getItem('idc7'),
-    fmpKey: localStorage.getItem('fmpKey'),
-    claudeKey: localStorage.getItem('claudeKey'),
     brokerTariffs: localStorage.getItem('brokerTariffs'),
   };
   // También exportar datos de valoración IDC por empresa
