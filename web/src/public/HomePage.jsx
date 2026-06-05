@@ -13,6 +13,7 @@ const initialForm = {
   phone: '',
   interest: '',
   message: '',
+  website: '',
   privacyAccepted: false,
 }
 
@@ -195,7 +196,11 @@ export default function HomePage() {
     setFormData((current) => ({ ...current, [field]: value }))
   }
 
-  function openInvite() {
+  function openInvite(project = null) {
+    setFormData((current) => ({
+      ...current,
+      interest: project?.slug || project?.name || current.interest,
+    }))
     setIsInviteOpen(true)
     setStatus({ type: 'idle', message: '' })
   }
@@ -260,33 +265,48 @@ export default function HomePage() {
       return
     }
 
-    if (!emailJsConfig.serviceId || !emailJsConfig.templateId || !emailJsConfig.publicKey) {
-      setStatus({
-        type: 'error',
-        message:
-          'El formulario está listo, pero EmailJS aún no está configurado en este entorno. Añade las variables VITE_EMAILJS_* para activarlo.',
-      })
-      return
-    }
-
     setIsSubmitting(true)
 
     try {
-      await emailjs.send(
-        emailJsConfig.serviceId,
-        emailJsConfig.templateId,
-        {
-          full_name: formData.fullName.trim(),
-          reply_to: formData.email.trim(),
-          phone: formData.phone.trim() || 'No facilitado',
-          interest: formData.interest.trim(),
-          message: formData.message.trim() || 'Sin mensaje adicional.',
-          to_email: emailJsConfig.toEmail,
+      const projectSlug = formData.interest.trim() || publicProjects[0]?.slug
+      const requestResponse = await fetch(`${PANEL_API_BASE_URL}/projects/${encodeURIComponent(projectSlug)}/access-requests`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        {
-          publicKey: emailJsConfig.publicKey,
-        },
-      )
+        body: JSON.stringify({
+          fullName: formData.fullName.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim(),
+          message: formData.message.trim(),
+          website: formData.website,
+          privacyAccepted: formData.privacyAccepted,
+        }),
+      })
+
+      const requestData = await requestResponse.json().catch(() => ({}))
+      if (!requestResponse.ok) {
+        throw new Error(requestData.error || 'No se pudo guardar la solicitud ahora mismo.')
+      }
+
+      if (emailJsConfig.serviceId && emailJsConfig.templateId && emailJsConfig.publicKey) {
+        await emailjs.send(
+          emailJsConfig.serviceId,
+          emailJsConfig.templateId,
+          {
+            full_name: formData.fullName.trim(),
+            reply_to: formData.email.trim(),
+            phone: formData.phone.trim() || 'No facilitado',
+            interest: projectSlug,
+            message: formData.message.trim() || 'Sin mensaje adicional.',
+            to_email: emailJsConfig.toEmail,
+          },
+          {
+            publicKey: emailJsConfig.publicKey,
+          },
+        )
+      }
 
       setStatus({ type: 'idle', message: '' })
       setFormData(initialForm)
@@ -488,7 +508,7 @@ export default function HomePage() {
                     <button className="cta-button cta-button--primary" type="button" onClick={() => openAccessModal(project)}>
                       Acceder con código
                     </button>
-                    <button className="cta-button cta-button--invite" type="button" onClick={openInvite}>
+                    <button className="cta-button cta-button--invite" type="button" onClick={() => openInvite(project)}>
                       Solicitar código
                     </button>
                   </div>
@@ -542,8 +562,8 @@ export default function HomePage() {
               <span className="section-heading__eyebrow">Solicitar Invitación</span>
               <h2 id="invite-modal-title">Déjanos tus datos</h2>
               <p className="invite-modal__copy">
-                Loren revisará tu solicitud antes de conceder acceso. Este formulario está pensado para enviar
-                los datos recibidos por email.
+                Loren revisará tu solicitud antes de conceder acceso. La solicitud se guardará en la bandeja interna
+                y se mantendrá el aviso por email como notificación secundaria.
               </p>
 
               <form className="invite-form" onSubmit={handleSubmit}>
@@ -597,6 +617,17 @@ export default function HomePage() {
                     onChange={(event) => updateField('message', event.target.value)}
                     placeholder="Cuéntale a Loren lo que considere útil para valorar tu solicitud"
                     rows={5}
+                  />
+                </label>
+
+                <label style={{ display: 'none' }} aria-hidden="true">
+                  <span>Web</span>
+                  <input
+                    type="text"
+                    value={formData.website}
+                    onChange={(event) => updateField('website', event.target.value)}
+                    tabIndex={-1}
+                    autoComplete="off"
                   />
                 </label>
 

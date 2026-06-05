@@ -261,6 +261,7 @@ function AdminPage() {
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <Link className="cta-admin-button cta-admin-button--blue" to="/admin/workspace">Abrir workspace</Link>
               <Link className="cta-admin-button cta-admin-button--green" to="/admin/agentes">Canal de coordinación actual</Link>
+              <Link className="cta-admin-button cta-admin-button--orange" to="/admin/invitaciones">Bandeja de invitaciones</Link>
             </div>
           </div>
 
