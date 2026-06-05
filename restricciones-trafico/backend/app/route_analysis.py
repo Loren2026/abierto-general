@@ -1,6 +1,7 @@
 import json
 import sqlite3
 from pathlib import Path
+from .osm_enrichment import refs_from_geometry
 from .query import affected_days, expand_days
 from .routing import NominatimOsrmProvider, RoutingProvider, normalize_road_code
 
@@ -60,24 +61,52 @@ def find_route_restrictions(fecha_salida: str, fecha_llegada: str, roads: list[s
     out.sort(key=lambda item: (item["confidence"], item["via"] or "", item["id"]))
     return out
 
-def analyze_route(origen: str, destino: str, fecha_salida: str, fecha_llegada: str, provider: RoutingProvider | None = None):
+def analyze_route(
+    origen: str,
+    destino: str,
+    fecha_salida: str,
+    fecha_llegada: str,
+    provider: RoutingProvider | None = None,
+    enrich_with_overpass: bool = True,
+):
     provider = provider or NominatimOsrmProvider()
     route = provider.route(origen, destino)
-    restrictions = find_route_restrictions(fecha_salida, fecha_llegada, route.roads, route.confidence)
+    roads = list(route.roads)
+    warnings = list(route.warnings)
+    enrichment = {"provider": None, "roads": [], "warnings": []}
+
+    # OSRM público a veces devuelve geometría correcta pero pocos refs de carretera.
+    # En ese caso enriquecemos con Overpass sobre la geometría OSM para obtener tags ref reales.
+    if enrich_with_overpass and route.geometry:
+        try:
+            osm_roads, osm_warnings = refs_from_geometry(route.geometry)
+            enrichment = {"provider": "overpass", "roads": osm_roads, "warnings": osm_warnings}
+            for road in osm_roads:
+                if road not in roads:
+                    roads.append(road)
+            warnings.extend(osm_warnings)
+        except Exception as error:
+            warnings.append(f"Overpass no disponible o falló: {error}")
+            enrichment = {"provider": "overpass", "roads": [], "warnings": [str(error)]}
+
+    # Confianza alta solo si tenemos un conjunto razonable de vías. Si no, nunca declarar vía libre.
+    route_confidence = route.confidence if len(roads) >= 3 else "baja"
+    restrictions = find_route_restrictions(fecha_salida, fecha_llegada, roads, route_confidence)
     return {
         "provider": route.provider,
         "origen": route.origin,
         "destino": route.destination,
         "fecha_salida": fecha_salida,
         "fecha_llegada": fecha_llegada,
-        "vias_detectadas": route.roads,
-        "route_confidence": route.confidence,
-        "warnings": route.warnings,
+        "vias_detectadas": roads,
+        "route_confidence": route_confidence,
+        "warnings": warnings,
         "geometry": route.geometry,
+        "enrichment": enrichment,
         "restricciones": restrictions,
         "summary": {
-            "total_vias": len(route.roads),
+            "total_vias": len(roads),
             "total_restricciones": len(restrictions),
-            "no_declarar_via_libre": route.confidence == "baja",
+            "no_declarar_via_libre": route_confidence == "baja",
         },
     }

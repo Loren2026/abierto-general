@@ -113,3 +113,101 @@ Es decir: en la BD actual, los 4 registros `aplica_a_loren=1` están en `DGT`, n
 - Restricciones genéricas sin vía concreta: la BD actual no mostró `G-*`; el código deja estructura para `generic_scope` si aparecen.
 - No se ha desplegado nada.
 - No se han usado servicios de pago.
+
+## Prueba real OSRM + Overpass — 2026-06-05
+
+### GraphHopper
+
+Prueba sin API key:
+
+```txt
+HTTP 401 Unauthorized
+{"message":"No API key specified. Please register and see documentation: https://www.graphhopper.com/developers/"}
+```
+
+Conclusión: GraphHopper puede ser alternativa, pero requiere API key gratuita. No se registró ninguna clave.
+
+### OSRM solo
+
+OSRM público devolvía geometría, pero en rutas largas desde Lugones solo entregaba refs locales (`AS-381`, `AS-17`) y omitía vías principales como `A-66`, `A-6`, `A-3`. Eso no es aceptable como única fuente.
+
+### OSRM + Overpass sobre geometría
+
+Se añadió enriquecimiento en:
+
+- `backend/app/osm_enrichment.py`
+- `backend/app/route_analysis.py`
+
+La geometría OSRM se muestrea y se consulta Overpass para vías OSM cercanas con tag `ref`. Se usan endpoints gratuitos con fallback:
+
+- `https://overpass-api.de/api/interpreter`
+- `https://overpass.kumi.systems/api/interpreter`
+
+Primera prueba real tuvo `504 Gateway Timeout` en alguna ruta. Tras reducir muestreo y añadir fallback, las tres rutas funcionaron.
+
+Fecha usada: `2026-08-15`.
+
+#### Lugones → Madrid
+
+Vías detectadas:
+
+```txt
+AS-381, AS-17, A-6, AP-6, A-66, AP-66, A-63, A-62, O-12, N-630
+```
+
+Restricciones detectadas: 6.
+
+```txt
+dgt-2026-f-0124 | A-6  | 2026-08-15 | alta
+dgt-2026-g-0028 | A-6  | 2026-08-15 | alta
+dgt-2026-g-0030 | A-6  | 2026-08-15 | alta
+dgt-2026-f-0131 | A-62 | 2026-08-15 | alta
+dgt-2026-g-0029 | AP-6 | 2026-08-15 | alta
+dgt-2026-g-0040 | N-630 | 2026-08-15 | alta
+```
+
+#### Lugones → Valencia
+
+Vías detectadas:
+
+```txt
+AS-381, AS-17, AP-66, A-66, A-6, A-3, AP-6
+```
+
+Restricciones detectadas: 6.
+
+```txt
+dgt-2026-f-0126 | A-3  | 2026-08-15 | alta
+dgt-2026-g-0026 | A-3  | 2026-08-15 | alta
+dgt-2026-f-0124 | A-6  | 2026-08-15 | alta
+dgt-2026-g-0028 | A-6  | 2026-08-15 | alta
+dgt-2026-g-0030 | A-6  | 2026-08-15 | alta
+dgt-2026-g-0029 | AP-6 | 2026-08-15 | alta
+```
+
+#### Lugones → Bilbao
+
+Vías detectadas:
+
+```txt
+AS-381, AS-17, A-8, A-64, N-632, N-634
+```
+
+Restricciones detectadas: 4.
+
+```txt
+dgt-2026-g-0012 | A-8 | 2026-08-15 | alta
+dgt-2026-g-0013 | A-8 | 2026-08-15 | alta
+pv-2026-0001    | A-8 | 2026-08-15 | alta
+pv-2026-0004    | A-8 | 2026-08-15 | alta
+```
+
+### Conclusión proveedor
+
+Proveedor ganador para Fase 4 reversible: **OSRM + Overpass**.
+
+- OSRM aporta ruta/geometría gratis sin clave.
+- Overpass aporta `ref` reales de carreteras sobre la geometría.
+- Si Overpass falla, el sistema lo registra en `warnings`; si quedan pocas vías, baja la confianza y no permite declarar “vía libre”.
+
+Limitación: Overpass público puede devolver 504/rate limit. Para producción habría que valorar caché local, throttling fuerte o instancia propia/servicio estable.
