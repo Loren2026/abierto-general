@@ -211,3 +211,19 @@ Proveedor ganador para Fase 4 reversible: **OSRM + Overpass**.
 - Si Overpass falla, el sistema lo registra en `warnings`; si quedan pocas vías, baja la confianza y no permite declarar “vía libre”.
 
 Limitación: Overpass público puede devolver 504/rate limit. Para producción habría que valorar caché local, throttling fuerte o instancia propia/servicio estable.
+
+## Ajuste de confianza — 2026-06-05
+
+Problema detectado en prueba local: OSRM marcaba confianza baja porque sus instrucciones no incluían refs principales, aunque Overpass sí enriquecía correctamente la geometría con vías como `A-6`, `AP-6`, `A-66`, `A-62`, `N-630`.
+
+La confianza ahora se calcula sobre la detección final combinada:
+
+- **Alta**: hay al menos 3 vías principales normalizadas (`AP-*`, `A-*`, `N-*`) y vienen de Overpass o de una ruta ya fiable.
+- **Media**: hay alguna vía principal, pero la detección parece parcial.
+- **Baja**: Overpass falló/no devolvió refs, hay menos de 2 vías normalizadas, o solo aparecen vías locales sin códigos principales.
+
+La regla de oro se mantiene:
+
+- Si la confianza es baja, `summary.no_declarar_via_libre = true`.
+- La UI debe mostrar: `No se puede garantizar vía libre, revisar manualmente`.
+- Nunca se debe declarar vía libre si Overpass falla o la detección real es pobre.

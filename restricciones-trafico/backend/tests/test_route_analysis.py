@@ -36,3 +36,22 @@ class RouteAnalysisTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class RouteConfidenceTests(unittest.TestCase):
+    def test_overpass_main_roads_raise_confidence_despite_osrm_low(self):
+        from app.route_analysis import calculate_route_confidence
+        confidence = calculate_route_confidence(
+            "baja",
+            ["AS-381", "AS-17", "A-6", "AP-6", "A-66", "A-62", "N-630"],
+            {"provider": "overpass", "roads": ["A-6", "AP-6", "A-66", "A-62", "N-630"], "warnings": []},
+        )
+        self.assertEqual(confidence, "alta")
+
+    def test_overpass_failure_keeps_confidence_low(self):
+        from app.route_analysis import calculate_route_confidence
+        confidence = calculate_route_confidence(
+            "baja",
+            ["AS-381", "AS-17"],
+            {"provider": "overpass", "roads": [], "warnings": ["504 Gateway Timeout"]},
+        )
+        self.assertEqual(confidence, "baja")

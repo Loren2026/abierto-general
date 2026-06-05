@@ -8,6 +8,30 @@ from .routing import NominatimOsrmProvider, RoutingProvider, normalize_road_code
 DB = Path(__file__).resolve().parents[1] / "data/restricciones.sqlite"
 
 GENERIC_PREFIXES = ("G-", "GEN", "GENERAL")
+MAIN_ROAD_PREFIXES = ("AP-", "A-", "N-")
+
+def is_main_road(road: str) -> bool:
+    return (road or "").upper().startswith(MAIN_ROAD_PREFIXES)
+
+def calculate_route_confidence(route_confidence: str, roads: list[str], enrichment: dict) -> str:
+    """Calcula confianza real de detección de vías, no solo la confianza inicial de OSRM.
+
+    OSRM público puede devolver geometría buena pero pocos nombres de vía. Si Overpass
+    enriquece con refs principales suficientes, la confianza debe subir.
+    """
+    normalized = [normalize_road_code(road) for road in roads if normalize_road_code(road)]
+    main_roads = [road for road in normalized if is_main_road(road)]
+    overpass_roads = enrichment.get("roads") or []
+    overpass_warnings = enrichment.get("warnings") or []
+    overpass_failed = bool(enrichment.get("provider") == "overpass" and overpass_warnings and not overpass_roads)
+
+    if overpass_failed or len(normalized) < 2:
+        return "baja"
+    if len(main_roads) >= 3 and (overpass_roads or route_confidence == "alta"):
+        return "alta"
+    if main_roads:
+        return "media"
+    return "baja"
 
 def restriction_confidence(route_confidence: str, row_confidence: str, match_type: str) -> str:
     if route_confidence == "baja" or match_type == "generic_scope":
@@ -89,8 +113,9 @@ def analyze_route(
             warnings.append(f"Overpass no disponible o falló: {error}")
             enrichment = {"provider": "overpass", "roads": [], "warnings": [str(error)]}
 
-    # Confianza alta solo si tenemos un conjunto razonable de vías. Si no, nunca declarar vía libre.
-    route_confidence = route.confidence if len(roads) >= 3 else "baja"
+    # Confianza basada en la detección final: OSRM + enriquecimiento Overpass.
+    # Un aviso inicial de OSRM por pocos nombres no fuerza baja si Overpass recuperó refs principales.
+    route_confidence = calculate_route_confidence(route.confidence, roads, enrichment)
     restrictions = find_route_restrictions(fecha_salida, fecha_llegada, roads, route_confidence)
     return {
         "provider": route.provider,
