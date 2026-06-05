@@ -1,11 +1,13 @@
 import sqlite3
 from pathlib import Path
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from .query import consulta
 from .route_analysis import analyze_route
 
 DB = Path(__file__).resolve().parents[1] / "data/restricciones.sqlite"
+FRONTEND = Path(__file__).resolve().parents[2] / "frontend"
 app = FastAPI(title="restricciones-trafico-local")
 
 class ConsultaRequest(BaseModel):
@@ -33,3 +35,6 @@ def post_consulta(req: ConsultaRequest):
 @app.post("/api/ruta/analizar")
 def post_ruta_analizar(req: RutaAnalizarRequest):
     return analyze_route(req.origen, req.destino, req.fecha_salida, req.fecha_llegada)
+
+if FRONTEND.exists():
+    app.mount("/", StaticFiles(directory=FRONTEND, html=True), name="frontend")
