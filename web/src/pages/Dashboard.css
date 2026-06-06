@@ -354,6 +354,65 @@
   border-color: rgba(91, 141, 239, 0.45);
 }
 
+.admin-project-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.admin-project-form__wide {
+  grid-column: 1 / -1;
+}
+
+.admin-project-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  color: #172033;
+  font-weight: 600;
+}
+
+.admin-project-form input,
+.admin-project-form select,
+.admin-project-form textarea {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: 14px;
+  color: #172033;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.admin-project-form textarea {
+  resize: vertical;
+}
+
+.admin-project-form input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.admin-project-form input:focus,
+.admin-project-form select:focus,
+.admin-project-form textarea:focus {
+  outline: 2px solid rgba(91, 141, 239, 0.22);
+  border-color: rgba(91, 141, 239, 0.45);
+}
+
+.created-project-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(91, 141, 239, 0.08);
+  border: 1px solid rgba(91, 141, 239, 0.16);
+}
+
 .cta-admin-button {
   min-height: 46px;
   border: none;

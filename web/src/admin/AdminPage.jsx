@@ -9,6 +9,17 @@ const initialAccessForm = {
   notes: '',
 }
 
+const initialProjectForm = {
+  slug: '',
+  name: '',
+  description: '',
+  sourceType: 'webapp',
+  redirectUrl: '',
+  sourceFileId: '',
+  version: '1.0.0',
+  updateMessage: '',
+}
+
 function formatDate(value, fallback = 'No disponible') {
   if (!value) return fallback
 
@@ -40,6 +51,13 @@ function AdminPage() {
   const [accessActionMessage, setAccessActionMessage] = useState({ type: '', message: '' })
   const [revealedCodes, setRevealedCodes] = useState({})
   const [activeDevicesByAccessId, setActiveDevicesByAccessId] = useState({})
+  const [projectForm, setProjectForm] = useState(initialProjectForm)
+  const [createdProject, setCreatedProject] = useState(null)
+  const [projectActionMessage, setProjectActionMessage] = useState({ type: '', message: '' })
+  const [isCreatingProject, setIsCreatingProject] = useState(false)
+  const [isPublishingProject, setIsPublishingProject] = useState(false)
+  const [isCreatingProjectAccess, setIsCreatingProjectAccess] = useState(false)
+  const [projectGeneratedCode, setProjectGeneratedCode] = useState('')
 
   const handleLogout = async () => {
     await logout()
@@ -148,6 +166,86 @@ function AdminPage() {
 
   function updateAccessForm(field, value) {
     setAccessForm((current) => ({ ...current, [field]: value }))
+  }
+
+  function updateProjectForm(field, value) {
+    setProjectForm((current) => ({ ...current, [field]: value }))
+  }
+
+  async function handleCreateProject(event) {
+    event?.preventDefault()
+    setIsCreatingProject(true)
+    setProjectActionMessage({ type: '', message: '' })
+    setProjectGeneratedCode('')
+
+    try {
+      const payload = {
+        slug: projectForm.slug,
+        name: projectForm.name,
+        description: projectForm.description || undefined,
+        sourceType: projectForm.sourceType,
+        redirectUrl: projectForm.redirectUrl || undefined,
+        sourceFileId: projectForm.sourceFileId || undefined,
+        version: projectForm.version || undefined,
+        updateMessage: projectForm.updateMessage || undefined,
+      }
+      const data = await apiFetch('/api/admin/projects', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
+      setCreatedProject(data.project)
+      setSelectedProjectId(data.project.id)
+      setProjectActionMessage({ type: 'success', message: `Proyecto creado: ${data.project.name}.` })
+      setProjectForm(initialProjectForm)
+      await loadProjects()
+    } catch (error) {
+      setProjectActionMessage({ type: 'error', message: error.message })
+    } finally {
+      setIsCreatingProject(false)
+    }
+  }
+
+  async function handlePublishCreatedProject() {
+    if (!createdProject?.id) return
+    setIsPublishingProject(true)
+    setProjectActionMessage({ type: '', message: '' })
+    try {
+      const data = await apiFetch(`/api/admin/projects/${createdProject.id}/publish`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+      })
+      setCreatedProject(data.project)
+      setProjectActionMessage({ type: 'success', message: `Proyecto publicado: ${data.project.name}.` })
+      await loadProjects()
+    } catch (error) {
+      setProjectActionMessage({ type: 'error', message: error.message })
+    } finally {
+      setIsPublishingProject(false)
+    }
+  }
+
+  async function handleCreateAccessForCreatedProject() {
+    if (!createdProject?.id) return
+    setIsCreatingProjectAccess(true)
+    setProjectActionMessage({ type: '', message: '' })
+    try {
+      const data = await apiFetch(`/api/admin/projects/${createdProject.id}/accesses`, {
+        method: 'POST',
+        body: JSON.stringify({
+          personName: `${createdProject.name} prueba`,
+          notes: `Código de prueba para ${createdProject.slug}`,
+        }),
+      })
+      setProjectGeneratedCode(data.generatedPassword)
+      setProjectActionMessage({ type: 'success', message: `Código generado para ${createdProject.name}.` })
+      setRevealedCodes((current) => ({ ...current, [data.access.id]: data.generatedPassword }))
+      setSelectedProjectId(createdProject.id)
+      await loadProjectAccesses(createdProject.id)
+    } catch (error) {
+      setProjectActionMessage({ type: 'error', message: error.message })
+    } finally {
+      setIsCreatingProjectAccess(false)
+    }
   }
 
   async function handleCreateAccess(event) {
@@ -266,6 +364,85 @@ function AdminPage() {
           </div>
 
           {projectsError ? <div className="error-message">{projectsError}</div> : null}
+
+          <div className="next-steps-card">
+            <div className="panel-header-row">
+              <h2>Crear proyecto</h2>
+              <span className="panel-header-pill">Admin</span>
+            </div>
+            <p className="coordination-panel-copy" style={{ marginBottom: 16 }}>
+              Alta reutilizable para descargas OneDrive y webapps públicas con código de invitación.
+            </p>
+            <form className="admin-project-form" onSubmit={handleCreateProject}>
+              <label>
+                <span>Slug</span>
+                <input type="text" value={projectForm.slug} onChange={(event) => updateProjectForm('slug', event.target.value)} placeholder="restricciones-trafico" required />
+              </label>
+              <label>
+                <span>Nombre</span>
+                <input type="text" value={projectForm.name} onChange={(event) => updateProjectForm('name', event.target.value)} placeholder="Restricciones Tráfico" required />
+              </label>
+              <label className="admin-project-form__wide">
+                <span>Descripción</span>
+                <textarea value={projectForm.description} onChange={(event) => updateProjectForm('description', event.target.value)} placeholder="Descripción visible del proyecto" rows={3} />
+              </label>
+              <label>
+                <span>Tipo de origen</span>
+                <select value={projectForm.sourceType} onChange={(event) => updateProjectForm('sourceType', event.target.value)}>
+                  <option value="webapp">webapp</option>
+                  <option value="onedrive">onedrive</option>
+                </select>
+              </label>
+              <label>
+                <span>Redirect URL {projectForm.sourceType === 'webapp' ? '(obligatorio)' : '(opcional)'}</span>
+                <input type="url" value={projectForm.redirectUrl} onChange={(event) => updateProjectForm('redirectUrl', event.target.value)} placeholder="https://restricciones.inteligencialoren.com" required={projectForm.sourceType === 'webapp'} />
+              </label>
+              <label>
+                <span>Source File ID {projectForm.sourceType === 'onedrive' ? '(obligatorio)' : '(no usado)'}</span>
+                <input type="text" value={projectForm.sourceFileId} onChange={(event) => updateProjectForm('sourceFileId', event.target.value)} placeholder="ID de OneDrive" required={projectForm.sourceType === 'onedrive'} disabled={projectForm.sourceType !== 'onedrive'} />
+              </label>
+              <label>
+                <span>Versión</span>
+                <input type="text" value={projectForm.version} onChange={(event) => updateProjectForm('version', event.target.value)} placeholder="1.0.0" />
+              </label>
+              <label className="admin-project-form__wide">
+                <span>Mensaje de actualización</span>
+                <input type="text" value={projectForm.updateMessage} onChange={(event) => updateProjectForm('updateMessage', event.target.value)} placeholder="Alta inicial" />
+              </label>
+              <button className="cta-admin-button cta-admin-button--blue" type="submit" disabled={isCreatingProject}>
+                {isCreatingProject ? 'Creando…' : 'Crear proyecto'}
+              </button>
+            </form>
+
+            {projectActionMessage.message ? <div className={`admin-notice admin-notice--${projectActionMessage.type || 'info'}`}>{projectActionMessage.message}</div> : null}
+
+            {createdProject ? (
+              <div className="created-project-panel">
+                <div className="access-meta-table">
+                  <div className="access-meta-row"><div className="access-meta-label">Project ID</div><div className="access-meta-value">{createdProject.id}</div></div>
+                  <div className="access-meta-row"><div className="access-meta-label">Slug</div><div className="access-meta-value">{createdProject.slug}</div></div>
+                  <div className="access-meta-row"><div className="access-meta-label">Estado</div><div className="access-meta-value">{createdProject.status}</div></div>
+                </div>
+                <div className="access-actions">
+                  <button className="cta-admin-button cta-admin-button--green" type="button" onClick={handlePublishCreatedProject} disabled={isPublishingProject || createdProject.status === 'public'}>
+                    {isPublishingProject ? 'Publicando…' : 'Publicar'}
+                  </button>
+                  <button className="cta-admin-button cta-admin-button--orange" type="button" onClick={handleCreateAccessForCreatedProject} disabled={isCreatingProjectAccess}>
+                    {isCreatingProjectAccess ? 'Generando…' : 'Generar código de acceso'}
+                  </button>
+                </div>
+                {projectGeneratedCode ? (
+                  <div className="code-reveal-card">
+                    <span className="code-reveal-card__label">Código generado</span>
+                    <code>{projectGeneratedCode}</code>
+                    <button className="cta-admin-button cta-admin-button--blue" type="button" onClick={() => navigator.clipboard.writeText(projectGeneratedCode)}>
+                      Copiar código
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
 
           <div className="stats-grid">
             <div className="stat-card">
