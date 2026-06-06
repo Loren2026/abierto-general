@@ -35,8 +35,17 @@ function ensureMap() {
   return map
 }
 
+function refreshMapSize() {
+  if (!map) return
+  requestAnimationFrame(() => {
+    map.invalidateSize()
+    setTimeout(() => map.invalidateSize(), 100)
+  })
+}
+
 function drawMap(data) {
   const m = ensureMap()
+  refreshMapSize()
   if (routeLayer) routeLayer.remove()
   if (restrictionLayer) restrictionLayer.remove()
   const coords = data.geometry?.coordinates || []
@@ -140,6 +149,7 @@ form.addEventListener('submit', async (event) => {
     renderRoads(data.vias_detectadas)
     renderRestrictions(data.restricciones)
     drawMap(data)
+    refreshMapSize()
     setStatus(data.warnings?.length ? `Avisos: ${data.warnings.join(' · ')}` : '')
   } catch (error) {
     setStatus(`No se pudo analizar la ruta: ${error.message}`, 'error')
