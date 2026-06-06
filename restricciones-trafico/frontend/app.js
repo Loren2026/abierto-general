@@ -147,12 +147,12 @@ function renderRestrictions(items = []) {
         <span class="road">${item.via || 'Genérica'}</span>
         <span class="badge">${item.confidence || 'baja'}</span>
       </div>
-      <div class="meta"><strong>Ámbito:</strong> ${item.source_scope || '—'} · <strong>ID:</strong> ${item.id}</div>
-      <div class="meta"><strong>Fechas afectadas:</strong> ${formatDays(item.dias_afecta)}</div>
-      <div class="meta"><strong>Regla fechas:</strong> ${formatDateRule(item)}</div>
-      <div class="meta"><strong>Horario:</strong> ${formatTimeWindows(item.franja_horaria)}</div>
-      <div class="meta"><strong>Tramo:</strong> ${item.tramo?.inicio || '—'} → ${item.tramo?.fin || '—'} · ${formatPk(item.pk)}</div>
-      <div class="meta"><strong>Sentido:</strong> ${item.sentido || 'No detallado'} · <strong>Tipo:</strong> ${item.restriction_type || '—'}</div>
+      <div class="meta"><span class="meta-label">Ámbito:</span> <span class="meta-value">${item.source_scope || '—'}</span> · <span class="meta-label">ID:</span> <span class="meta-value">${item.id}</span></div>
+      <div class="meta"><span class="meta-label">Fechas afectadas:</span> <span class="meta-value">${formatDays(item.dias_afecta)}</span></div>
+      <div class="meta"><span class="meta-label">Regla fechas:</span> <span class="meta-value">${formatDateRule(item)}</span></div>
+      <div class="meta"><span class="meta-label">Horario:</span> <span class="meta-value">${formatTimeWindows(item.franja_horaria)}</span></div>
+      <div class="meta"><span class="meta-label">Tramo:</span> <span class="meta-value">${item.tramo?.inicio || '—'} → ${item.tramo?.fin || '—'} · ${formatPk(item.pk)}</span></div>
+      <div class="meta"><span class="meta-label">Sentido:</span> <span class="meta-value">${item.sentido || 'No detallado'}</span> · <span class="meta-label">Tipo:</span> <span class="meta-value">${item.restriction_type || '—'}</span></div>
     `
     restrictionsList.appendChild(div)
   }
