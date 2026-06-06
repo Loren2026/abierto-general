@@ -10,6 +10,7 @@ const roadsList = document.querySelector('#roads-list')
 let map
 let routeLayer
 let restrictionLayer
+let resizeObserver
 
 function today() { return new Date().toISOString().slice(0, 10) }
 document.querySelector('#fecha_salida').value = today()
@@ -27,42 +28,69 @@ function setStatus(message, type = 'info') {
 
 function ensureMap() {
   if (map) return map
-  map = L.map('map', { scrollWheelZoom: false }).setView([40.4, -3.7], 6)
+  const container = document.querySelector('#map')
+  map = L.map(container, { scrollWheelZoom: false }).setView([40.4, -3.7], 6)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
     attribution: '&copy; OpenStreetMap contributors',
   }).addTo(map)
+  resizeObserver = new ResizeObserver(() => refreshMapSize())
+  resizeObserver.observe(container)
   return map
 }
 
-function refreshMapSize() {
+function refreshMapSize(bounds) {
   if (!map) return
-  requestAnimationFrame(() => {
+  const apply = () => {
     map.invalidateSize()
-    setTimeout(() => map.invalidateSize(), 100)
+    if (bounds?.isValid()) map.fitBounds(bounds, { padding: [28, 28], maxZoom: 11 })
+  }
+  requestAnimationFrame(() => {
+    apply()
+    setTimeout(apply, 120)
+    setTimeout(apply, 350)
   })
+}
+
+function restrictionLatLngs(item, routeLatLngs) {
+  const pk = item.pk || {}
+  const start = Number(pk.start ?? pk.min)
+  const end = Number(pk.end ?? pk.max)
+  if (!Number.isFinite(start) || !Number.isFinite(end) || !routeLatLngs.length) return []
+  const count = routeLatLngs.length
+  const from = Math.max(0, Math.min(count - 1, Math.floor(count * 0.45)))
+  const to = Math.max(from + 1, Math.min(count, Math.floor(count * 0.58)))
+  return routeLatLngs.slice(from, to)
 }
 
 function drawMap(data) {
   const m = ensureMap()
-  refreshMapSize()
   if (routeLayer) routeLayer.remove()
   if (restrictionLayer) restrictionLayer.remove()
   const coords = data.geometry?.coordinates || []
+  let routeBounds
   if (coords.length) {
     const latlngs = coords.map(([lon, lat]) => [lat, lon])
-    routeLayer = L.polyline(latlngs, { color: '#38bdf8', weight: 5, opacity: .9 }).addTo(m)
-    m.fitBounds(routeLayer.getBounds(), { padding: [22, 22] })
+    routeLayer = L.polyline(latlngs, { color: '#2563eb', weight: 6, opacity: .95 }).addTo(m)
+    routeBounds = routeLayer.getBounds()
+    m.fitBounds(routeBounds, { padding: [28, 28], maxZoom: 11 })
   }
   restrictionLayer = L.layerGroup().addTo(m)
   for (const item of data.restricciones || []) {
     if (!coords.length) continue
-    const idx = Math.floor(coords.length / 2)
-    const [lon, lat] = coords[idx]
-    L.circleMarker([lat, lon], { radius: 8, color: '#ef4444', fillColor: '#ef4444', fillOpacity: .85 })
-      .bindPopup(`<strong>${item.via || 'Restricción'}</strong><br>${item.source_scope || ''}<br>${item.id}`)
-      .addTo(restrictionLayer)
+    const latlngs = coords.map(([lon, lat]) => [lat, lon])
+    const segment = restrictionLatLngs(item, latlngs)
+    if (segment.length > 1) {
+      L.polyline(segment, { color: '#ef4444', weight: 9, opacity: .95 }).bindPopup(`<strong>${item.via || 'Restricción'}</strong><br>${item.source_scope || ''}<br>${item.id}`).addTo(restrictionLayer)
+    } else {
+      const idx = Math.floor(coords.length / 2)
+      const [lon, lat] = coords[idx]
+      L.circleMarker([lat, lon], { radius: 8, color: '#ef4444', fillColor: '#ef4444', fillOpacity: .85 })
+        .bindPopup(`<strong>${item.via || 'Restricción'}</strong><br>${item.source_scope || ''}<br>${item.id}`)
+        .addTo(restrictionLayer)
+    }
   }
+  refreshMapSize(routeBounds)
 }
 
 function renderConfidence(data) {
