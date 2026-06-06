@@ -1,0 +1,265 @@
+const ACCESS_PROJECT_SLUG = 'restricciones-trafico'
+const ACCESS_API_BASE = 'https://panel.inteligencialoren.com/api'
+const ACCESS_STORAGE_KEY = `restricciones_access_${ACCESS_PROJECT_SLUG}`
+const DEVICE_STORAGE_KEY = `restricciones_device_${ACCESS_PROJECT_SLUG}`
+
+const accessGate = document.querySelector('#access-gate')
+const accessForm = document.querySelector('#access-form')
+const accessCode = document.querySelector('#access-code')
+const accessError = document.querySelector('#access-error')
+const appContent = document.querySelector('#app-content')
+const form = document.querySelector('#route-form')
+const statusBox = document.querySelector('#status')
+const results = document.querySelector('#results')
+const button = document.querySelector('#submit-button')
+const confidenceCard = document.querySelector('#confidence-card')
+const confidenceText = document.querySelector('#confidence-text')
+const confidenceWarning = document.querySelector('#confidence-warning')
+const restrictionsList = document.querySelector('#restrictions-list')
+const roadsList = document.querySelector('#roads-list')
+let map
+let routeLayer
+let restrictionLayer
+let resizeObserver
+
+function today() { return new Date().toISOString().slice(0, 10) }
+document.querySelector('#fecha_salida').value = today()
+document.querySelector('#fecha_llegada').value = today()
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js').catch(() => {})
+}
+
+function getDeviceId() {
+  let deviceId = localStorage.getItem(DEVICE_STORAGE_KEY)
+  if (!deviceId) {
+    deviceId = crypto.randomUUID ? crypto.randomUUID() : `device-${Date.now()}-${Math.random().toString(16).slice(2)}`
+    localStorage.setItem(DEVICE_STORAGE_KEY, deviceId)
+  }
+  return deviceId
+}
+
+function deviceName() {
+  return `${navigator.platform || 'web'} · ${navigator.userAgent.slice(0, 80)}`
+}
+
+function showApp() {
+  accessGate.hidden = true
+  appContent.hidden = false
+}
+
+function showGate(message = '') {
+  accessGate.hidden = false
+  appContent.hidden = true
+  accessError.hidden = !message
+  accessError.textContent = message
+}
+
+function hasStoredAccess() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(ACCESS_STORAGE_KEY) || 'null')
+    return stored?.ok === true && stored?.project?.slug === ACCESS_PROJECT_SLUG
+  } catch (_) {
+    return false
+  }
+}
+
+async function validateAccessCode(code) {
+  const response = await fetch(`${ACCESS_API_BASE}/projects/${ACCESS_PROJECT_SLUG}/validate-code`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, deviceId: getDeviceId(), deviceName: deviceName(), platform: 'web' }),
+  })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok || data?.ok !== true) {
+    throw new Error(data.error || 'Código inválido o no autorizado')
+  }
+  localStorage.setItem(ACCESS_STORAGE_KEY, JSON.stringify({ ...data, validatedAt: new Date().toISOString() }))
+  return data
+}
+
+accessForm.addEventListener('submit', async (event) => {
+  event.preventDefault()
+  accessError.hidden = true
+  const submit = accessForm.querySelector('button')
+  submit.disabled = true
+  try {
+    await validateAccessCode(accessCode.value.trim())
+    showApp()
+  } catch (error) {
+    localStorage.removeItem(ACCESS_STORAGE_KEY)
+    showGate(error.message)
+  } finally {
+    submit.disabled = false
+  }
+})
+
+hasStoredAccess() ? showApp() : showGate()
+
+function setStatus(message, type = 'info') {
+  statusBox.hidden = !message
+  statusBox.textContent = message || ''
+  statusBox.className = `status ${type}`
+}
+
+function ensureMap() {
+  if (map) return map
+  const container = document.querySelector('#map')
+  container.style.width = '100%'
+  container.style.height = '480px'
+  map = L.map(container, { scrollWheelZoom: false }).setView([40.4, -3.7], 6)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap contributors',
+  }).addTo(map)
+  resizeObserver = new ResizeObserver(() => refreshMapSize())
+  resizeObserver.observe(container)
+  return map
+}
+
+function refreshMapSize(bounds) {
+  if (!map) return
+  const apply = () => {
+    map.invalidateSize()
+    if (bounds?.isValid()) map.fitBounds(bounds, { padding: [28, 28], maxZoom: 11 })
+  }
+  requestAnimationFrame(() => {
+    apply()
+    setTimeout(apply, 120)
+    setTimeout(apply, 350)
+  })
+}
+
+function restrictionLatLngs(item, routeLatLngs) {
+  const pk = item.pk || {}
+  const start = Number(pk.start ?? pk.min)
+  const end = Number(pk.end ?? pk.max)
+  if (!Number.isFinite(start) || !Number.isFinite(end) || !routeLatLngs.length) return []
+  const count = routeLatLngs.length
+  const from = Math.max(0, Math.min(count - 1, Math.floor(count * 0.45)))
+  const to = Math.max(from + 1, Math.min(count, Math.floor(count * 0.58)))
+  return routeLatLngs.slice(from, to)
+}
+
+function drawMap(data) {
+  const m = ensureMap()
+  if (routeLayer) routeLayer.remove()
+  if (restrictionLayer) restrictionLayer.remove()
+  const coords = data.geometry?.coordinates || []
+  let routeBounds
+  if (coords.length) {
+    const latlngs = coords.map(([lon, lat]) => [lat, lon])
+    routeLayer = L.polyline(latlngs, { color: '#2563eb', weight: 6, opacity: .95 }).addTo(m)
+    routeBounds = routeLayer.getBounds()
+    m.fitBounds(routeBounds, { padding: [28, 28], maxZoom: 11 })
+  }
+  restrictionLayer = L.layerGroup().addTo(m)
+  for (const item of data.restricciones || []) {
+    if (!coords.length) continue
+    const latlngs = coords.map(([lon, lat]) => [lat, lon])
+    const segment = restrictionLatLngs(item, latlngs)
+    if (segment.length > 1) {
+      L.polyline(segment, { color: '#ef4444', weight: 9, opacity: .95 }).bindPopup(`<strong>${item.via || 'Restricción'}</strong><br>${item.source_scope || ''}<br>${item.id}`).addTo(restrictionLayer)
+    } else {
+      const idx = Math.floor(coords.length / 2)
+      const [lon, lat] = coords[idx]
+      L.circleMarker([lat, lon], { radius: 8, color: '#ef4444', fillColor: '#ef4444', fillOpacity: .85 })
+        .bindPopup(`<strong>${item.via || 'Restricción'}</strong><br>${item.source_scope || ''}<br>${item.id}`)
+        .addTo(restrictionLayer)
+    }
+  }
+  refreshMapSize(routeBounds)
+}
+
+function renderConfidence(data) {
+  const confidence = data.route_confidence || 'baja'
+  confidenceCard.className = `card confidence-card confidence-${confidence}`
+  confidenceText.textContent = confidence
+  const unsafe = confidence !== 'alta' || data.summary?.no_declarar_via_libre
+  confidenceWarning.textContent = unsafe
+    ? 'No se puede garantizar vía libre, revisar manualmente.'
+    : 'Detección de vías suficiente. Revisa igualmente el detalle antes de salir.'
+}
+
+function renderRoads(roads = []) {
+  roadsList.innerHTML = ''
+  if (!roads.length) {
+    roadsList.innerHTML = '<p class="empty">No se detectaron vías suficientes. Revisión manual obligatoria.</p>'
+    return
+  }
+  for (const road of roads) {
+    const span = document.createElement('span')
+    span.className = 'chip'
+    span.textContent = road
+    roadsList.appendChild(span)
+  }
+}
+
+function formatDays(days = []) { return days.length ? days.join(', ') : 'Sin días concretos' }
+function formatTimeWindows(windows = []) {
+  if (!windows.length) return 'Horario no detallado'
+  return windows.map((window) => {
+    if (window.start && window.end) return `${window.start}-${window.end}`
+    return window.raw || 'Horario no detallado'
+  }).join(', ')
+}
+function formatDateRule(item = {}) { return item.regla_fechas || item.date_rule?.raw || 'Regla de fechas no detallada' }
+function formatPk(pk = {}) {
+  const parts = []
+  if (pk.start !== null && pk.start !== undefined) parts.push(`PK ${pk.start}`)
+  if (pk.end !== null && pk.end !== undefined) parts.push(`→ ${pk.end}`)
+  return parts.join(' ') || 'PK no detallado'
+}
+
+function renderRestrictions(items = []) {
+  restrictionsList.innerHTML = ''
+  if (!items.length) {
+    restrictionsList.innerHTML = '<p class="empty">No hay restricciones cruzadas, pero solo es fiable si la confianza de vías es alta.</p>'
+    return
+  }
+  for (const item of items) {
+    const div = document.createElement('article')
+    div.className = 'restriction-item'
+    div.innerHTML = `
+      <div class="restriction-head">
+        <span class="road">${item.via || 'Genérica'}</span>
+        <span class="badge">${item.confidence || 'baja'}</span>
+      </div>
+      <div class="meta"><span class="meta-label">Ámbito:</span> <span class="meta-value">${item.source_scope || '—'}</span> · <span class="meta-label">ID:</span> <span class="meta-value">${item.id}</span></div>
+      <div class="meta"><span class="meta-label">Fechas afectadas:</span> <span class="meta-value">${formatDays(item.dias_afecta)}</span></div>
+      <div class="meta"><span class="meta-label">Regla fechas:</span> <span class="meta-value">${formatDateRule(item)}</span></div>
+      <div class="meta"><span class="meta-label">Horario:</span> <span class="meta-value">${formatTimeWindows(item.franja_horaria)}</span></div>
+      <div class="meta"><span class="meta-label">Tramo:</span> <span class="meta-value">${item.tramo?.inicio || '—'} → ${item.tramo?.fin || '—'} · ${formatPk(item.pk)}</span></div>
+      <div class="meta"><span class="meta-label">Sentido:</span> <span class="meta-value">${item.sentido || 'No detallado'}</span> · <span class="meta-label">Tipo:</span> <span class="meta-value">${item.restriction_type || '—'}</span></div>
+    `
+    restrictionsList.appendChild(div)
+  }
+}
+
+form.addEventListener('submit', async (event) => {
+  event.preventDefault()
+  const payload = Object.fromEntries(new FormData(form).entries())
+  button.disabled = true
+  results.hidden = true
+  setStatus('Calculando ruta y consultando restricciones. Puede tardar por OSRM/Overpass…')
+  try {
+    const response = await fetch('/api/ruta/analizar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.detail || data.error || `Error HTTP ${response.status}`)
+    results.hidden = false
+    renderConfidence(data)
+    renderRoads(data.vias_detectadas)
+    renderRestrictions(data.restricciones)
+    drawMap(data)
+    refreshMapSize()
+    setStatus(data.warnings?.length ? `Avisos: ${data.warnings.join(' · ')}` : '')
+  } catch (error) {
+    setStatus(`No se pudo analizar la ruta: ${error.message}`, 'error')
+  } finally {
+    button.disabled = false
+  }
+})
