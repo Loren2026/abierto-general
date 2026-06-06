@@ -29,6 +29,8 @@ function setStatus(message, type = 'info') {
 function ensureMap() {
   if (map) return map
   const container = document.querySelector('#map')
+  container.style.width = '100%'
+  container.style.height = '480px'
   map = L.map(container, { scrollWheelZoom: false }).setView([40.4, -3.7], 6)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
