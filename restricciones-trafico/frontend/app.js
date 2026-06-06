@@ -81,6 +81,14 @@ function renderRoads(roads = []) {
 }
 
 function formatDays(days = []) { return days.length ? days.join(', ') : 'Sin días concretos' }
+function formatTimeWindows(windows = []) {
+  if (!windows.length) return 'Horario no detallado'
+  return windows.map((window) => {
+    if (window.start && window.end) return `${window.start}-${window.end}`
+    return window.raw || 'Horario no detallado'
+  }).join(', ')
+}
+function formatDateRule(item = {}) { return item.regla_fechas || item.date_rule?.raw || 'Regla de fechas no detallada' }
 function formatPk(pk = {}) {
   const parts = []
   if (pk.start !== null && pk.start !== undefined) parts.push(`PK ${pk.start}`)
@@ -103,7 +111,9 @@ function renderRestrictions(items = []) {
         <span class="badge">${item.confidence || 'baja'}</span>
       </div>
       <div class="meta"><strong>Ámbito:</strong> ${item.source_scope || '—'} · <strong>ID:</strong> ${item.id}</div>
-      <div class="meta"><strong>Fechas:</strong> ${formatDays(item.dias_afecta)}</div>
+      <div class="meta"><strong>Fechas afectadas:</strong> ${formatDays(item.dias_afecta)}</div>
+      <div class="meta"><strong>Regla fechas:</strong> ${formatDateRule(item)}</div>
+      <div class="meta"><strong>Horario:</strong> ${formatTimeWindows(item.franja_horaria)}</div>
       <div class="meta"><strong>Tramo:</strong> ${item.tramo?.inicio || '—'} → ${item.tramo?.fin || '—'} · ${formatPk(item.pk)}</div>
       <div class="meta"><strong>Sentido:</strong> ${item.sentido || 'No detallado'} · <strong>Tipo:</strong> ${item.restriction_type || '—'}</div>
     `

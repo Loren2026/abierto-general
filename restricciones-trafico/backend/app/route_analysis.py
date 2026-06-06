@@ -42,6 +42,7 @@ def restriction_confidence(route_confidence: str, row_confidence: str, match_typ
 
 def row_to_restriction(row, hits, confidence, match_type):
     tw = json.loads(row["time_windows"] or "[]")
+    date_rule = json.loads(row["date_rule"] or "{}")
     return {
         "id": row["id"],
         "via": row["road_normalized"],
@@ -49,6 +50,8 @@ def row_to_restriction(row, hits, confidence, match_type):
         "tramo": {"inicio": row["town_start"], "fin": row["town_end"]},
         "sentido": row["direction_raw"] or row["direction"],
         "franja_horaria": tw,
+        "date_rule": date_rule,
+        "regla_fechas": date_rule.get("raw") or row["restriction_type"] or "No detallada",
         "dias_afecta": hits,
         "confidence": confidence,
         "restriction_confidence": row["confidence"],
