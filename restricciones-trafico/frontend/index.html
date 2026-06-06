@@ -10,7 +10,20 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <main class="app-shell">
+    <section id="access-gate" class="access-gate">
+      <form id="access-form" class="card access-card">
+        <p class="eyebrow">Acceso por invitación</p>
+        <h1>Restricciones Tráfico</h1>
+        <p>Introduce tu código para consultar restricciones de ruta.</p>
+        <label>Código de invitación
+          <input id="access-code" name="code" autocomplete="one-time-code" required placeholder="Ej. LOREN-2026" />
+        </label>
+        <button type="submit">Entrar</button>
+        <p id="access-error" class="access-error" hidden></p>
+      </form>
+    </section>
+
+    <main id="app-content" class="app-shell" hidden>
       <section class="hero">
         <p class="eyebrow">Mercancías &gt; 7.500 kg · 5 ejes</p>
         <h1>Analizar restricciones de ruta</h1>

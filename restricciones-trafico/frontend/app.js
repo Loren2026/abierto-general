@@ -1,3 +1,13 @@
+const ACCESS_PROJECT_SLUG = 'restricciones-trafico'
+const ACCESS_API_BASE = 'https://panel.inteligencialoren.com/api'
+const ACCESS_STORAGE_KEY = `restricciones_access_${ACCESS_PROJECT_SLUG}`
+const DEVICE_STORAGE_KEY = `restricciones_device_${ACCESS_PROJECT_SLUG}`
+
+const accessGate = document.querySelector('#access-gate')
+const accessForm = document.querySelector('#access-form')
+const accessCode = document.querySelector('#access-code')
+const accessError = document.querySelector('#access-error')
+const appContent = document.querySelector('#app-content')
 const form = document.querySelector('#route-form')
 const statusBox = document.querySelector('#status')
 const results = document.querySelector('#results')
@@ -19,6 +29,72 @@ document.querySelector('#fecha_llegada').value = today()
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/service-worker.js').catch(() => {})
 }
+
+function getDeviceId() {
+  let deviceId = localStorage.getItem(DEVICE_STORAGE_KEY)
+  if (!deviceId) {
+    deviceId = crypto.randomUUID ? crypto.randomUUID() : `device-${Date.now()}-${Math.random().toString(16).slice(2)}`
+    localStorage.setItem(DEVICE_STORAGE_KEY, deviceId)
+  }
+  return deviceId
+}
+
+function deviceName() {
+  return `${navigator.platform || 'web'} · ${navigator.userAgent.slice(0, 80)}`
+}
+
+function showApp() {
+  accessGate.hidden = true
+  appContent.hidden = false
+}
+
+function showGate(message = '') {
+  accessGate.hidden = false
+  appContent.hidden = true
+  accessError.hidden = !message
+  accessError.textContent = message
+}
+
+function hasStoredAccess() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(ACCESS_STORAGE_KEY) || 'null')
+    return stored?.ok === true && stored?.project?.slug === ACCESS_PROJECT_SLUG
+  } catch (_) {
+    return false
+  }
+}
+
+async function validateAccessCode(code) {
+  const response = await fetch(`${ACCESS_API_BASE}/projects/${ACCESS_PROJECT_SLUG}/validate-code`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, deviceId: getDeviceId(), deviceName: deviceName(), platform: 'web' }),
+  })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok || data?.ok !== true) {
+    throw new Error(data.error || 'Código inválido o no autorizado')
+  }
+  localStorage.setItem(ACCESS_STORAGE_KEY, JSON.stringify({ ...data, validatedAt: new Date().toISOString() }))
+  return data
+}
+
+accessForm.addEventListener('submit', async (event) => {
+  event.preventDefault()
+  accessError.hidden = true
+  const submit = accessForm.querySelector('button')
+  submit.disabled = true
+  try {
+    await validateAccessCode(accessCode.value.trim())
+    showApp()
+  } catch (error) {
+    localStorage.removeItem(ACCESS_STORAGE_KEY)
+    showGate(error.message)
+  } finally {
+    submit.disabled = false
+  }
+})
+
+hasStoredAccess() ? showApp() : showGate()
 
 function setStatus(message, type = 'info') {
   statusBox.hidden = !message
