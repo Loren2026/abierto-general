@@ -61,7 +61,7 @@ app.use(helmet({
 app.use(cors({
   origin: process.env.NODE_ENV === 'development' 
     ? ['http://localhost:5173', 'http://localhost:3000']
-    : ['https://inteligencialoren.com', 'https://www.inteligencialoren.com', 'https://panel.inteligencialoren.com'],
+    : ['https://inteligencialoren.com', 'https://www.inteligencialoren.com', 'https://panel.inteligencialoren.com', 'https://restricciones.inteligencialoren.com'],
   credentials: true,
 }));
 
