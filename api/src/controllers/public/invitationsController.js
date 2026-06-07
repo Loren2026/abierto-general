@@ -84,10 +84,12 @@ async function validateDeviceForAccess({ project, access, deviceId, deviceName, 
   if (existingDevice) {
     const lastSeenAt = new Date().toISOString()
 
-    await supabaseAdmin
+    const { error: updateError } = await supabaseAdmin
       .from('project_devices')
       .update({ last_seen_at: lastSeenAt })
       .eq('id', existingDevice.id)
+
+    if (updateError) throw updateError
 
     setProjectAccessCookie(res, {
       project,
@@ -163,7 +165,7 @@ export async function validateAnyProjectCode(req, res) {
     }
 
     const { project, access } = match
-    return validateDeviceForAccess({ project, access, deviceId, deviceName, res })
+    return await validateDeviceForAccess({ project, access, deviceId, deviceName, res })
   } catch (error) {
     console.error('VALIDATE ANY ERROR:', error)
     return res.status(500).json({ error: error.message || 'Internal server error' })
@@ -185,25 +187,25 @@ export async function validateProjectCode(req, res) {
     return res.status(400).json({ error: 'deviceId and deviceName are required' })
   }
 
-  const { data: project, error: projectError } = await supabaseAdmin
-    .from('projects')
-    .select('id, slug, name, status')
-    .eq('status', 'public')
-    .eq('slug', slug)
-    .maybeSingle()
-
-  if (handleSupabaseError(projectError, res)) return
-  if (!project) {
-    return res.status(404).json({ error: 'project not found' })
-  }
-
   try {
+    const { data: project, error: projectError } = await supabaseAdmin
+      .from('projects')
+      .select('id, slug, name, status')
+      .eq('status', 'public')
+      .eq('slug', slug)
+      .maybeSingle()
+
+    if (handleSupabaseError(projectError, res)) return
+    if (!project) {
+      return res.status(404).json({ error: 'project not found' })
+    }
+
     const access = await findMatchingAccess(project.id, code)
     if (!access) {
       return res.status(401).json(buildInvalidDownloadResponse())
     }
 
-    return validateDeviceForAccess({ project, access, deviceId, deviceName, res })
+    return await validateDeviceForAccess({ project, access, deviceId, deviceName, res })
   } catch (error) {
     console.error('VALIDATE ERROR:', error)
     return res.status(500).json({ error: error.message || 'Internal server error' })
