@@ -26,18 +26,16 @@ function setProjectAccessCookie(res, { project, deviceId, accessId, binding }) {
   })
 }
 
-async function findActiveDevice(accessId) {
+async function listActiveDevices(accessId) {
   const { data, error } = await supabaseAdmin
     .from('project_devices')
     .select('*')
     .eq('project_access_id', accessId)
     .eq('status', 'active')
     .order('first_seen_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
 
   if (error) throw error
-  return data
+  return data || []
 }
 
 async function bindDeviceToAccess(accessId, { deviceId, deviceName }) {
@@ -79,6 +77,65 @@ async function findMatchingProjectAndAccess(code) {
   return null
 }
 
+async function validateDeviceForAccess({ project, access, deviceId, deviceName, res }) {
+  const activeDevices = await listActiveDevices(access.id)
+  const existingDevice = activeDevices.find((device) => device.device_id === deviceId)
+
+  if (existingDevice) {
+    const lastSeenAt = new Date().toISOString()
+
+    await supabaseAdmin
+      .from('project_devices')
+      .update({ last_seen_at: lastSeenAt })
+      .eq('id', existingDevice.id)
+
+    setProjectAccessCookie(res, {
+      project,
+      deviceId,
+      accessId: access.id,
+      binding: 'reused',
+    })
+
+    return res.json({
+      ok: true,
+      project,
+      access: sanitizeValidatedAccess(access),
+      device: sanitizeDeviceRecord({ ...existingDevice, last_seen_at: lastSeenAt }),
+      binding: 'reused',
+    })
+  }
+
+  const maxDevices = Number.isInteger(access.max_devices) && access.max_devices > 0
+    ? access.max_devices
+    : 1
+
+  if (activeDevices.length >= maxDevices) {
+    return res.status(409).json({
+      error: 'access already linked to maximum active devices',
+      binding: 'blocked',
+      maxDevices,
+      activeDevices: activeDevices.map(sanitizeDeviceRecord),
+    })
+  }
+
+  const createdDevice = await bindDeviceToAccess(access.id, { deviceId, deviceName })
+
+  setProjectAccessCookie(res, {
+    project,
+    deviceId,
+    accessId: access.id,
+    binding: 'created',
+  })
+
+  return res.json({
+    ok: true,
+    project,
+    access: sanitizeValidatedAccess(access),
+    device: sanitizeDeviceRecord(createdDevice),
+    binding: 'created',
+  })
+}
+
 function handleSupabaseError(error, res) {
   if (!error) return false
   res.status(500).json({ error: error.message || 'Internal server error' })
@@ -106,56 +163,7 @@ export async function validateAnyProjectCode(req, res) {
     }
 
     const { project, access } = match
-    const activeDevice = await findActiveDevice(access.id)
-
-    if (!activeDevice) {
-      const createdDevice = await bindDeviceToAccess(access.id, { deviceId, deviceName })
-
-      setProjectAccessCookie(res, {
-        project,
-        deviceId,
-        accessId: access.id,
-        binding: 'created',
-      })
-
-      return res.json({
-        ok: true,
-        project,
-        access: sanitizeValidatedAccess(access),
-        device: sanitizeDeviceRecord(createdDevice),
-        binding: 'created',
-      })
-    }
-
-    if (activeDevice.device_id !== deviceId) {
-      return res.status(409).json({
-        error: 'access already linked to another active device',
-        binding: 'blocked',
-        device: sanitizeDeviceRecord(activeDevice),
-      })
-    }
-
-    const lastSeenAt = new Date().toISOString()
-
-    await supabaseAdmin
-      .from('project_devices')
-      .update({ last_seen_at: lastSeenAt })
-      .eq('id', activeDevice.id)
-
-    setProjectAccessCookie(res, {
-      project,
-      deviceId,
-      accessId: access.id,
-      binding: 'reused',
-    })
-
-    return res.json({
-      ok: true,
-      project,
-      access: sanitizeValidatedAccess(access),
-      device: sanitizeDeviceRecord({ ...activeDevice, last_seen_at: lastSeenAt }),
-      binding: 'reused',
-    })
+    return validateDeviceForAccess({ project, access, deviceId, deviceName, res })
   } catch (error) {
     console.error('VALIDATE ANY ERROR:', error)
     return res.status(500).json({ error: error.message || 'Internal server error' })
@@ -195,56 +203,7 @@ export async function validateProjectCode(req, res) {
       return res.status(401).json(buildInvalidDownloadResponse())
     }
 
-    const activeDevice = await findActiveDevice(access.id)
-
-    if (!activeDevice) {
-      const createdDevice = await bindDeviceToAccess(access.id, { deviceId, deviceName })
-
-      setProjectAccessCookie(res, {
-        project,
-        deviceId,
-        accessId: access.id,
-        binding: 'created',
-      })
-
-      return res.json({
-        ok: true,
-        project,
-        access: sanitizeValidatedAccess(access),
-        device: sanitizeDeviceRecord(createdDevice),
-        binding: 'created',
-      })
-    }
-
-    if (activeDevice.device_id !== deviceId) {
-      return res.status(409).json({
-        error: 'access already linked to another active device',
-        binding: 'blocked',
-        device: sanitizeDeviceRecord(activeDevice),
-      })
-    }
-
-    const lastSeenAt = new Date().toISOString()
-
-    await supabaseAdmin
-      .from('project_devices')
-      .update({ last_seen_at: lastSeenAt })
-      .eq('id', activeDevice.id)
-
-    setProjectAccessCookie(res, {
-      project,
-      deviceId,
-      accessId: access.id,
-      binding: 'reused',
-    })
-
-    return res.json({
-      ok: true,
-      project,
-      access: sanitizeValidatedAccess(access),
-      device: sanitizeDeviceRecord({ ...activeDevice, last_seen_at: lastSeenAt }),
-      binding: 'reused',
-    })
+    return validateDeviceForAccess({ project, access, deviceId, deviceName, res })
   } catch (error) {
     console.error('VALIDATE ERROR:', error)
     return res.status(500).json({ error: error.message || 'Internal server error' })
