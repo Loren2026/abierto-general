@@ -1,0 +1,22 @@
+  restricciones-trafico:
+    container_name: restricciones-trafico
+    build:
+      context: ./restricciones-trafico
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      - openclaw-2ns9_default
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health', timeout=5).read()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.restricciones-trafico.rule=Host(`restricciones.inteligencialoren.com`)
+      - traefik.http.routers.restricciones-trafico.entrypoints=websecure
+      - traefik.http.routers.restricciones-trafico.tls=true
+      - traefik.http.routers.restricciones-trafico.tls.certresolver=letsencrypt
+      - traefik.http.routers.restricciones-trafico.priority=50
+      - traefik.http.services.restricciones-trafico.loadbalancer.server.port=8090
