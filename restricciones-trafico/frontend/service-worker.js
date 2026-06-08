@@ -1,5 +1,15 @@
-const CACHE = 'restricciones-trafico-v1'
-const ASSETS = ['/', '/styles.css', '/app.js', '/manifest.webmanifest', '/icon.svg']
+const CACHE = 'restricciones-trafico-v2'
+const ASSETS = [
+  '/',
+  '/styles.css',
+  '/app.js',
+  '/manifest.webmanifest',
+  '/icon.svg',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/icon-192-maskable.png',
+  '/icon-512-maskable.png'
+]
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting()))
 })
