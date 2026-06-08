@@ -1,4 +1,4 @@
-const CACHE = 'restricciones-trafico-v2'
+const CACHE = 'restricciones-trafico-v3'
 const ASSETS = [
   '/',
   '/styles.css',
