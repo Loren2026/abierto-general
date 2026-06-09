@@ -77,8 +77,64 @@ async function findMatchingProjectAndAccess(code) {
   return null
 }
 
+function isTrialAccessExpired(access, now = new Date()) {
+  if (!Number.isInteger(access.trial_days) || access.trial_days <= 0 || !access.activated_at) {
+    return false
+  }
+
+  const activatedAt = new Date(access.activated_at)
+  if (Number.isNaN(activatedAt.getTime())) return false
+
+  const expiresAt = new Date(activatedAt.getTime() + access.trial_days * 24 * 60 * 60 * 1000)
+  return now.getTime() > expiresAt.getTime()
+}
+
+async function activateTrialAccessIfNeeded(access) {
+  if (!Number.isInteger(access.trial_days) || access.trial_days <= 0) {
+    return access
+  }
+
+  if (access.activated_at) {
+    return access
+  }
+
+  const activatedAt = new Date().toISOString()
+  const { data, error } = await supabaseAdmin
+    .from('project_accesses')
+    .update({ activated_at: activatedAt })
+    .eq('id', access.id)
+    .is('activated_at', null)
+    .select('*')
+    .maybeSingle()
+
+  if (error) throw error
+  if (data) return data
+
+  const { data: refreshedAccess, error: refreshError } = await supabaseAdmin
+    .from('project_accesses')
+    .select('*')
+    .eq('id', access.id)
+    .maybeSingle()
+
+  if (refreshError) throw refreshError
+  return refreshedAccess || access
+}
+
+function buildTrialExpiredResponse() {
+  return {
+    error: 'Periodo de prueba finalizado',
+    reason: 'trial_expired',
+  }
+}
+
 async function validateDeviceForAccess({ project, access, deviceId, deviceName, res }) {
-  const activeDevices = await listActiveDevices(access.id)
+  const activeAccess = await activateTrialAccessIfNeeded(access)
+
+  if (isTrialAccessExpired(activeAccess)) {
+    return res.status(403).json(buildTrialExpiredResponse())
+  }
+
+  const activeDevices = await listActiveDevices(activeAccess.id)
   const existingDevice = activeDevices.find((device) => device.device_id === deviceId)
 
   if (existingDevice) {
@@ -94,21 +150,21 @@ async function validateDeviceForAccess({ project, access, deviceId, deviceName, 
     setProjectAccessCookie(res, {
       project,
       deviceId,
-      accessId: access.id,
+      accessId: activeAccess.id,
       binding: 'reused',
     })
 
     return res.json({
       ok: true,
       project,
-      access: sanitizeValidatedAccess(access),
+      access: sanitizeValidatedAccess(activeAccess),
       device: sanitizeDeviceRecord({ ...existingDevice, last_seen_at: lastSeenAt }),
       binding: 'reused',
     })
   }
 
-  const maxDevices = Number.isInteger(access.max_devices) && access.max_devices > 0
-    ? access.max_devices
+  const maxDevices = Number.isInteger(activeAccess.max_devices) && activeAccess.max_devices > 0
+    ? activeAccess.max_devices
     : 1
 
   if (activeDevices.length >= maxDevices) {
@@ -120,19 +176,19 @@ async function validateDeviceForAccess({ project, access, deviceId, deviceName, 
     })
   }
 
-  const createdDevice = await bindDeviceToAccess(access.id, { deviceId, deviceName })
+  const createdDevice = await bindDeviceToAccess(activeAccess.id, { deviceId, deviceName })
 
   setProjectAccessCookie(res, {
     project,
     deviceId,
-    accessId: access.id,
+    accessId: activeAccess.id,
     binding: 'created',
   })
 
   return res.json({
     ok: true,
     project,
-    access: sanitizeValidatedAccess(access),
+    access: sanitizeValidatedAccess(activeAccess),
     device: sanitizeDeviceRecord(createdDevice),
     binding: 'created',
   })

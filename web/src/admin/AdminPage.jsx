@@ -7,6 +7,8 @@ import AdminLayout from '../components/layout/AdminLayout'
 const initialAccessForm = {
   personName: '',
   notes: '',
+  isTrial: false,
+  trialDays: '',
 }
 
 const initialProjectForm = {
@@ -35,6 +37,26 @@ function formatDate(value, fallback = 'No disponible') {
 
 async function readJson(response) {
   return response.json().catch(() => ({}))
+}
+
+function getAccessTrialState(access) {
+  if (!Number.isInteger(access?.trialDays) || access.trialDays <= 0) {
+    return { type: 'normal', label: 'Normal', status: 'Sin caducidad' }
+  }
+
+  if (!access.activatedAt) {
+    return { type: 'trial', label: `Prueba: ${access.trialDays} días`, status: 'Sin activar' }
+  }
+
+  const activatedAt = new Date(access.activatedAt)
+  const expiresAt = new Date(activatedAt.getTime() + access.trialDays * 24 * 60 * 60 * 1000)
+  const isExpired = Date.now() > expiresAt.getTime()
+
+  return {
+    type: 'trial',
+    label: `Prueba: ${access.trialDays} días`,
+    status: isExpired ? 'Caducada' : `Activa desde ${formatDate(access.activatedAt, 'fecha no disponible')}`,
+  }
 }
 
 function AdminPage() {
@@ -253,13 +275,25 @@ function AdminPage() {
 
     if (!selectedProjectId) return
 
+    if (accessForm.isTrial) {
+      const trialDays = Number(accessForm.trialDays)
+      if (!Number.isInteger(trialDays) || trialDays <= 0) {
+        setAccessActionMessage({ type: 'error', message: 'Los días de prueba deben ser un entero positivo.' })
+        return
+      }
+    }
+
     setIsCreatingAccess(true)
     setAccessActionMessage({ type: '', message: '' })
 
     try {
       const data = await apiFetch(`/api/admin/projects/${selectedProjectId}/accesses`, {
         method: 'POST',
-        body: JSON.stringify(accessForm),
+        body: JSON.stringify({
+          personName: accessForm.personName,
+          notes: accessForm.notes,
+          trialDays: accessForm.isTrial ? Number(accessForm.trialDays) : null,
+        }),
       })
 
       setRevealedCodes((current) => ({
@@ -529,6 +563,29 @@ function AdminPage() {
                       placeholder="Opcional"
                     />
                   </label>
+                  <label>
+                    <span>Código de prueba temporal</span>
+                    <select
+                      value={accessForm.isTrial ? 'yes' : 'no'}
+                      onChange={(event) => updateAccessForm('isTrial', event.target.value === 'yes')}
+                    >
+                      <option value="no">No, código normal</option>
+                      <option value="yes">Sí, prueba temporal</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Días de prueba</span>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={accessForm.trialDays}
+                      onChange={(event) => updateAccessForm('trialDays', event.target.value)}
+                      placeholder="Ej. 7"
+                      required={accessForm.isTrial}
+                      disabled={!accessForm.isTrial}
+                    />
+                  </label>
                 </form>
 
                 <button
@@ -557,6 +614,7 @@ function AdminPage() {
                     {projectAccesses.map((access) => {
                       const activeDevice = activeDevicesByAccessId[access.id]
                       const revealedCode = revealedCodes[access.id]
+                      const trialState = getAccessTrialState(access)
 
                       return (
                         <div key={access.id} className="access-card access-card--detailed">
@@ -601,6 +659,14 @@ function AdminPage() {
                               <div className="access-meta-row">
                                 <div className="access-meta-label">Creado</div>
                                 <div className="access-meta-value access-meta-value--nowrap">{formatDate(access.createdAt)}</div>
+                              </div>
+                              <div className="access-meta-row">
+                                <div className="access-meta-label">Tipo</div>
+                                <div className="access-meta-value">{trialState.label}</div>
+                              </div>
+                              <div className="access-meta-row">
+                                <div className="access-meta-label">Estado prueba</div>
+                                <div className="access-meta-value">{trialState.status}</div>
                               </div>
                               <div className="access-meta-row">
                                 <div className="access-meta-label">Último código</div>
