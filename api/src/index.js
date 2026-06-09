@@ -58,10 +58,30 @@ app.use(helmet({
 }));
 
 // CORS
-app.use(cors({
-  origin: process.env.NODE_ENV === 'development' 
+const allowedCorsOrigins = new Set(
+  process.env.NODE_ENV === 'development'
     ? ['http://localhost:5173', 'http://localhost:3000']
-    : ['https://inteligencialoren.com', 'https://www.inteligencialoren.com', 'https://panel.inteligencialoren.com', 'https://restricciones.inteligencialoren.com'],
+    : [
+        'https://inteligencialoren.com',
+        'https://www.inteligencialoren.com',
+        'https://panel.inteligencialoren.com',
+        'https://restricciones.inteligencialoren.com',
+      ],
+);
+
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+
+    const normalizedOrigin = origin.replace(/\/$/, '');
+
+    if (allowedCorsOrigins.has(normalizedOrigin)) {
+      return callback(null, normalizedOrigin);
+    }
+
+    console.warn('CORS origin blocked:', origin);
+    return callback(null, false);
+  },
   credentials: true,
 }));
 
