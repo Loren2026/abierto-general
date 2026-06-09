@@ -69,18 +69,42 @@ const allowedCorsOrigins = new Set(
       ],
 );
 
+function resolveAllowedCorsOrigin(origin) {
+  if (!origin) return true;
+
+  const normalizedOrigin = origin.replace(/\/$/, '');
+
+  if (allowedCorsOrigins.has(normalizedOrigin)) {
+    return normalizedOrigin;
+  }
+
+  console.warn('CORS origin blocked:', origin);
+  return false;
+}
+
+function applyCorsHeaders(req, res, next) {
+  const allowedOrigin = resolveAllowedCorsOrigin(req.headers.origin);
+
+  if (allowedOrigin && allowedOrigin !== true) {
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    res.setHeader('Vary', 'Origin');
+  }
+
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
+  res.setHeader('Access-Control-Allow-Headers', req.headers['access-control-request-headers'] || 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+
+  return next();
+}
+
+app.use(applyCorsHeaders);
 app.use(cors({
   origin(origin, callback) {
-    if (!origin) return callback(null, true);
-
-    const normalizedOrigin = origin.replace(/\/$/, '');
-
-    if (allowedCorsOrigins.has(normalizedOrigin)) {
-      return callback(null, normalizedOrigin);
-    }
-
-    console.warn('CORS origin blocked:', origin);
-    return callback(null, false);
+    return callback(null, resolveAllowedCorsOrigin(origin));
   },
   credentials: true,
 }));
