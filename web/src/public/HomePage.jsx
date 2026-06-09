@@ -136,6 +136,9 @@ function getClientDeviceInfo() {
 
 function readApiError(data, fallback) {
   if (!data) return fallback
+  if (data.reason === 'trial_expired') {
+    return 'Periodo de prueba finalizado'
+  }
   if (data.binding === 'blocked') {
     return 'Este código ya está vinculado a otro dispositivo activo. Pide a Loren que revoque o reasigne el acceso si necesitas moverlo.'
   }

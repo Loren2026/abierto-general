@@ -29,5 +29,7 @@ export function sanitizeValidatedAccess(record) {
     status: record.status,
     createdAt: record.created_at,
     passwordLastGeneratedAt: record.password_last_generated_at,
+    trialDays: record.trial_days,
+    activatedAt: record.activated_at,
   }
 }

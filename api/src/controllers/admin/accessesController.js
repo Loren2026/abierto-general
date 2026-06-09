@@ -48,6 +48,10 @@ export async function createProjectAccess(req, res) {
   const generatedPassword = generateProjectPassword(8)
   const passwordHash = await hashProjectPassword(generatedPassword)
 
+  const trialDays = req.body.trialDays === undefined || req.body.trialDays === null || req.body.trialDays === ''
+    ? null
+    : Number(req.body.trialDays)
+
   const { data, error } = await supabaseAdmin
     .from('project_accesses')
     .insert({
@@ -55,6 +59,7 @@ export async function createProjectAccess(req, res) {
       person_name: req.body.personName.trim(),
       password_hash: passwordHash,
       notes: req.body.notes?.toString().trim() || null,
+      trial_days: trialDays,
     })
     .select('*')
     .single()
