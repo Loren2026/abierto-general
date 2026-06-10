@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import PublicLayout from '../components/layout/PublicLayout'
 import fitLorenHero from '../assets/fit-loren-hero.jpg'
 import gestactasHero from '../assets/gestactas-hero.png'
+import restriccionesHero from '../assets/restricciones-trafico-hero.jpg'
 
 const DEVICE_ID_KEY = 'inteligencialoren.deviceId'
 const PANEL_API_BASE_URL = 'https://panel.inteligencialoren.com/api'
@@ -26,7 +27,7 @@ const featuredProjects = [
     name: 'Restricciones Tráfico',
     description:
       'Consulta privada de restricciones de tráfico, avisos y acceso autorizado a información útil del proyecto.',
-    image: gestactasHero,
+    image: restriccionesHero,
     badge: 'Próximamente',
     accessLabel: 'Próximamente',
     visibleUrl: 'restricciones.inteligencialoren.com',
@@ -454,9 +455,8 @@ export default function HomePage() {
         </section>
 
         <section className="section-shell project-showcase-section">
-          <div className="content-card content-card--wide project-showcase-heading-card" style={{ padding: '18px 20px' }}>
-            <span className="content-card__eyebrow">Proyectos publicados</span>
-            <h2 style={{ fontSize: 'clamp(1.35rem, 7vw, 2.1rem)', lineHeight: 1.05, whiteSpace: 'nowrap', marginBottom: 0 }}>PROYECTOS PUBLICADOS</h2>
+          <div className="content-card content-card--wide project-showcase-heading-card" style={{ padding: '16px 18px' }}>
+            <h2 style={{ fontSize: 'clamp(1.22rem, 6.2vw, 1.85rem)', lineHeight: 1.05, whiteSpace: 'nowrap', marginBottom: 0 }}>PROYECTOS PUBLICADOS</h2>
           </div>
           <div className="project-showcase-grid">
             {publicProjects.map((project) => (
@@ -465,9 +465,8 @@ export default function HomePage() {
                   <img src={project.image} alt={project.name} />
                 </div>
                 <div className="project-card__body">
-                  <div className="project-card__topline">
+                  <div className="project-card__topline" style={{ justifyContent: 'center' }}>
                     <span className="project-card__badge">{project.badge}</span>
-                    <span className="project-card__access">{project.accessLabel}</span>
                   </div>
                   <h3>{project.name}</h3>
                   <p>{project.description}</p>
