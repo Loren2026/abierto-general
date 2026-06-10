@@ -480,11 +480,9 @@ export default function HomePage() {
           <div className="landing-footer__card">
             <strong>Inteligencia Loren</strong>
             <span>Acceso privado y gestionado</span>
-            <div className="landing-footer__links">
-              <button type="button" className="landing-footer__link-button" onClick={() => openAccessModal(publicProjects[0])}>
-                Acceso con código
-              </button>
-              <a href="#privacidad">Privacidad</a>
+            <div className="landing-footer__links" aria-label="Información de pie de página">
+              <span>Acceso con código</span>
+              <span>Privacidad</span>
             </div>
           </div>
         </footer>
