@@ -601,7 +601,7 @@ export default function HomePage() {
               <button className="invite-modal__close" type="button" onClick={closeAccessModal} aria-label="Cerrar acceso con código">
                 ×
               </button>
-              <span className="section-heading__eyebrow">Acceder con código</span>
+              <span className="section-heading__eyebrow">Acceso privado</span>
               <h2 id="access-modal-title">{selectedProject.name}</h2>
               <p className="invite-modal__copy">
                 Introduce tu código de invitación. El sistema validará el acceso, vinculará este dispositivo y te llevará al proyecto.
