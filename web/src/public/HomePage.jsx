@@ -18,18 +18,18 @@ const initialForm = {
   privacyAccepted: false,
 }
 
-const publishedProjects = ['Fit Loren', 'fit-loren', 'GestActas', 'gestactas']
+const publishedProjects = ['Restricciones Tráfico', 'restricciones-trafico', 'GestActas', 'gestactas', 'Fit Loren', 'fit-loren']
 
 const featuredProjects = [
   {
-    slug: 'fit-loren',
-    name: 'Fit Loren',
+    slug: 'restricciones-trafico',
+    name: 'Restricciones Tráfico',
     description:
-      'Fit Loren es tu entrenador personal en casa. Combina ejercicios con máquinas de musculación, rutinas sin equipo y calistenia en una sola app. Se registra con tus datos y preferencias, y la inteligencia artificial adapta cada entrenamiento a ti, tu nivel, tus objetivos, tu ritmo.',
-    image: fitLorenHero,
+      'Consulta privada de restricciones de tráfico, avisos y acceso autorizado a información útil del proyecto.',
+    image: gestactasHero,
     badge: 'Próximamente',
-    accessLabel: 'Código de invitación',
-    visibleUrl: 'fit.inteligencialoren.com',
+    accessLabel: 'Próximamente',
+    visibleUrl: 'restricciones.inteligencialoren.com',
   },
   {
     slug: 'gestactas',
@@ -37,9 +37,19 @@ const featuredProjects = [
     description:
       'Gestión completa de juntas de comunidades de propietarios. Grabación de audio, transcripción automática y generación del acta con inteligencia artificial.',
     image: gestactasHero,
-    badge: 'Disponible',
-    accessLabel: 'Código de invitación',
+    badge: 'Próximamente',
+    accessLabel: 'Próximamente',
     visibleUrl: 'gestactas.inteligencialoren.com',
+  },
+  {
+    slug: 'fit-loren',
+    name: 'Fit Loren',
+    description:
+      'Fit Loren es tu entrenador personal en casa. Combina ejercicios con máquinas de musculación, rutinas sin equipo y calistenia en una sola app.',
+    image: fitLorenHero,
+    badge: 'Próximamente',
+    accessLabel: 'Próximamente',
+    visibleUrl: 'fit.inteligencialoren.com',
   },
 ]
 
@@ -462,14 +472,6 @@ export default function HomePage() {
                   <h3>{project.name}</h3>
                   <p>{project.description}</p>
                   <div className="project-card__url">{project.visibleUrl}</div>
-                  <div className="project-card__actions">
-                    <button className="cta-button cta-button--primary" type="button" onClick={() => openAccessModal(project)}>
-                      Acceder con código
-                    </button>
-                    <button className="cta-button cta-button--invite" type="button" onClick={() => openInvite(project)}>
-                      Solicitar código
-                    </button>
-                  </div>
                 </div>
               </article>
             ))}
