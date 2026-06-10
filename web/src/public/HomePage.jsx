@@ -448,6 +448,32 @@ export default function HomePage() {
             <span className="content-card__eyebrow">Proyectos publicados</span>
             <h2 style={{ fontSize: 'clamp(1.35rem, 7vw, 2.1rem)', lineHeight: 1.05, whiteSpace: 'nowrap', marginBottom: 0 }}>PROYECTOS PUBLICADOS</h2>
           </div>
+          <div className="project-showcase-grid">
+            {publicProjects.map((project) => (
+              <article className="project-card project-card--featured" key={project.slug}>
+                <div className="project-card__media">
+                  <img src={project.image} alt={project.name} />
+                </div>
+                <div className="project-card__body">
+                  <div className="project-card__topline">
+                    <span className="project-card__badge">{project.badge}</span>
+                    <span className="project-card__access">{project.accessLabel}</span>
+                  </div>
+                  <h3>{project.name}</h3>
+                  <p>{project.description}</p>
+                  <div className="project-card__url">{project.visibleUrl}</div>
+                  <div className="project-card__actions">
+                    <button className="cta-button cta-button--primary" type="button" onClick={() => openAccessModal(project)}>
+                      Acceder con código
+                    </button>
+                    <button className="cta-button cta-button--invite" type="button" onClick={() => openInvite(project)}>
+                      Solicitar código
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
         </section>
 
         <footer className="landing-footer section-shell">
