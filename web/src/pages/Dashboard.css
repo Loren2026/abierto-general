@@ -1777,3 +1777,20 @@
     align-items: flex-start;
   }
 }
+
+.project-drilldown-name {
+  display: block;
+  width: 100%;
+  color: #172033;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.stat-drilldown__panel .project-card {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+}
