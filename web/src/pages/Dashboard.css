@@ -1794,3 +1794,14 @@
   display: flex;
   align-items: center;
 }
+
+.project-drilldown-item {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-project-detail-card--inline {
+  margin-top: 0;
+  border-color: rgba(91, 141, 239, 0.28);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+}
