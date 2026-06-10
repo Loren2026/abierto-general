@@ -112,7 +112,7 @@ function AdminPage() {
     const edit = editingAccesses[access.id]; if (!edit) return
     setSavingAccessId(access.id); setAccessActionMessage({ type: '', message: '' })
     try {
-      const data = await apiFetch(`/api/admin/accesses/${access.id}`, { method: 'PATCH', body: JSON.stringify({ maxDevices: Number(edit.maxDevices), status: edit.status, trialDays: edit.trialDays === '' ? null : Number(edit.trialDays) }) })
+      const data = await apiFetch(`/api/admin/accesses/${access.id}/update`, { method: 'POST', body: JSON.stringify({ maxDevices: Number(edit.maxDevices), status: edit.status, trialDays: edit.trialDays === '' ? null : Number(edit.trialDays) }) })
       setProjectAccesses((items) => items.map((item) => (item.id === access.id ? data.access : item)))
       setAccessActionMessage({ type: 'success', message: `Código actualizado para ${data.access.personName}.` })
     } catch (e) { setAccessActionMessage({ type: 'error', message: e.message }) } finally { setSavingAccessId(null) }
