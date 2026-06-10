@@ -444,9 +444,9 @@ export default function HomePage() {
         </section>
 
         <section className="section-shell project-showcase-section">
-          <div className="content-card content-card--wide">
+          <div className="content-card content-card--wide project-showcase-heading-card" style={{ padding: '18px 20px' }}>
             <span className="content-card__eyebrow">Proyectos publicados</span>
-            <h2>PROYECTOS PUBLICADOS</h2>
+            <h2 style={{ fontSize: 'clamp(1.35rem, 7vw, 2.1rem)', lineHeight: 1.05, whiteSpace: 'nowrap', marginBottom: 0 }}>PROYECTOS PUBLICADOS</h2>
           </div>
         </section>
 
