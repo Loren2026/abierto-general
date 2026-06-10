@@ -1,6 +1,5 @@
 import express from 'express';
 import helmet from 'helmet';
-import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import bcrypt from 'bcryptjs';
@@ -57,13 +56,8 @@ app.use(helmet({
   xssFilter: true,
 }));
 
-// CORS
-app.use(cors({
-  origin: process.env.NODE_ENV === 'development' 
-    ? ['http://localhost:5173', 'http://localhost:3000']
-    : ['https://inteligencialoren.com', 'https://www.inteligencialoren.com', 'https://panel.inteligencialoren.com', 'https://restricciones.inteligencialoren.com'],
-  credentials: true,
-}));
+// CORS se gestiona exclusivamente en Traefik mediante el middleware il-cors.
+// No emitir cabeceras Access-Control-* desde Node para evitar duplicidades entre capas.
 
 // Body parser
 app.use(express.json());
