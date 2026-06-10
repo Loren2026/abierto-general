@@ -45,20 +45,20 @@ const featuredProjects = [
 
 const flowSteps = [
   {
-    title: 'Recibes tu invitación o tu código',
-    copy: 'Loren habilita el acceso de forma individual para cada usuario.',
+    title: 'Solicitas tu acceso',
+    copy: 'Pides un código de invitación; Loren lo habilita de forma individual para ti.',
   },
   {
-    title: 'Accedes al proyecto autorizado',
-    copy: 'Solo ves el contenido que realmente tienes permitido usar.',
+    title: 'Entras en tu proyecto',
+    copy: 'Introduces el código y accedes solo al contenido que tienes autorizado.',
   },
   {
     title: 'Activas tu acceso',
-    copy: 'El sistema valida el acceso y lo vincula correctamente.',
+    copy: 'El sistema valida tu código y lo vincula a tu dispositivo de forma segura.',
   },
   {
-    title: 'Descargas o utilizas tu contenido',
-    copy: 'Todo de forma sencilla, privada y organizada.',
+    title: 'Usas tu contenido',
+    copy: 'Ya puedes consultar, descargar o utilizar todo, de forma sencilla y privada.',
   },
 ]
 
@@ -444,39 +444,9 @@ export default function HomePage() {
         </section>
 
         <section className="section-shell project-showcase-section">
-          <div className="section-heading">
-            <span className="section-heading__eyebrow">Proyecto destacado</span>
-            <h2>Fit Loren ya tiene espacio reservado en la plataforma</h2>
-            <p>
-              Una app pensada para entrenar en casa con acceso privado, adaptación inteligente y entrada por
-              código de invitación.
-            </p>
-          </div>
-          <div className="project-showcase-grid">
-            {publicProjects.map((project) => (
-              <article className="project-card project-card--featured" key={project.slug}>
-                <div className="project-card__media">
-                  <img src={project.image} alt={project.name} />
-                </div>
-                <div className="project-card__body">
-                  <div className="project-card__topline">
-                    <span className="project-card__badge">{project.badge}</span>
-                    <span className="project-card__access">{project.accessLabel}</span>
-                  </div>
-                  <h3>{project.name}</h3>
-                  <p>{project.description}</p>
-                  <div className="project-card__url">{project.visibleUrl}</div>
-                  <div className="project-card__actions">
-                    <button className="cta-button cta-button--primary" type="button" onClick={() => openAccessModal(project)}>
-                      Acceder con código
-                    </button>
-                    <button className="cta-button cta-button--invite" type="button" onClick={() => openInvite(project)}>
-                      Solicitar código
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
+          <div className="content-card content-card--wide">
+            <span className="content-card__eyebrow">Proyectos publicados</span>
+            <h2>PROYECTOS PUBLICADOS</h2>
           </div>
         </section>
 
