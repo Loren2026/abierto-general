@@ -1666,3 +1666,114 @@
   cursor: pointer;
   text-align: left;
 }
+
+/* Panel final adjustments */
+.admin-projects-section {
+  display: grid;
+  gap: 18px;
+  margin-top: 34px;
+  margin-bottom: 24px;
+}
+
+.admin-section-label-card {
+  padding: 22px 24px;
+}
+
+.admin-section-label-card h2 {
+  margin-bottom: 0;
+}
+
+.stats-grid--drilldown {
+  align-items: start;
+  margin-bottom: 0;
+}
+
+.stat-drilldown {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.stat-drilldown__panel {
+  margin: 0;
+  padding: 18px;
+}
+
+.admin-drilldown-summary {
+  margin: 0;
+}
+
+.admin-project-detail-card {
+  margin-top: 8px;
+}
+
+.admin-project-form,
+.admin-inline-form {
+  width: 100%;
+  min-width: 0;
+}
+
+.admin-project-form *,
+.admin-inline-form * {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.admin-project-form input,
+.admin-project-form select,
+.admin-project-form textarea,
+.admin-inline-form input,
+.admin-inline-form select,
+.admin-inline-form textarea {
+  width: 100%;
+  max-width: 100%;
+  min-height: 46px;
+  box-sizing: border-box;
+}
+
+.admin-inline-form select {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: 14px;
+  color: #172033;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.admin-inline-form select:focus {
+  outline: 2px solid rgba(91, 141, 239, 0.22);
+  border-color: rgba(91, 141, 239, 0.45);
+}
+
+@media (max-width: 640px) {
+  .dashboard-container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .dashboard-content,
+  .next-steps-card,
+  .info-card,
+  .content-card,
+  .stat-card,
+  .stat-drilldown__panel {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .admin-project-form,
+  .admin-inline-form,
+  .stats-grid,
+  .stats-grid--drilldown {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-project-form__wide {
+    grid-column: auto;
+  }
+
+  .panel-header-row {
+    align-items: flex-start;
+  }
+}
