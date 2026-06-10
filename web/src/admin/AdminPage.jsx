@@ -4,67 +4,33 @@ import useAuthStore from '../store/useAuthStore'
 import '../pages/Dashboard.css'
 import AdminLayout from '../components/layout/AdminLayout'
 
-const initialAccessForm = {
-  personName: '',
-  notes: '',
-  isTrial: false,
-  trialDays: '',
-}
-
-const initialProjectForm = {
-  slug: '',
-  name: '',
-  description: '',
-  sourceType: 'webapp',
-  redirectUrl: '',
-  sourceFileId: '',
-  version: '1.0.0',
-  updateMessage: '',
-}
+const initialAccessForm = { personName: '', notes: '', isTrial: false, trialDays: '' }
+const initialProjectForm = { slug: '', name: '', description: '', sourceType: 'webapp', redirectUrl: '', sourceFileId: '', version: '1.0.0', updateMessage: '' }
 
 function formatDate(value, fallback = 'No disponible') {
   if (!value) return fallback
-
-  try {
-    return new Intl.DateTimeFormat('es-ES', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    }).format(new Date(value))
-  } catch (error) {
-    return value
-  }
+  try { return new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) } catch { return value }
 }
-
-async function readJson(response) {
-  return response.json().catch(() => ({}))
-}
-
+async function readJson(response) { return response.json().catch(() => ({})) }
 function getAccessTrialState(access) {
-  if (!Number.isInteger(access?.trialDays) || access.trialDays <= 0) {
-    return { type: 'normal', label: 'Normal', status: 'Sin caducidad' }
-  }
-
-  if (!access.activatedAt) {
-    return { type: 'trial', label: `Prueba: ${access.trialDays} días`, status: 'Sin activar' }
-  }
-
-  const activatedAt = new Date(access.activatedAt)
-  const expiresAt = new Date(activatedAt.getTime() + access.trialDays * 24 * 60 * 60 * 1000)
-  const isExpired = Date.now() > expiresAt.getTime()
-
-  return {
-    type: 'trial',
-    label: `Prueba: ${access.trialDays} días`,
-    status: isExpired ? 'Caducada' : `Activa desde ${formatDate(access.activatedAt, 'fecha no disponible')}`,
-  }
+  if (!Number.isInteger(access?.trialDays) || access.trialDays <= 0) return { label: 'Normal', status: 'Sin caducidad' }
+  if (!access.activatedAt) return { label: `Prueba: ${access.trialDays} días`, status: 'Sin activar' }
+  const expiresAt = new Date(new Date(access.activatedAt).getTime() + access.trialDays * 86400000)
+  return { label: `Prueba: ${access.trialDays} días`, status: Date.now() > expiresAt.getTime() ? 'Caducada' : `Activa desde ${formatDate(access.activatedAt)}` }
+}
+function splitDescription(description) {
+  const text = description || 'Proyecto privado gestionado desde el panel de Inteligencia Loren.'
+  return text.split(/(?<=[.!?])\s+/).filter(Boolean).slice(0, 2).join(' ')
 }
 
 function AdminPage() {
-  const { user, session, logout } = useAuthStore()
+  const { session, logout } = useAuthStore()
   const [projects, setProjects] = useState([])
   const [isLoadingProjects, setIsLoadingProjects] = useState(true)
   const [projectsError, setProjectsError] = useState('')
   const [selectedProjectId, setSelectedProjectId] = useState(null)
+  const [expandedMetric, setExpandedMetric] = useState(null)
+  const [expandedAccessId, setExpandedAccessId] = useState(null)
   const [projectAccesses, setProjectAccesses] = useState([])
   const [isLoadingAccesses, setIsLoadingAccesses] = useState(false)
   const [accessesError, setAccessesError] = useState('')
@@ -80,648 +46,95 @@ function AdminPage() {
   const [isPublishingProject, setIsPublishingProject] = useState(false)
   const [isCreatingProjectAccess, setIsCreatingProjectAccess] = useState(false)
   const [projectGeneratedCode, setProjectGeneratedCode] = useState('')
+  const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false)
+  const [editingAccesses, setEditingAccesses] = useState({})
+  const [savingAccessId, setSavingAccessId] = useState(null)
 
-  const handleLogout = async () => {
-    await logout()
-  }
-
+  const handleLogout = async () => { await logout() }
   async function apiFetch(path, options = {}) {
-    const headers = {
-      Authorization: `Bearer ${session?.accessToken}`,
-      ...(options.headers || {}),
-    }
-
-    if (options.body && !headers['Content-Type']) {
-      headers['Content-Type'] = 'application/json'
-    }
-
-    const response = await fetch(path, {
-      ...options,
-      headers,
-    })
-
+    const headers = { Authorization: `Bearer ${session?.accessToken}`, ...(options.headers || {}) }
+    if (options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json'
+    const response = await fetch(path, { ...options, headers })
     const data = await readJson(response)
-    if (!response.ok) {
-      throw new Error(data.error || 'Error en administración')
-    }
-
+    if (!response.ok) throw new Error(data.error || 'Error en administración')
     return data
   }
-
   async function loadProjects() {
-    if (!session?.accessToken) {
-      setProjects([])
-      setIsLoadingProjects(false)
-      return
-    }
-
-    setIsLoadingProjects(true)
-    setProjectsError('')
-
-    try {
-      const data = await apiFetch('/api/admin/projects')
-      setProjects(data.projects || [])
-    } catch (error) {
-      setProjectsError(error.message)
-    } finally {
-      setIsLoadingProjects(false)
-    }
+    if (!session?.accessToken) { setProjects([]); setIsLoadingProjects(false); return }
+    setIsLoadingProjects(true); setProjectsError('')
+    try { const data = await apiFetch('/api/admin/projects'); setProjects(data.projects || []) } catch (e) { setProjectsError(e.message) } finally { setIsLoadingProjects(false) }
   }
-
   async function loadProjectAccesses(projectId) {
-    if (!projectId || !session?.accessToken) {
-      setProjectAccesses([])
-      setAccessesError('')
-      setIsLoadingAccesses(false)
-      return
-    }
-
-    setIsLoadingAccesses(true)
-    setAccessesError('')
-    setActiveDevicesByAccessId({})
-
+    if (!projectId || !session?.accessToken) { setProjectAccesses([]); setAccessesError(''); setIsLoadingAccesses(false); return }
+    setIsLoadingAccesses(true); setAccessesError(''); setActiveDevicesByAccessId({})
     try {
       const data = await apiFetch(`/api/admin/projects/${projectId}/accesses`)
       const accesses = data.accesses || []
       setProjectAccesses(accesses)
-
-      const deviceResults = await Promise.all(
-        accesses.map(async (access) => {
-          try {
-            const deviceData = await apiFetch(`/api/admin/accesses/${access.id}/device`)
-            return [access.id, deviceData.device]
-          } catch (error) {
-            return [access.id, null]
-          }
-        }),
-      )
-
+      setEditingAccesses(Object.fromEntries(accesses.map((a) => [a.id, { maxDevices: String(a.maxDevices || 1), status: a.status || 'active', trialDays: a.trialDays ? String(a.trialDays) : '' }])))
+      const deviceResults = await Promise.all(accesses.map(async (access) => { try { const d = await apiFetch(`/api/admin/accesses/${access.id}/device`); return [access.id, d.device] } catch { return [access.id, null] } }))
       setActiveDevicesByAccessId(Object.fromEntries(deviceResults))
-    } catch (error) {
-      setAccessesError(error.message)
-    } finally {
-      setIsLoadingAccesses(false)
-    }
+    } catch (e) { setAccessesError(e.message) } finally { setIsLoadingAccesses(false) }
   }
+  useEffect(() => { loadProjects() }, [session?.accessToken])
+  useEffect(() => { loadProjectAccesses(selectedProjectId) }, [selectedProjectId, session?.accessToken])
 
-  useEffect(() => {
-    loadProjects()
-  }, [session?.accessToken])
+  const projectBuckets = useMemo(() => ({
+    total: projects,
+    public: projects.filter((p) => p.status === 'public'),
+    private: projects.filter((p) => p.status !== 'public'),
+    published: projects.filter((p) => p.published_at),
+  }), [projects])
+  const metricCards = [
+    ['total', 'Proyectos totales'], ['public', 'Proyectos públicos'], ['private', 'Proyectos privados'], ['published', 'Publicados'],
+  ]
+  const selectedProject = useMemo(() => projects.find((p) => p.id === selectedProjectId) || null, [projects, selectedProjectId])
 
-  useEffect(() => {
-    loadProjectAccesses(selectedProjectId)
-  }, [selectedProjectId, session?.accessToken])
-
-  const metrics = useMemo(() => {
-    const total = projects.length
-    const publicCount = projects.filter((project) => project.status === 'public').length
-    const privateCount = projects.filter((project) => project.status !== 'public').length
-    const publishedCount = projects.filter((project) => project.published_at).length
-
-    return { total, publicCount, privateCount, publishedCount }
-  }, [projects])
-
-  const selectedProject = useMemo(
-    () => projects.find((project) => project.id === selectedProjectId) || null,
-    [projects, selectedProjectId],
-  )
-
-  function updateAccessForm(field, value) {
-    setAccessForm((current) => ({ ...current, [field]: value }))
-  }
-
-  function updateProjectForm(field, value) {
-    setProjectForm((current) => ({ ...current, [field]: value }))
-  }
-
+  function updateAccessForm(field, value) { setAccessForm((c) => ({ ...c, [field]: value })) }
+  function updateProjectForm(field, value) { setProjectForm((c) => ({ ...c, [field]: value })) }
   async function handleCreateProject(event) {
-    event?.preventDefault()
-    setIsCreatingProject(true)
-    setProjectActionMessage({ type: '', message: '' })
-    setProjectGeneratedCode('')
-
+    event?.preventDefault(); setIsCreatingProject(true); setProjectActionMessage({ type: '', message: '' }); setProjectGeneratedCode('')
     try {
-      const payload = {
-        slug: projectForm.slug,
-        name: projectForm.name,
-        description: projectForm.description || undefined,
-        sourceType: projectForm.sourceType,
-        redirectUrl: projectForm.redirectUrl || undefined,
-        sourceFileId: projectForm.sourceFileId || undefined,
-        version: projectForm.version || undefined,
-        updateMessage: projectForm.updateMessage || undefined,
-      }
-      const data = await apiFetch('/api/admin/projects', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      })
-      setCreatedProject(data.project)
-      setSelectedProjectId(data.project.id)
-      setProjectActionMessage({ type: 'success', message: `Proyecto creado: ${data.project.name}.` })
-      setProjectForm(initialProjectForm)
-      await loadProjects()
-    } catch (error) {
-      setProjectActionMessage({ type: 'error', message: error.message })
-    } finally {
-      setIsCreatingProject(false)
-    }
+      const payload = { slug: projectForm.slug, name: projectForm.name, description: projectForm.description || undefined, sourceType: projectForm.sourceType, redirectUrl: projectForm.redirectUrl || undefined, sourceFileId: projectForm.sourceFileId || undefined, version: projectForm.version || undefined, updateMessage: projectForm.updateMessage || undefined }
+      const data = await apiFetch('/api/admin/projects', { method: 'POST', body: JSON.stringify(payload) })
+      setCreatedProject(data.project); setSelectedProjectId(data.project.id); setProjectActionMessage({ type: 'success', message: `Proyecto creado: ${data.project.name}.` }); setProjectForm(initialProjectForm); await loadProjects()
+    } catch (e) { setProjectActionMessage({ type: 'error', message: e.message }) } finally { setIsCreatingProject(false) }
   }
-
-  async function handlePublishCreatedProject() {
-    if (!createdProject?.id) return
-    setIsPublishingProject(true)
-    setProjectActionMessage({ type: '', message: '' })
-    try {
-      const data = await apiFetch(`/api/admin/projects/${createdProject.id}/publish`, {
-        method: 'POST',
-        body: JSON.stringify({}),
-      })
-      setCreatedProject(data.project)
-      setProjectActionMessage({ type: 'success', message: `Proyecto publicado: ${data.project.name}.` })
-      await loadProjects()
-    } catch (error) {
-      setProjectActionMessage({ type: 'error', message: error.message })
-    } finally {
-      setIsPublishingProject(false)
-    }
-  }
-
-  async function handleCreateAccessForCreatedProject() {
-    if (!createdProject?.id) return
-    setIsCreatingProjectAccess(true)
-    setProjectActionMessage({ type: '', message: '' })
-    try {
-      const data = await apiFetch(`/api/admin/projects/${createdProject.id}/accesses`, {
-        method: 'POST',
-        body: JSON.stringify({
-          personName: `${createdProject.name} prueba`,
-          notes: `Código de prueba para ${createdProject.slug}`,
-        }),
-      })
-      setProjectGeneratedCode(data.generatedPassword)
-      setProjectActionMessage({ type: 'success', message: `Código generado para ${createdProject.name}.` })
-      setRevealedCodes((current) => ({ ...current, [data.access.id]: data.generatedPassword }))
-      setSelectedProjectId(createdProject.id)
-      await loadProjectAccesses(createdProject.id)
-    } catch (error) {
-      setProjectActionMessage({ type: 'error', message: error.message })
-    } finally {
-      setIsCreatingProjectAccess(false)
-    }
-  }
-
+  async function handlePublishCreatedProject() { if (!createdProject?.id) return; setIsPublishingProject(true); try { const data = await apiFetch(`/api/admin/projects/${createdProject.id}/publish`, { method: 'POST', body: JSON.stringify({}) }); setCreatedProject(data.project); await loadProjects() } finally { setIsPublishingProject(false) } }
+  async function handleCreateAccessForCreatedProject() { if (!createdProject?.id) return; setIsCreatingProjectAccess(true); try { const data = await apiFetch(`/api/admin/projects/${createdProject.id}/accesses`, { method: 'POST', body: JSON.stringify({ personName: `${createdProject.name} prueba`, notes: `Código de prueba para ${createdProject.slug}` }) }); setProjectGeneratedCode(data.generatedPassword); setRevealedCodes((c) => ({ ...c, [data.access.id]: data.generatedPassword })); setSelectedProjectId(createdProject.id); await loadProjectAccesses(createdProject.id) } finally { setIsCreatingProjectAccess(false) } }
   async function handleCreateAccess(event) {
-    event?.preventDefault()
-
-    if (!selectedProjectId) return
-
-    if (accessForm.isTrial) {
-      const trialDays = Number(accessForm.trialDays)
-      if (!Number.isInteger(trialDays) || trialDays <= 0) {
-        setAccessActionMessage({ type: 'error', message: 'Los días de prueba deben ser un entero positivo.' })
-        return
-      }
-    }
-
-    setIsCreatingAccess(true)
-    setAccessActionMessage({ type: '', message: '' })
-
-    try {
-      const data = await apiFetch(`/api/admin/projects/${selectedProjectId}/accesses`, {
-        method: 'POST',
-        body: JSON.stringify({
-          personName: accessForm.personName,
-          notes: accessForm.notes,
-          trialDays: accessForm.isTrial ? Number(accessForm.trialDays) : null,
-        }),
-      })
-
-      setRevealedCodes((current) => ({
-        ...current,
-        [data.access.id]: data.generatedPassword,
-      }))
-      setAccessActionMessage({ type: 'success', message: `Código creado para ${data.access.personName}.` })
-      setAccessForm(initialAccessForm)
-      await loadProjectAccesses(selectedProjectId)
-    } catch (error) {
-      setAccessActionMessage({ type: 'error', message: error.message })
-    } finally {
-      setIsCreatingAccess(false)
-    }
+    event?.preventDefault(); if (!selectedProjectId) return
+    if (accessForm.isTrial) { const days = Number(accessForm.trialDays); if (!Number.isInteger(days) || days <= 0) { setAccessActionMessage({ type: 'error', message: 'Los días de prueba deben ser un entero positivo.' }); return } }
+    setIsCreatingAccess(true); setAccessActionMessage({ type: '', message: '' })
+    try { const data = await apiFetch(`/api/admin/projects/${selectedProjectId}/accesses`, { method: 'POST', body: JSON.stringify({ personName: accessForm.personName, notes: accessForm.notes, trialDays: accessForm.isTrial ? Number(accessForm.trialDays) : null }) }); setRevealedCodes((c) => ({ ...c, [data.access.id]: data.generatedPassword })); setAccessActionMessage({ type: 'success', message: `Código creado para ${data.access.personName}.` }); setAccessForm(initialAccessForm); await loadProjectAccesses(selectedProjectId) } catch (e) { setAccessActionMessage({ type: 'error', message: e.message }) } finally { setIsCreatingAccess(false) }
   }
-
-  async function copyCode(accessId) {
-    const code = revealedCodes[accessId]
-    if (!code) return
-
+  async function saveAccess(access) {
+    const edit = editingAccesses[access.id]; if (!edit) return
+    setSavingAccessId(access.id); setAccessActionMessage({ type: '', message: '' })
     try {
-      await navigator.clipboard.writeText(code)
-      setAccessActionMessage({ type: 'success', message: 'Código copiado al portapapeles.' })
-    } catch (error) {
-      setAccessActionMessage({ type: 'error', message: 'No se pudo copiar el código automáticamente.' })
-    }
+      const data = await apiFetch(`/api/admin/accesses/${access.id}`, { method: 'PATCH', body: JSON.stringify({ maxDevices: Number(edit.maxDevices), status: edit.status, trialDays: edit.trialDays === '' ? null : Number(edit.trialDays) }) })
+      setProjectAccesses((items) => items.map((item) => (item.id === access.id ? data.access : item)))
+      setAccessActionMessage({ type: 'success', message: `Código actualizado para ${data.access.personName}.` })
+    } catch (e) { setAccessActionMessage({ type: 'error', message: e.message }) } finally { setSavingAccessId(null) }
   }
-
-  async function handleRegenerateAccess(access) {
-    setAccessActionMessage({ type: '', message: '' })
-
-    try {
-      const data = await apiFetch(`/api/admin/accesses/${access.id}/regenerate-password`, {
-        method: 'POST',
-        body: JSON.stringify({}),
-      })
-
-      setRevealedCodes((current) => ({
-        ...current,
-        [access.id]: data.generatedPassword,
-      }))
-      setProjectAccesses((current) => current.map((item) => (item.id === access.id ? data.access : item)))
-      setAccessActionMessage({ type: 'success', message: `Código regenerado para ${access.personName}.` })
-    } catch (error) {
-      setAccessActionMessage({ type: 'error', message: error.message })
-    }
-  }
-
-  async function handleRevokeAccess(access) {
-    setAccessActionMessage({ type: '', message: '' })
-
-    try {
-      const data = await apiFetch(`/api/admin/accesses/${access.id}/revoke`, {
-        method: 'POST',
-        body: JSON.stringify({ notes: access.notes || null }),
-      })
-
-      setProjectAccesses((current) => current.map((item) => (item.id === access.id ? data.access : item)))
-      setActiveDevicesByAccessId((current) => ({ ...current, [access.id]: null }))
-      setAccessActionMessage({ type: 'success', message: `Código revocado para ${access.personName}.` })
-    } catch (error) {
-      setAccessActionMessage({ type: 'error', message: error.message })
-    }
-  }
+  function updateEditingAccess(id, field, value) { setEditingAccesses((c) => ({ ...c, [id]: { ...(c[id] || {}), [field]: value } })) }
+  async function copyCode(id) { const code = revealedCodes[id]; if (code) await navigator.clipboard.writeText(code) }
 
   return (
     <AdminLayout title="Panel Loren" onLogout={handleLogout}>
-      <div className="dashboard-container">
-        <div className="dashboard-content">
-          <div className="security-banner">
-            <div className="security-icon">🔒</div>
-            <div className="security-text">
-              <h3>Panel conectado a datos reales</h3>
-              <p>Sesión activa, proyectos, códigos de invitación y dispositivos leídos desde la API admin.</p>
-            </div>
-          </div>
+      <div className="dashboard-container"><div className="dashboard-content">
+        <div className="info-card"><h2>Workspace</h2><p className="coordination-panel-copy" style={{ marginBottom: 16 }}>Espacio interno para chat, documentos, habilidades, proyectos y seguimiento operativo.</p><div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}><Link className="cta-admin-button cta-admin-button--blue" to="/admin/workspace">Abrir workspace</Link><Link className="cta-admin-button cta-admin-button--green" to="/admin/agentes">Canal de coordinación actual</Link><Link className="cta-admin-button cta-admin-button--orange" to="/admin/invitaciones">Bandeja de invitaciones</Link></div></div>
+        {projectsError ? <div className="error-message">{projectsError}</div> : null}
 
-          <div className="info-card">
-            <h2>Información del usuario</h2>
-            <div className="user-info">
-              <div className="info-item">
-                <label>ID:</label>
-                <span>{user?.id}</span>
-              </div>
-              <div className="info-item">
-                <label>Email:</label>
-                <span>{user?.email}</span>
-              </div>
-            </div>
-          </div>
+        <div className="next-steps-card"><button type="button" className="panel-header-row admin-accordion-toggle" onClick={() => setIsCreateProjectOpen((v) => !v)} aria-expanded={isCreateProjectOpen}><h2>Crear nuevo proyecto</h2><span className="panel-header-pill">{isCreateProjectOpen ? 'Cerrar' : 'Abrir'}</span></button>{isCreateProjectOpen ? <><p className="coordination-panel-copy" style={{ marginBottom: 16 }}>Alta reutilizable para descargas OneDrive y webapps públicas con código de invitación.</p><form className="admin-project-form" onSubmit={handleCreateProject}><label><span>Slug</span><input type="text" value={projectForm.slug} onChange={(e) => updateProjectForm('slug', e.target.value)} placeholder="restricciones-trafico" required /></label><label><span>Nombre</span><input type="text" value={projectForm.name} onChange={(e) => updateProjectForm('name', e.target.value)} placeholder="Restricciones Tráfico" required /></label><label className="admin-project-form__wide"><span>Descripción</span><textarea value={projectForm.description} onChange={(e) => updateProjectForm('description', e.target.value)} rows={3} /></label><label><span>Tipo de origen</span><select value={projectForm.sourceType} onChange={(e) => updateProjectForm('sourceType', e.target.value)}><option value="webapp">webapp</option><option value="onedrive">onedrive</option></select></label><label><span>Redirect URL</span><input type="url" value={projectForm.redirectUrl} onChange={(e) => updateProjectForm('redirectUrl', e.target.value)} required={projectForm.sourceType === 'webapp'} /></label><label><span>Source File ID</span><input type="text" value={projectForm.sourceFileId} onChange={(e) => updateProjectForm('sourceFileId', e.target.value)} disabled={projectForm.sourceType !== 'onedrive'} required={projectForm.sourceType === 'onedrive'} /></label><label><span>Versión</span><input type="text" value={projectForm.version} onChange={(e) => updateProjectForm('version', e.target.value)} /></label><label className="admin-project-form__wide"><span>Mensaje de actualización</span><input type="text" value={projectForm.updateMessage} onChange={(e) => updateProjectForm('updateMessage', e.target.value)} /></label><button className="cta-admin-button cta-admin-button--blue" disabled={isCreatingProject}>{isCreatingProject ? 'Creando…' : 'Crear proyecto'}</button></form></> : null}{projectActionMessage.message ? <div className={`admin-notice admin-notice--${projectActionMessage.type || 'info'}`}>{projectActionMessage.message}</div> : null}{createdProject ? <div className="created-project-panel"><div className="access-meta-table"><div className="access-meta-row"><div className="access-meta-label">Project ID</div><div className="access-meta-value">{createdProject.id}</div></div><div className="access-meta-row"><div className="access-meta-label">Slug</div><div className="access-meta-value">{createdProject.slug}</div></div></div><div className="access-actions"><button className="cta-admin-button cta-admin-button--green" type="button" onClick={handlePublishCreatedProject} disabled={isPublishingProject || createdProject.status === 'public'}>Publicar</button><button className="cta-admin-button cta-admin-button--orange" type="button" onClick={handleCreateAccessForCreatedProject} disabled={isCreatingProjectAccess}>Generar código de acceso</button></div>{projectGeneratedCode ? <div className="code-reveal-card"><code>{projectGeneratedCode}</code></div> : null}</div> : null}</div>
 
-          <div className="info-card">
-            <h2>Workspace</h2>
-            <p className="coordination-panel-copy" style={{ marginBottom: 16 }}>
-              Nuevo espacio interno para chat, documentos, habilidades, proyectos y seguimiento operativo.
-            </p>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <Link className="cta-admin-button cta-admin-button--blue" to="/admin/workspace">Abrir workspace</Link>
-              <Link className="cta-admin-button cta-admin-button--green" to="/admin/agentes">Canal de coordinación actual</Link>
-              <Link className="cta-admin-button cta-admin-button--orange" to="/admin/invitaciones">Bandeja de invitaciones</Link>
-            </div>
-          </div>
+        <div className="stats-grid">{metricCards.map(([key, label]) => <button key={key} type="button" className={`stat-card stat-card--button ${expandedMetric === key ? 'project-card--active' : ''}`} onClick={() => setExpandedMetric(expandedMetric === key ? null : key)}><div className="stat-value">{isLoadingProjects ? '…' : projectBuckets[key].length}</div><div className="stat-label">{label}</div></button>)}</div>
+        {expandedMetric ? <div className="next-steps-card"><h2>{metricCards.find(([k]) => k === expandedMetric)?.[1]}</h2>{projectBuckets[expandedMetric].length === 0 ? <div className="steps-message">Sin proyectos en esta categoría.</div> : <div className="project-list">{projectBuckets[expandedMetric].map((project) => <button key={project.id} type="button" className={`project-card ${selectedProjectId === project.id ? 'project-card--active' : ''}`} onClick={() => setSelectedProjectId(selectedProjectId === project.id ? null : project.id)}><strong>{project.name}</strong></button>)}</div>}</div> : null}
 
-          {projectsError ? <div className="error-message">{projectsError}</div> : null}
-
-          <div className="next-steps-card">
-            <div className="panel-header-row">
-              <h2>Crear proyecto</h2>
-              <span className="panel-header-pill">Admin</span>
-            </div>
-            <p className="coordination-panel-copy" style={{ marginBottom: 16 }}>
-              Alta reutilizable para descargas OneDrive y webapps públicas con código de invitación.
-            </p>
-            <form className="admin-project-form" onSubmit={handleCreateProject}>
-              <label>
-                <span>Slug</span>
-                <input type="text" value={projectForm.slug} onChange={(event) => updateProjectForm('slug', event.target.value)} placeholder="restricciones-trafico" required />
-              </label>
-              <label>
-                <span>Nombre</span>
-                <input type="text" value={projectForm.name} onChange={(event) => updateProjectForm('name', event.target.value)} placeholder="Restricciones Tráfico" required />
-              </label>
-              <label className="admin-project-form__wide">
-                <span>Descripción</span>
-                <textarea value={projectForm.description} onChange={(event) => updateProjectForm('description', event.target.value)} placeholder="Descripción visible del proyecto" rows={3} />
-              </label>
-              <label>
-                <span>Tipo de origen</span>
-                <select value={projectForm.sourceType} onChange={(event) => updateProjectForm('sourceType', event.target.value)}>
-                  <option value="webapp">webapp</option>
-                  <option value="onedrive">onedrive</option>
-                </select>
-              </label>
-              <label>
-                <span>Redirect URL {projectForm.sourceType === 'webapp' ? '(obligatorio)' : '(opcional)'}</span>
-                <input type="url" value={projectForm.redirectUrl} onChange={(event) => updateProjectForm('redirectUrl', event.target.value)} placeholder="https://restricciones.inteligencialoren.com" required={projectForm.sourceType === 'webapp'} />
-              </label>
-              <label>
-                <span>Source File ID {projectForm.sourceType === 'onedrive' ? '(obligatorio)' : '(no usado)'}</span>
-                <input type="text" value={projectForm.sourceFileId} onChange={(event) => updateProjectForm('sourceFileId', event.target.value)} placeholder="ID de OneDrive" required={projectForm.sourceType === 'onedrive'} disabled={projectForm.sourceType !== 'onedrive'} />
-              </label>
-              <label>
-                <span>Versión</span>
-                <input type="text" value={projectForm.version} onChange={(event) => updateProjectForm('version', event.target.value)} placeholder="1.0.0" />
-              </label>
-              <label className="admin-project-form__wide">
-                <span>Mensaje de actualización</span>
-                <input type="text" value={projectForm.updateMessage} onChange={(event) => updateProjectForm('updateMessage', event.target.value)} placeholder="Alta inicial" />
-              </label>
-              <button className="cta-admin-button cta-admin-button--blue" type="submit" disabled={isCreatingProject}>
-                {isCreatingProject ? 'Creando…' : 'Crear proyecto'}
-              </button>
-            </form>
-
-            {projectActionMessage.message ? <div className={`admin-notice admin-notice--${projectActionMessage.type || 'info'}`}>{projectActionMessage.message}</div> : null}
-
-            {createdProject ? (
-              <div className="created-project-panel">
-                <div className="access-meta-table">
-                  <div className="access-meta-row"><div className="access-meta-label">Project ID</div><div className="access-meta-value">{createdProject.id}</div></div>
-                  <div className="access-meta-row"><div className="access-meta-label">Slug</div><div className="access-meta-value">{createdProject.slug}</div></div>
-                  <div className="access-meta-row"><div className="access-meta-label">Estado</div><div className="access-meta-value">{createdProject.status}</div></div>
-                </div>
-                <div className="access-actions">
-                  <button className="cta-admin-button cta-admin-button--green" type="button" onClick={handlePublishCreatedProject} disabled={isPublishingProject || createdProject.status === 'public'}>
-                    {isPublishingProject ? 'Publicando…' : 'Publicar'}
-                  </button>
-                  <button className="cta-admin-button cta-admin-button--orange" type="button" onClick={handleCreateAccessForCreatedProject} disabled={isCreatingProjectAccess}>
-                    {isCreatingProjectAccess ? 'Generando…' : 'Generar código de acceso'}
-                  </button>
-                </div>
-                {projectGeneratedCode ? (
-                  <div className="code-reveal-card">
-                    <span className="code-reveal-card__label">Código generado</span>
-                    <code>{projectGeneratedCode}</code>
-                    <button className="cta-admin-button cta-admin-button--blue" type="button" onClick={() => navigator.clipboard.writeText(projectGeneratedCode)}>
-                      Copiar código
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-value">{isLoadingProjects ? '…' : metrics.total}</div>
-              <div className="stat-label">Proyectos totales</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">{isLoadingProjects ? '…' : metrics.publicCount}</div>
-              <div className="stat-label">Proyectos públicos</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">{isLoadingProjects ? '…' : metrics.privateCount}</div>
-              <div className="stat-label">Proyectos privados</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">{isLoadingProjects ? '…' : metrics.publishedCount}</div>
-              <div className="stat-label">Publicados</div>
-            </div>
-          </div>
-
-          <div className="next-steps-card">
-            <h2>Proyectos reales</h2>
-            {isLoadingProjects ? (
-              <div className="steps-message">Cargando proyectos…</div>
-            ) : projects.length === 0 ? (
-              <div className="steps-message">Todavía no hay proyectos cargados en el panel.</div>
-            ) : (
-              <div className="project-list">
-                {projects.map((project) => {
-                  const isSelected = project.id === selectedProjectId
-
-                  return (
-                    <button
-                      key={project.id}
-                      type="button"
-                      className={`project-card ${isSelected ? 'project-card--active' : ''}`}
-                      onClick={() => setSelectedProjectId(project.id)}
-                    >
-                      <div className="project-card__header">
-                        <strong>{project.name}</strong>
-                        <span className={`project-status project-status--${project.status}`}>{project.status}</span>
-                      </div>
-                      <div className="project-card__meta">Slug: {project.slug}</div>
-                      <div className="project-card__meta">Versión: {project.version || 'Sin versión'}</div>
-                      <div className="project-card__meta">Publicado: {formatDate(project.published_at, 'No publicado')}</div>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-
-          <div className="next-steps-card">
-            <div className="panel-header-row">
-              <h2>Códigos de invitación por proyecto</h2>
-              {selectedProject ? <span className="panel-header-pill">{selectedProject.slug}</span> : null}
-            </div>
-            {!selectedProject ? (
-              <div className="steps-message">Selecciona un proyecto para gestionar sus códigos de invitación.</div>
-            ) : (
-              <>
-                <div className="selected-project-banner">
-                  <strong>{selectedProject.name}</strong>
-                  <span>{selectedProject.slug}</span>
-                </div>
-
-                <form className="admin-inline-form" onSubmit={handleCreateAccess}>
-                  <label>
-                    <span>Nombre de la persona</span>
-                    <input
-                      type="text"
-                      value={accessForm.personName}
-                      onChange={(event) => updateAccessForm('personName', event.target.value)}
-                      placeholder="Ej. Ana Pérez"
-                      required
-                    />
-                  </label>
-                  <label>
-                    <span>Notas</span>
-                    <input
-                      type="text"
-                      value={accessForm.notes}
-                      onChange={(event) => updateAccessForm('notes', event.target.value)}
-                      placeholder="Opcional"
-                    />
-                  </label>
-                  <label>
-                    <span>Código de prueba temporal</span>
-                    <select
-                      value={accessForm.isTrial ? 'yes' : 'no'}
-                      onChange={(event) => updateAccessForm('isTrial', event.target.value === 'yes')}
-                    >
-                      <option value="no">No, código normal</option>
-                      <option value="yes">Sí, prueba temporal</option>
-                    </select>
-                  </label>
-                  <label>
-                    <span>Días de prueba</span>
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={accessForm.trialDays}
-                      onChange={(event) => updateAccessForm('trialDays', event.target.value)}
-                      placeholder="Ej. 7"
-                      required={accessForm.isTrial}
-                      disabled={!accessForm.isTrial}
-                    />
-                  </label>
-                </form>
-
-                <button
-                  className="cta-admin-button cta-admin-button--green"
-                  type="button"
-                  onClick={handleCreateAccess}
-                  disabled={isCreatingAccess}
-                >
-                  {isCreatingAccess ? 'Creando…' : 'Generar código'}
-                </button>
-
-                {accessActionMessage.message ? (
-                  <div className={`admin-notice admin-notice--${accessActionMessage.type || 'info'}`}>
-                    {accessActionMessage.message}
-                  </div>
-                ) : null}
-
-                {accessesError ? <div className="error-message">{accessesError}</div> : null}
-
-                {isLoadingAccesses ? (
-                  <div className="steps-message">Cargando accesos…</div>
-                ) : projectAccesses.length === 0 ? (
-                  <div className="steps-message">Este proyecto no tiene códigos registrados todavía.</div>
-                ) : (
-                  <div className="access-list">
-                    {projectAccesses.map((access) => {
-                      const activeDevice = activeDevicesByAccessId[access.id]
-                      const revealedCode = revealedCodes[access.id]
-                      const trialState = getAccessTrialState(access)
-
-                      return (
-                        <div key={access.id} className="access-card access-card--detailed">
-                          <div className="access-card__header">
-                            <strong>{access.personName}</strong>
-                            <div className="access-card__status-group">
-                              <span className="device-status-row">
-                                <span className={`device-status-dot ${access.status === 'revoked' ? 'device-status-dot--inactive' : 'device-status-dot--active'}`} />
-                                <span className="device-status-text">{access.status === 'revoked' ? 'Revocado' : 'Activo'}</span>
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="access-stack-layout">
-                            <div className="device-panel-simple">
-                              <p className="device-panel-simple__summary">
-                                {activeDevice ? 'Dispositivo vinculado' : 'Sin dispositivo vinculado'}
-                              </p>
-                              {activeDevice ? (
-                                <div className="access-meta-table access-meta-table--compact">
-                                  <div className="access-meta-row">
-                                    <div className="access-meta-label">Nombre</div>
-                                    <div className="access-meta-value">{activeDevice.deviceName}</div>
-                                  </div>
-                                  <div className="access-meta-row">
-                                    <div className="access-meta-label">ID</div>
-                                    <div className="access-meta-value">{activeDevice.deviceId}</div>
-                                  </div>
-                                  <div className="access-meta-row">
-                                    <div className="access-meta-label">Plataforma</div>
-                                    <div className="access-meta-value">{activeDevice.platform || 'No indicada'}</div>
-                                  </div>
-                                  <div className="access-meta-row">
-                                    <div className="access-meta-label">Activado</div>
-                                    <div className="access-meta-value access-meta-value--nowrap">{formatDate(activeDevice.activatedAt)}</div>
-                                  </div>
-                                </div>
-                              ) : null}
-                            </div>
-
-                            <div className="access-meta-table">
-                              <div className="access-meta-row">
-                                <div className="access-meta-label">Creado</div>
-                                <div className="access-meta-value access-meta-value--nowrap">{formatDate(access.createdAt)}</div>
-                              </div>
-                              <div className="access-meta-row">
-                                <div className="access-meta-label">Tipo</div>
-                                <div className="access-meta-value">{trialState.label}</div>
-                              </div>
-                              <div className="access-meta-row">
-                                <div className="access-meta-label">Estado prueba</div>
-                                <div className="access-meta-value">{trialState.status}</div>
-                              </div>
-                              <div className="access-meta-row">
-                                <div className="access-meta-label">Último código</div>
-                                <div className="access-meta-value access-meta-value--nowrap">{formatDate(access.passwordLastGeneratedAt, 'Solo el inicial')}</div>
-                              </div>
-                              <div className="access-meta-row">
-                                <div className="access-meta-label">Revocado</div>
-                                <div className="access-meta-value access-meta-value--nowrap">{formatDate(access.revokedAt, 'Activo')}</div>
-                              </div>
-                              <div className="access-meta-row">
-                                <div className="access-meta-label">Notas</div>
-                                <div className="access-meta-value">{access.notes || 'Sin notas'}</div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {revealedCode ? (
-                            <div className="code-reveal-card">
-                              <span className="code-reveal-card__label">Código visible una sola vez</span>
-                              <code>{revealedCode}</code>
-                              <button className="cta-admin-button cta-admin-button--blue" type="button" onClick={() => copyCode(access.id)}>
-                                Copiar código
-                              </button>
-                            </div>
-                          ) : null}
-
-                          <div className="access-actions">
-                            <button
-                              className="cta-admin-button cta-admin-button--orange"
-                              type="button"
-                              onClick={() => handleRegenerateAccess(access)}
-                            >
-                              Regenerar código
-                            </button>
-                            <button
-                              className="cta-admin-button cta-admin-button--red"
-                              type="button"
-                              onClick={() => handleRevokeAccess(access)}
-                              disabled={access.status === 'revoked'}
-                            >
-                              Revocar código
-                            </button>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+        {selectedProject ? <div className="next-steps-card"><div className="panel-header-row"><h2>{selectedProject.name}</h2><span className="panel-header-pill">Ficha</span></div><p>{splitDescription(selectedProject.description)}</p><div className="access-meta-table"><div className="access-meta-row"><div className="access-meta-label">Creación</div><div className="access-meta-value">{formatDate(selectedProject.created_at)}</div></div><div className="access-meta-row"><div className="access-meta-label">Publicación</div><div className="access-meta-value">{formatDate(selectedProject.published_at, 'No publicado')}</div></div><div className="access-meta-row"><div className="access-meta-label">Personas con acceso</div><div className="access-meta-value">{projectAccesses.filter((a) => a.status !== 'revoked').length}</div></div></div>
+          <h3>Códigos del proyecto</h3><form className="admin-inline-form" onSubmit={handleCreateAccess}><label><span>Nombre de la persona</span><input type="text" value={accessForm.personName} onChange={(e) => updateAccessForm('personName', e.target.value)} required /></label><label><span>Notas</span><input type="text" value={accessForm.notes} onChange={(e) => updateAccessForm('notes', e.target.value)} /></label><label><span>Código de prueba temporal</span><select value={accessForm.isTrial ? 'yes' : 'no'} onChange={(e) => updateAccessForm('isTrial', e.target.value === 'yes')}><option value="no">No, código normal</option><option value="yes">Sí, prueba temporal</option></select></label><label><span>Días de prueba</span><input type="number" min="1" value={accessForm.trialDays} onChange={(e) => updateAccessForm('trialDays', e.target.value)} disabled={!accessForm.isTrial} required={accessForm.isTrial} /></label><button className="cta-admin-button cta-admin-button--green" disabled={isCreatingAccess}>{isCreatingAccess ? 'Creando…' : 'Generar código'}</button></form>{accessActionMessage.message ? <div className={`admin-notice admin-notice--${accessActionMessage.type || 'info'}`}>{accessActionMessage.message}</div> : null}{accessesError ? <div className="error-message">{accessesError}</div> : null}{isLoadingAccesses ? <div className="steps-message">Cargando accesos…</div> : projectAccesses.length === 0 ? <div className="steps-message">Este proyecto no tiene códigos registrados todavía.</div> : <div className="access-list">{projectAccesses.map((access) => { const device = activeDevicesByAccessId[access.id]; const trial = getAccessTrialState(access); const edit = editingAccesses[access.id] || {}; return <div key={access.id} className="access-card access-card--detailed"><button type="button" className="access-card__header admin-accordion-toggle" onClick={() => setExpandedAccessId(expandedAccessId === access.id ? null : access.id)}><strong>{access.personName}</strong><span>{access.status === 'revoked' ? 'Revocado' : 'Activo'}</span></button>{expandedAccessId === access.id ? <div className="access-stack-layout"><div className="access-meta-table"><div className="access-meta-row"><div className="access-meta-label">Persona</div><div className="access-meta-value">{access.personName}</div></div><div className="access-meta-row"><div className="access-meta-label">Estado</div><div className="access-meta-value">{access.status}</div></div><div className="access-meta-row"><div className="access-meta-label">Dispositivos</div><div className="access-meta-value">{device ? `${device.deviceName} · ${device.platform || 'sin plataforma'}` : 'Sin dispositivo vinculado'}</div></div><div className="access-meta-row"><div className="access-meta-label">Fechas</div><div className="access-meta-value">Creado: {formatDate(access.createdAt)} · Activado: {formatDate(access.activatedAt, 'No activado')} · Revocado: {formatDate(access.revokedAt, 'No')}</div></div><div className="access-meta-row"><div className="access-meta-label">Trial</div><div className="access-meta-value">{trial.label} · {trial.status}</div></div><div className="access-meta-row"><div className="access-meta-label">Notas</div><div className="access-meta-value">{access.notes || 'Sin notas'}</div></div></div><div className="admin-inline-form"><label><span>max_devices</span><input type="number" min="1" value={edit.maxDevices || ''} onChange={(e) => updateEditingAccess(access.id, 'maxDevices', e.target.value)} /></label><label><span>status</span><select value={edit.status || 'active'} onChange={(e) => updateEditingAccess(access.id, 'status', e.target.value)}><option value="active">active</option><option value="revoked">revoked</option></select></label><label><span>trial_days</span><input type="number" min="1" value={edit.trialDays || ''} onChange={(e) => updateEditingAccess(access.id, 'trialDays', e.target.value)} placeholder="Vacío = sin trial" /></label><button type="button" className="cta-admin-button cta-admin-button--blue" onClick={() => saveAccess(access)} disabled={savingAccessId === access.id}>{savingAccessId === access.id ? 'Guardando…' : 'Guardar cambios'}</button>{revealedCodes[access.id] ? <button type="button" className="cta-admin-button cta-admin-button--orange" onClick={() => copyCode(access.id)}>Copiar código</button> : null}</div></div> : null}</div> })}</div>}</div> : null}
+      </div></div>
     </AdminLayout>
   )
 }
-
 export default AdminPage

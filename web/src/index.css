@@ -122,6 +122,17 @@ canvas {
   gap: 10px;
   flex-wrap: wrap;
   justify-content: flex-end;
+  margin-left: auto;
+}
+
+.site-header--public {
+  display: none;
+}
+
+.landing-private-entry {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 20px;
 }
 
 .nav-chip {

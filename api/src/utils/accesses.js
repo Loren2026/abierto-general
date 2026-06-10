@@ -27,6 +27,7 @@ export function sanitizeAccessRecord(record) {
     activatedAt: record.activated_at,
     expiresAt: record.expires_at,
     trialDays: record.trial_days,
+    maxDevices: record.max_devices,
     createdAt: record.created_at,
     updatedAt: record.updated_at,
     revokedAt: record.revoked_at,

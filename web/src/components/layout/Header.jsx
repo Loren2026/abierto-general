@@ -6,10 +6,12 @@ export default function Header({ privateArea = false, title = 'Inteligencia Lore
   return (
     <header className={`site-header ${privateArea ? 'site-header--private' : 'site-header--public'}`}>
       <div className="site-header__inner">
-        <div className="site-branding">
-          <span className="site-branding__eyebrow">Inteligencia Loren</span>
-          <strong className="site-branding__title">{title}</strong>
-        </div>
+        {privateArea ? null : (
+          <div className="site-branding">
+            <span className="site-branding__eyebrow">Inteligencia Loren</span>
+            <strong className="site-branding__title">{title}</strong>
+          </div>
+        )}
 
         <nav className="site-header__actions" aria-label="Navegación principal">
           {privateArea ? (
@@ -24,9 +26,7 @@ export default function Header({ privateArea = false, title = 'Inteligencia Lore
                 Salir
               </button>
             </>
-          ) : (
-            <Link to="/login" className="nav-chip nav-chip--blue">Acceso Loren</Link>
-          )}
+          ) : null}
         </nav>
       </div>
     </header>

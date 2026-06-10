@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import emailjs from '@emailjs/browser'
+import { Link } from 'react-router-dom'
 import PublicLayout from '../components/layout/PublicLayout'
 import fitLorenHero from '../assets/fit-loren-hero.jpg'
 import gestactasHero from '../assets/gestactas-hero.png'
@@ -16,25 +17,6 @@ const initialForm = {
   website: '',
   privacyAccepted: false,
 }
-
-const featureCards = [
-  {
-    title: 'Herramientas privadas',
-    copy: 'Accesos habilitados individualmente para proyectos y recursos seleccionados por Loren.',
-  },
-  {
-    title: 'Recursos exclusivos',
-    copy: 'Contenido curado y organizado para que cada persona vea solo lo que realmente necesita.',
-  },
-  {
-    title: 'Apps seleccionadas',
-    copy: 'Aplicaciones, materiales y descargas controladas con seguimiento y validación.',
-  },
-  {
-    title: 'Accesos personalizados',
-    copy: 'Cada invitación se concede con criterio, según proyecto, momento y uso previsto.',
-  },
-]
 
 const publishedProjects = ['Fit Loren', 'fit-loren', 'GestActas', 'gestactas']
 
@@ -408,6 +390,10 @@ export default function HomePage() {
   return (
     <PublicLayout>
       <main className="landing-page">
+        <div className="landing-private-entry section-shell">
+          <Link to="/login" className="nav-chip nav-chip--blue">Privado</Link>
+        </div>
+
         <section className="landing-hero section-shell">
           <div className="hero-panel">
             <div className="hero-panel__eyebrow">Acceso privado y gestionado</div>
@@ -417,14 +403,6 @@ export default function HomePage() {
               Una plataforma donde Loren organiza proyectos, accesos y recursos digitales de forma simple,
               segura y controlada.
             </p>
-            <div className="hero-panel__actions">
-              <button className="cta-button cta-button--primary" type="button" onClick={() => openAccessModal(publicProjects[0])}>
-                Acceder con código
-              </button>
-              <button className="cta-button cta-button--invite" type="button" onClick={openInvite}>
-                Solicitar Invitación
-              </button>
-            </div>
           </div>
         </section>
 
@@ -465,25 +443,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="section-shell features-section">
-          <div className="section-heading">
-            <span className="section-heading__eyebrow">Qué puedes encontrar aquí</span>
-            <h2>Proyectos y recursos seleccionados</h2>
-            <p>
-              Aquí no se publica todo. Cada proyecto se revisa, se prepara y se activa cuando Loren decide
-              que está listo para compartirse.
-            </p>
-          </div>
-          <div className="feature-grid">
-            {featureCards.map((card) => (
-              <article className="feature-card" key={card.title}>
-                <h3>{card.title}</h3>
-                <p>{card.copy}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
         <section className="section-shell project-showcase-section">
           <div className="section-heading">
             <span className="section-heading__eyebrow">Proyecto destacado</span>
@@ -518,27 +477,6 @@ export default function HomePage() {
                 </div>
               </article>
             ))}
-          </div>
-        </section>
-
-        <section className="section-shell invite-section">
-          <div className="invite-section__card">
-            <div>
-              <span className="section-heading__eyebrow">Invitación</span>
-              <h2>¿No tienes acceso todavía?</h2>
-              <p>
-                Si quieres recibir una invitación, puedes enviar tu solicitud y Loren revisará tus datos
-                antes de habilitar cualquier acceso.
-              </p>
-            </div>
-            <div className="hero-panel__actions invite-section__actions">
-              <button className="cta-button cta-button--primary" type="button" onClick={() => openAccessModal(publicProjects[0])}>
-                Acceder con código
-              </button>
-              <button className="cta-button cta-button--invite" type="button" onClick={openInvite}>
-                Solicitar Invitación
-              </button>
-            </div>
           </div>
         </section>
 
