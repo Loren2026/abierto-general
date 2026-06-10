@@ -87,6 +87,53 @@ export async function getProjectAccess(req, res) {
   return res.json({ access: sanitizeAccessRecord(data) })
 }
 
+export async function updateProjectAccess(req, res) {
+  const { accessId } = req.params
+  const updates = {}
+
+  if (req.body.maxDevices !== undefined) {
+    const maxDevices = Number(req.body.maxDevices)
+    if (!Number.isInteger(maxDevices) || maxDevices <= 0) {
+      return res.status(400).json({ error: 'maxDevices must be a positive integer' })
+    }
+    updates.max_devices = maxDevices
+  }
+
+  if (req.body.trialDays !== undefined) {
+    if (req.body.trialDays === null || req.body.trialDays === '') {
+      updates.trial_days = null
+    } else {
+      const trialDays = Number(req.body.trialDays)
+      if (!Number.isInteger(trialDays) || trialDays <= 0) {
+        return res.status(400).json({ error: 'trialDays must be a positive integer or empty' })
+      }
+      updates.trial_days = trialDays
+    }
+  }
+
+  if (req.body.status !== undefined) {
+    if (!['active', 'revoked'].includes(req.body.status)) {
+      return res.status(400).json({ error: 'status must be active or revoked' })
+    }
+    updates.status = req.body.status
+    updates.revoked_at = req.body.status === 'revoked' ? new Date().toISOString() : null
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ error: 'no editable fields provided' })
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('project_accesses')
+    .update(updates)
+    .eq('id', accessId)
+    .select('*')
+    .single()
+
+  if (handleSupabaseError(error, res)) return
+  return res.json({ access: sanitizeAccessRecord(data) })
+}
+
 export async function regenerateProjectPassword(req, res) {
   const { accessId } = req.params
 
