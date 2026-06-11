@@ -1,5 +1,9 @@
 -- PREPARADO PERO SIN EJECUTAR: no aplicar en Supabase sin autorización de Loren.
-CREATE TABLE IF NOT EXISTS restriction_geometries (
+-- Nota: los 381 registros actuales de restricciones viven en el backend FastAPI
+-- (JSON procesado + SQLite local), no en una tabla public.restrictions de Supabase.
+-- Por eso restriction_id queda como TEXT indexado, sin FOREIGN KEY, para evitar
+-- fallo en el SQL editor hasta que Loren autorice migrar también restrictions.
+CREATE TABLE IF NOT EXISTS public.restriction_geometries (
   id TEXT PRIMARY KEY,
   restriction_id TEXT NOT NULL,
   source_scope TEXT NOT NULL,
@@ -13,11 +17,17 @@ CREATE TABLE IF NOT EXISTS restriction_geometries (
   confidence TEXT NOT NULL CHECK (confidence IN ('alta','media','baja')),
   source_reference TEXT,
   reviewed_by TEXT,
-  reviewed_at TEXT,
-  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (restriction_id) REFERENCES restrictions(id)
+  reviewed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS idx_restriction_geometries_restriction_id ON restriction_geometries(restriction_id);
-CREATE INDEX IF NOT EXISTS idx_restriction_geometries_confidence ON restriction_geometries(confidence);
-CREATE INDEX IF NOT EXISTS idx_restriction_geometries_road ON restriction_geometries(road_normalized);
+CREATE INDEX IF NOT EXISTS idx_restriction_geometries_restriction_id ON public.restriction_geometries(restriction_id);
+CREATE INDEX IF NOT EXISTS idx_restriction_geometries_confidence ON public.restriction_geometries(confidence);
+CREATE INDEX IF NOT EXISTS idx_restriction_geometries_road ON public.restriction_geometries(road_normalized);
+
+ALTER TABLE public.restriction_geometries ENABLE ROW LEVEL SECURITY;
+
+-- Sin políticas para anon/authenticated por ahora: deniega todo por defecto.
+-- El backend de panel usa SUPABASE_SERVICE_ROLE_KEY mediante supabaseAdmin,
+-- que bypasses RLS; cuando se exponga lectura pública/autenticada se añadirá
+-- una política explícita y revisada.
