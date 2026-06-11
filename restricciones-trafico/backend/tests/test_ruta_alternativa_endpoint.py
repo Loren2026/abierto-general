@@ -72,6 +72,20 @@ class RutaAlternativaEndpointTests(unittest.TestCase):
         self.assertEqual(fake_client.calls[0]["vehicle"].length_m, 17)
         self.assertEqual(fake_client.calls[0]["vehicle"].height_m, 4)
 
+    def test_endpoint_returns_400_for_ambiguous_geocoding(self):
+        req = RutaAlternativaRequest(
+            origen="Asturias",
+            destino="aranjuez",
+            fecha_salida="2026-06-15",
+            hora_salida="08:30",
+        )
+        with patch("app.main.OpenRouteServiceClient", return_value=FakeOrsClient()), patch("app.alternative_routing.geocode_es", side_effect=ValueError("Geocodificación ambigua para 'aranjuez'. Añade provincia o localidad, por ejemplo 'Aranjuez, Madrid'.")):
+            from fastapi import HTTPException
+            with self.assertRaises(HTTPException) as ctx:
+                post_ruta_alternativa(req)
+        self.assertEqual(ctx.exception.status_code, 400)
+        self.assertIn("Añade provincia", ctx.exception.detail)
+
 
 if __name__ == "__main__":
     unittest.main()

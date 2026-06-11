@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, Field, field_validator
 
+from .adr_calendar import adr_calendar_warnings
 from .geocoding import geocode_es
 
 FIXED_SPEED_KMH = 78
@@ -237,7 +238,7 @@ def build_ruta_alternativa_response(req: RutaAlternativaRequest, ors_data: dict[
 
     warnings = []
     if req.cargo_type == CargoType.adr:
-        warnings.append("ADR/RIMP 2026 en modo informativo: no bloquea rutas todavía.")
+        warnings.extend(adr_calendar_warnings(req.fecha_salida, req.hora_salida, original.get("eta_minutes")))
     if route_has_disallowed_local_roads(selected.get("categories", {})):
         warnings.append("No se encontró alternativa sin comarcales/locales; revisar manualmente.")
 
