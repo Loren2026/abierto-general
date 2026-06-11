@@ -298,8 +298,13 @@ form.addEventListener('submit', async (event) => {
         body: JSON.stringify(payload),
       })
       data = await altResponse.json().catch(() => ({}))
-      if (!altResponse.ok) throw new Error(data.detail || data.error || `Error HTTP ${altResponse.status}`)
+      if (!altResponse.ok) {
+        const message = data.detail || data.error || `Error HTTP ${altResponse.status}`
+        if (altResponse.status === 400) throw Object.assign(new Error(message), { userFixable: true })
+        throw new Error(message)
+      }
     } catch (altError) {
+      if (altError.userFixable) throw altError
       fallbackWarning = `Ruta alternativa no disponible (${altError.message}); usando análisis clásico.`
       const response = await fetch('/api/ruta/analizar', {
         method: 'POST',

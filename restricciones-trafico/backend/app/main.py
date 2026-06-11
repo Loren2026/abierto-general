@@ -1,6 +1,6 @@
 import sqlite3
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from .alternative_routing import RutaAlternativaRequest, calculate_alternative_route
@@ -40,7 +40,10 @@ def post_ruta_analizar(req: RutaAnalizarRequest):
 
 @app.post("/api/ruta/alternativa")
 def post_ruta_alternativa(req: RutaAlternativaRequest):
-    return calculate_alternative_route(req, OpenRouteServiceClient())
+    try:
+        return calculate_alternative_route(req, OpenRouteServiceClient())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 if FRONTEND.exists():
     app.mount("/", StaticFiles(directory=FRONTEND, html=True), name="frontend")
