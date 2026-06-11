@@ -81,3 +81,19 @@ button:disabled { opacity: .65; cursor: wait; }
   overflow: hidden;
   box-shadow: 0 12px 28px rgba(15, 23, 42, .35);
 }
+
+.leaflet-top.leaflet-right { top: 12px; right: 12px; }
+.leaflet-control-zoom a,
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+  min-width: 48px !important;
+  min-height: 48px !important;
+  width: 48px !important;
+  height: 48px !important;
+  line-height: 48px !important;
+  background: #0f3b5f !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255,255,255,.45) !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,.45);
+}
+.leaflet-control-zoom a:hover { background: #14532d !important; color: #fff !important; }
