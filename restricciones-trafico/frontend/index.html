@@ -41,11 +41,23 @@
           <label>Fecha salida
             <input id="fecha_salida" name="fecha_salida" type="date" required />
           </label>
+          <label>Hora salida manual
+            <input id="hora_salida" name="hora_salida" type="time" required value="08:00" />
+          </label>
+        </div>
+        <div class="grid-2">
           <label>Fecha llegada
             <input id="fecha_llegada" name="fecha_llegada" type="date" required />
           </label>
+          <label>Tipo de mercancía
+            <select id="cargo_type" name="cargo_type">
+              <option value="general">General</option>
+              <option value="adr">ADR · RIMP 2026 en preparación</option>
+            </select>
+          </label>
         </div>
-        <button id="submit-button" type="submit">Analizar ruta</button>
+        <p id="adr-warning" class="inline-warning" hidden>ADR/RIMP 2026 está en preparación: informativo, no bloquea rutas todavía.</p>
+        <button id="submit-button" class="sticky-cta" type="submit">Analizar ruta</button>
       </form>
 
       <section id="status" class="status" hidden></section>
@@ -59,7 +71,27 @@
           <p id="confidence-warning"></p>
         </div>
 
-        <div id="map" class="map" aria-label="Mapa de ruta"></div>
+        <section class="map-shell">
+          <div class="map-toolbar">
+            <div class="map-legend" aria-label="Leyenda del mapa">
+              <span><i class="legend-line original"></i> Original</span>
+              <span><i class="legend-line alternative"></i> Alternativa</span>
+              <span><i class="legend-line restriction-high"></i> Restricción</span>
+              <span><i class="legend-line restriction-low"></i> Baja confianza</span>
+            </div>
+            <button id="center-map" class="secondary-button" type="button">Centrar ruta</button>
+          </div>
+          <div id="map" class="map" aria-label="Mapa de ruta"></div>
+          <article id="map-detail" class="map-detail" hidden></article>
+        </section>
+
+        <section class="card route-summary-card">
+          <h2>Resumen de ruta</h2>
+          <div id="route-summary" class="route-summary">
+            <p class="empty">Calcula una ruta para ver km, ETA y alternativa.</p>
+          </div>
+          <p class="eta-warning">ETA calculada con velocidad media fija de 78 km/h. No usa tráfico real.</p>
+        </section>
 
         <section class="card">
           <h2>Restricciones encontradas</h2>

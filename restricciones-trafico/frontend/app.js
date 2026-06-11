@@ -17,9 +17,17 @@ const confidenceText = document.querySelector('#confidence-text')
 const confidenceWarning = document.querySelector('#confidence-warning')
 const restrictionsList = document.querySelector('#restrictions-list')
 const roadsList = document.querySelector('#roads-list')
+const routeSummary = document.querySelector('#route-summary')
+const centerMapButton = document.querySelector('#center-map')
+const mapDetail = document.querySelector('#map-detail')
+const cargoType = document.querySelector('#cargo_type')
+const adrWarning = document.querySelector('#adr-warning')
 let map
 let routeLayer
+let alternativeLayer
 let restrictionLayer
+let lowConfidenceLayer
+let lastBounds
 let resizeObserver
 
 function today() { return new Date().toISOString().slice(0, 10) }
@@ -106,7 +114,6 @@ function ensureMap() {
   if (map) return map
   const container = document.querySelector('#map')
   container.style.width = '100%'
-  container.style.height = '480px'
   map = L.map(container, { scrollWheelZoom: false }).setView([40.4, -3.7], 6)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
@@ -141,11 +148,24 @@ function restrictionLatLngs(item, routeLatLngs) {
   return routeLatLngs.slice(from, to)
 }
 
+function showMapDetail(html) {
+  mapDetail.innerHTML = html
+  mapDetail.hidden = false
+}
+
+function bindDetail(layer, html) {
+  layer.on('click', () => showMapDetail(html))
+  return layer.bindPopup(html)
+}
+
 function drawMap(data) {
   const m = ensureMap()
   if (routeLayer) routeLayer.remove()
+  if (alternativeLayer) alternativeLayer.remove()
   if (restrictionLayer) restrictionLayer.remove()
-  const coords = data.geometry?.coordinates || []
+  if (lowConfidenceLayer) lowConfidenceLayer.remove()
+  mapDetail.hidden = true
+  const coords = data.geometry?.coordinates || data.original_route?.geometry?.coordinates || []
   let routeBounds
   if (coords.length) {
     const latlngs = coords.map(([lon, lat]) => [lat, lon])
@@ -153,23 +173,46 @@ function drawMap(data) {
     routeBounds = routeLayer.getBounds()
     m.fitBounds(routeBounds, { padding: [28, 28], maxZoom: 11 })
   }
+  const altCoords = data.alternative_route?.geometry?.coordinates || []
+  if (altCoords.length) {
+    const altLatLngs = altCoords.map(([lon, lat]) => [lat, lon])
+    alternativeLayer = L.polyline(altLatLngs, { color: '#22c55e', weight: 6, opacity: .95, dashArray: '10 8' }).addTo(m)
+    routeBounds = routeBounds ? routeBounds.extend(alternativeLayer.getBounds()) : alternativeLayer.getBounds()
+  }
   restrictionLayer = L.layerGroup().addTo(m)
-  for (const item of data.restricciones || []) {
+  lowConfidenceLayer = L.layerGroup().addTo(m)
+  for (const item of data.restricciones || data.crossed_restrictions || []) {
     if (!coords.length) continue
     const latlngs = coords.map(([lon, lat]) => [lat, lon])
     const segment = restrictionLatLngs(item, latlngs)
     if (segment.length > 1) {
-      L.polyline(segment, { color: '#ef4444', weight: 9, opacity: .95 }).bindPopup(`<strong>${item.via || 'Restricción'}</strong><br>${item.source_scope || ''}<br>${item.id}`).addTo(restrictionLayer)
+      bindDetail(L.polyline(segment, { color: item.confidence === 'baja' ? '#f59e0b' : '#ef4444', weight: 9, opacity: .95 }), `<strong>${item.via || 'Restricción'}</strong><br>${item.source_scope || ''}<br>${item.id}`).addTo(item.confidence === 'baja' ? lowConfidenceLayer : restrictionLayer)
     } else {
       const idx = Math.floor(coords.length / 2)
       const [lon, lat] = coords[idx]
-      L.circleMarker([lat, lon], { radius: 8, color: '#ef4444', fillColor: '#ef4444', fillOpacity: .85 })
-        .bindPopup(`<strong>${item.via || 'Restricción'}</strong><br>${item.source_scope || ''}<br>${item.id}`)
-        .addTo(restrictionLayer)
+      bindDetail(L.circleMarker([lat, lon], { radius: 8, color: item.confidence === 'baja' ? '#f59e0b' : '#ef4444', fillColor: item.confidence === 'baja' ? '#f59e0b' : '#ef4444', fillOpacity: .85 }), `<strong>${item.via || 'Restricción'}</strong><br>${item.source_scope || ''}<br>${item.id}`)
+        .addTo(item.confidence === 'baja' ? lowConfidenceLayer : restrictionLayer)
     }
   }
+  lastBounds = routeBounds
   refreshMapSize(routeBounds)
 }
+
+function renderRouteSummary(data) {
+  const original = data.original_route
+  const alternative = data.alternative_route
+  if (!original && !data.summary) { routeSummary.innerHTML = '<p class="empty">Sin resumen de ruta.</p>'; return }
+  const cards = []
+  if (original) {
+    cards.push(`<div class="metric"><span>Original</span><strong>${original.distance_km} km</strong><small>ETA ${original.eta_at || '—'} · ${original.eta_minutes || '—'} min</small></div>`)
+  }
+  if (alternative) {
+    cards.push(`<div class="metric"><span>Alternativa</span><strong>${alternative.distance_km} km</strong><small>ETA ${alternative.eta_at || '—'} · ${alternative.eta_minutes || '—'} min</small></div>`)
+  }
+  if (!cards.length) cards.push(`<div class="metric"><span>Vías</span><strong>${data.summary?.total_vias ?? '—'}</strong><small>Restricciones: ${data.summary?.total_restricciones ?? '—'}</small></div>`)
+  routeSummary.innerHTML = cards.join('')
+}
+
 
 function renderConfidence(data) {
   const confidence = data.route_confidence || 'baja'
@@ -236,6 +279,9 @@ function renderRestrictions(items = []) {
   }
 }
 
+cargoType.addEventListener('change', () => { adrWarning.hidden = cargoType.value !== 'adr' })
+centerMapButton.addEventListener('click', () => refreshMapSize(lastBounds))
+
 form.addEventListener('submit', async (event) => {
   event.preventDefault()
   const payload = Object.fromEntries(new FormData(form).entries())
@@ -253,7 +299,8 @@ form.addEventListener('submit', async (event) => {
     results.hidden = false
     renderConfidence(data)
     renderRoads(data.vias_detectadas)
-    renderRestrictions(data.restricciones)
+    renderRestrictions(data.restricciones || data.crossed_restrictions)
+    renderRouteSummary(data)
     drawMap(data)
     refreshMapSize()
     setStatus(data.warnings?.length ? `Avisos: ${data.warnings.join(' · ')}` : '')
