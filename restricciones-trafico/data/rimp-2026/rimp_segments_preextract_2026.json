@@ -6450,8 +6450,8 @@
       "source_page": null,
       "source_row_raw": "– Autopista AP-2.",
       "community": "Cataluña",
-      "road": null,
-      "road_normalized": null,
+      "road": "AP-2",
+      "road_normalized": "AP-2",
       "itinerary": "Autopista AP-2.",
       "province": null,
       "segment_type": "red_obligatoria",
@@ -6467,8 +6467,8 @@
       "source_page": null,
       "source_row_raw": "– Autopista AP-7/E-15.",
       "community": "Cataluña",
-      "road": null,
-      "road_normalized": null,
+      "road": "AP-7/E-15",
+      "road_normalized": "AP-7",
       "itinerary": "Autopista AP-7/E-15.",
       "province": null,
       "segment_type": "red_obligatoria",
@@ -6484,8 +6484,8 @@
       "source_page": null,
       "source_row_raw": "– Autovía A-27, desde el PK 0+000 en Tarragona hasta el PK 9+000 en El Morell.",
       "community": "Cataluña",
-      "road": null,
-      "road_normalized": null,
+      "road": "A-27",
+      "road_normalized": "A-27",
       "itinerary": "Autovía A-27, desde el PK 0+000 en Tarragona hasta el PK 9+000 en El Morell.",
       "province": null,
       "segment_type": "red_obligatoria",
@@ -6501,8 +6501,8 @@
       "source_page": null,
       "source_row_raw": "– Autopista C-16/E-09, desde el PK 13+500, enlace con la AP-7/E-15 en Sant Cugat del Vallès, hasta el PK 96+000 en Berga.",
       "community": "Cataluña",
-      "road": null,
-      "road_normalized": null,
+      "road": "C-16/E-09",
+      "road_normalized": "C-16",
       "itinerary": "Autopista C-16/E-09, desde el PK 13+500, enlace con la AP-7/E-15 en Sant Cugat del Vallès, hasta el PK 96+000 en Berga.",
       "province": null,
       "segment_type": "red_obligatoria",
@@ -6518,8 +6518,8 @@
       "source_page": null,
       "source_row_raw": "– Autovía A-22, desde el PK 0+000, enlace con la A-2, hasta el PK 19+000 en Almacelles.",
       "community": "Cataluña",
-      "road": null,
-      "road_normalized": null,
+      "road": "A-22",
+      "road_normalized": "A-22",
       "itinerary": "Autovía A-22, desde el PK 0+000, enlace con la A-2, hasta el PK 19+000 en Almacelles.",
       "province": null,
       "segment_type": "red_obligatoria",
@@ -6535,8 +6535,8 @@
       "source_page": null,
       "source_row_raw": "– Carretera C-44, desde el PK 1+000, enlace 38 de la AP-7/E-15 en L’Hospitalet de l’Infant, hasta el PK 26+500 en Móra la Nova.",
       "community": "Cataluña",
-      "road": null,
-      "road_normalized": null,
+      "road": "C-44",
+      "road_normalized": "C-44",
       "itinerary": "Carretera C-44, desde el PK 1+000, enlace 38 de la AP-7/E-15 en L’Hospitalet de l’Infant, hasta el PK 26+500 en Móra la Nova.",
       "province": null,
       "segment_type": "red_obligatoria",
@@ -6552,8 +6552,8 @@
       "source_page": null,
       "source_row_raw": "– Carretera C-12, desde el PK 60+600 en Móra la Nova hasta el PK 63+600 en Móra la Nova, enlace con la N-420.",
       "community": "Cataluña",
-      "road": null,
-      "road_normalized": null,
+      "road": "C-12",
+      "road_normalized": "C-12",
       "itinerary": "Carretera C-12, desde el PK 60+600 en Móra la Nova hasta el PK 63+600 en Móra la Nova, enlace con la N-420.",
       "province": null,
       "segment_type": "red_obligatoria",
@@ -6569,8 +6569,8 @@
       "source_page": null,
       "source_row_raw": "– Autovía C-17, entre el PK 62+000 en Gurb, hasta el PK 92+000 en Ripoll.",
       "community": "Cataluña",
-      "road": null,
-      "road_normalized": null,
+      "road": "C-17",
+      "road_normalized": "C-17",
       "itinerary": "Autovía C-17, entre el PK 62+000 en Gurb, hasta el PK 92+000 en Ripoll.",
       "province": null,
       "segment_type": "red_obligatoria",
@@ -6586,8 +6586,8 @@
       "source_page": null,
       "source_row_raw": "– Autovía C-25, entre el PK 82+000, enlace con la A-2/E-90 en Cervera, hasta el PK 236+000, enlace con la A-2/E-90 en Caldes de Malavella.",
       "community": "Cataluña",
-      "road": null,
-      "road_normalized": null,
+      "road": "C-25",
+      "road_normalized": "C-25",
       "itinerary": "Autovía C-25, entre el PK 82+000, enlace con la A-2/E-90 en Cervera, hasta el PK 236+000, enlace con la A-2/E-90 en Caldes de Malavella.",
       "province": null,
       "segment_type": "red_obligatoria",
@@ -6603,8 +6603,8 @@
       "source_page": null,
       "source_row_raw": "– Autovía A-2/E-90, entre el PK 702+500, enlace con la C-25/E-90 en Caldes de Malavella, hasta el PK 705+000, enlace con la AP-7/E-15 en Riudellots de la Selva.",
       "community": "Cataluña",
-      "road": null,
-      "road_normalized": null,
+      "road": "A-2/E-90",
+      "road_normalized": "A-2",
       "itinerary": "Autovía A-2/E-90, entre el PK 702+500, enlace con la C-25/E-90 en Caldes de Malavella, hasta el PK 705+000, enlace con la AP-7/E-15 en Riudellots de la Selva.",
       "province": null,
       "segment_type": "red_obligatoria",
@@ -6620,8 +6620,8 @@
       "source_page": null,
       "source_row_raw": "– Autovía A-2, entre el PK 519+000, enlace con la C-25 en Cervera, hasta el PK 443+00 en Soses.",
       "community": "Cataluña",
-      "road": null,
-      "road_normalized": null,
+      "road": "A-2",
+      "road_normalized": "A-2",
       "itinerary": "Autovía A-2, entre el PK 519+000, enlace con la C-25 en Cervera, hasta el PK 443+00 en Soses.",
       "province": null,
       "segment_type": "red_obligatoria",
@@ -6637,8 +6637,8 @@
       "source_page": null,
       "source_row_raw": "– Carretera C-26, entre el PK 1+000, enlace con la AP-7/E-15 en Borrassà, hasta el PK 8+000, enlace con la N-260 en Ordis.",
       "community": "Cataluña",
-      "road": null,
-      "road_normalized": null,
+      "road": "C-26",
+      "road_normalized": "C-26",
       "itinerary": "Carretera C-26, entre el PK 1+000, enlace con la AP-7/E-15 en Borrassà, hasta el PK 8+000, enlace con la N-260 en Ordis.",
       "province": null,
       "segment_type": "red_obligatoria",
@@ -6654,8 +6654,8 @@
       "source_page": null,
       "source_row_raw": "– Carretera N-260, entre el PK 45+500, enlace con la C-26 en Ordis, hasta el PK 62+000 en Besalú.",
       "community": "Cataluña",
-      "road": null,
-      "road_normalized": null,
+      "road": "N-260",
+      "road_normalized": "N-260",
       "itinerary": "Carretera N-260, entre el PK 45+500, enlace con la C-26 en Ordis, hasta el PK 62+000 en Besalú.",
       "province": null,
       "segment_type": "red_obligatoria",
@@ -6671,8 +6671,8 @@
       "source_page": null,
       "source_row_raw": "– Autovía A-26, entre el PK 62+000 en Besalú, hasta el PK 84+000 en Olot.",
       "community": "Cataluña",
-      "road": null,
-      "road_normalized": null,
+      "road": "A-26",
+      "road_normalized": "A-26",
       "itinerary": "Autovía A-26, entre el PK 62+000 en Besalú, hasta el PK 84+000 en Olot.",
       "province": null,
       "segment_type": "red_obligatoria",
@@ -6688,8 +6688,8 @@
       "source_page": null,
       "source_row_raw": "– Autovía A-14, entre el PK 1+000 en Lleida hasta el PK 16+000 en Almenar.",
       "community": "Cataluña",
-      "road": null,
-      "road_normalized": null,
+      "road": "A-14",
+      "road_normalized": "A-14",
       "itinerary": "Autovía A-14, entre el PK 1+000 en Lleida hasta el PK 16+000 en Almenar.",
       "province": null,
       "segment_type": "red_obligatoria",
@@ -6712,7 +6712,11 @@
       "segment_type": "origen_destino",
       "confidence": "pendiente",
       "method": "html_anexo_d_preextract_pending_patron_oro",
-      "active_year": 2026
+      "active_year": 2026,
+      "roads": [
+        "A-2",
+        "N-IIz"
+      ]
     },
     {
       "id": "rimp-2026-cataluna-od-0002",
@@ -6729,7 +6733,14 @@
       "segment_type": "origen_destino",
       "confidence": "pendiente",
       "method": "html_anexo_d_preextract_pending_patron_oro",
-      "active_year": 2026
+      "active_year": 2026,
+      "roads": [
+        "C-14",
+        "C-26",
+        "C-13",
+        "N-145",
+        "N-260"
+      ]
     },
     {
       "id": "rimp-2026-cataluna-od-0003",
@@ -6746,7 +6757,11 @@
       "segment_type": "origen_destino",
       "confidence": "pendiente",
       "method": "html_anexo_d_preextract_pending_patron_oro",
-      "active_year": 2026
+      "active_year": 2026,
+      "roads": [
+        "N-260",
+        "C-153"
+      ]
     },
     {
       "id": "rimp-2026-cataluna-od-0004",
@@ -6763,7 +6778,10 @@
       "segment_type": "origen_destino",
       "confidence": "pendiente",
       "method": "html_anexo_d_preextract_pending_patron_oro",
-      "active_year": 2026
+      "active_year": 2026,
+      "roads": [
+        "C-26"
+      ]
     },
     {
       "id": "rimp-2026-cataluna-od-0005",
@@ -6780,7 +6798,10 @@
       "segment_type": "origen_destino",
       "confidence": "pendiente",
       "method": "html_anexo_d_preextract_pending_patron_oro",
-      "active_year": 2026
+      "active_year": 2026,
+      "roads": [
+        "C-15"
+      ]
     },
     {
       "id": "rimp-2026-cataluna-od-0006",
@@ -6797,7 +6818,11 @@
       "segment_type": "origen_destino",
       "confidence": "pendiente",
       "method": "html_anexo_d_preextract_pending_patron_oro",
-      "active_year": 2026
+      "active_year": 2026,
+      "roads": [
+        "AP-7",
+        "C-17"
+      ]
     },
     {
       "id": "rimp-2026-cataluna-od-0007",
@@ -6814,7 +6839,11 @@
       "segment_type": "origen_destino",
       "confidence": "pendiente",
       "method": "html_anexo_d_preextract_pending_patron_oro",
-      "active_year": 2026
+      "active_year": 2026,
+      "roads": [
+        "A-14",
+        "N-230"
+      ]
     },
     {
       "id": "rimp-2026-cataluna-od-0008",
@@ -6831,7 +6860,10 @@
       "segment_type": "origen_destino",
       "confidence": "pendiente",
       "method": "html_anexo_d_preextract_pending_patron_oro",
-      "active_year": 2026
+      "active_year": 2026,
+      "roads": [
+        "C-66"
+      ]
     },
     {
       "id": "rimp-2026-pais-vasco-0001",
