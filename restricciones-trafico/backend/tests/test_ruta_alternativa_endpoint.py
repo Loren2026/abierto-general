@@ -55,9 +55,12 @@ class RutaAlternativaEndpointTests(unittest.TestCase):
             hora_salida="08:30",
             vehicle={"mass_kg": 7500, "length_m": 17, "height_m": 4},
         )
-        with patch("app.main.OpenRouteServiceClient", return_value=fake_client):
-            result = post_ruta_alternativa(req).model_dump()
+        with patch("app.main.OpenRouteServiceClient", return_value=fake_client), patch("app.alternative_routing.geocode_es") as geocode:
+            geocode.side_effect = [type("P", (), {"lon": -3.7, "lat": 40.4, "label": "Madrid"})(), type("P", (), {"lon": -0.3, "lat": 39.4, "label": "Valencia"})()]
+            result = post_ruta_alternativa(req)
         self.assertEqual(result["provider"], "openrouteservice")
+        self.assertEqual(result["vias_detectadas"], ["A-3"])
+        self.assertEqual(result["route_confidence"], "alta")
         self.assertEqual(result["fixed_speed_kmh"], 78)
         self.assertEqual(result["original_route"]["distance_km"], 156)
         self.assertEqual(result["original_route"]["eta_minutes"], 120)

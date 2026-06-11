@@ -7,6 +7,8 @@ from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, Field, field_validator
 
+from .geocoding import geocode_es
+
 FIXED_SPEED_KMH = 78
 DEFAULT_TIMEZONE = "Europe/Madrid"
 
@@ -60,6 +62,8 @@ class RimpStatus(BaseModel):
 
 class RutaAlternativaResponse(BaseModel):
     provider: str
+    origen: dict[str, Any] | None = None
+    destino: dict[str, Any] | None = None
     fixed_speed_kmh: int = FIXED_SPEED_KMH
     original_route: RouteMetrics
     alternative_route: AlternativeRoute | None = None
@@ -193,6 +197,12 @@ def route_metrics_from_ors_feature(feature: dict[str, Any], req: RutaAlternativa
         km_comarcal_local=categories.get("comarcal_local", 0),
     )
     eta = calculate_eta(distance_km, req.fecha_salida, req.hora_salida)
+    roads = []
+    for segment in feature.get("properties", {}).get("segments", []) or []:
+        for step in segment.get("steps", []) or []:
+            name = step.get("name")
+            if name and name not in roads:
+                roads.append(name)
     return {
         "geometry": feature.get("geometry"),
         "distance_km": round(distance_km, 3),
@@ -200,6 +210,7 @@ def route_metrics_from_ors_feature(feature: dict[str, Any], req: RutaAlternativa
         "eta_at": eta["eta_at"],
         "road_category_score": score,
         "categories": categories,
+        "roads": roads,
     }
 
 
@@ -230,17 +241,30 @@ def build_ruta_alternativa_response(req: RutaAlternativaRequest, ors_data: dict[
     if route_has_disallowed_local_roads(selected.get("categories", {})):
         warnings.append("No se encontró alternativa sin comarcales/locales; revisar manualmente.")
 
-    return RutaAlternativaResponse(
+    response = RutaAlternativaResponse(
         provider="openrouteservice",
         original_route=original_route,
         alternative_route=alternative_route,
         warnings=warnings,
     )
+    # Compatibilidad UI con el flujo clásico: evita lista de vías vacía/confianza baja artificial.
+    response_dict = response.model_dump()
+    response_dict["vias_detectadas"] = original.get("roads", [])
+    response_dict["route_confidence"] = "alta" if original.get("roads") else "media"
+    return response_dict
 
 
-def calculate_alternative_route(req: RutaAlternativaRequest, ors_client: OrsClientProtocol, coordinates: list[list[float]] | None = None) -> RutaAlternativaResponse:
-    # Fase 2: coordinates permite tests/mock sin activar geocoding ni consumir proveedores externos.
-    # La geocodificación real queda para una fase posterior del prototipo.
-    route_coordinates = coordinates or [[-3.7038, 40.4168], [-0.3763, 39.4699]]
+def calculate_alternative_route(req: RutaAlternativaRequest, ors_client: OrsClientProtocol, coordinates: list[list[float]] | None = None) -> dict[str, Any]:
+    if coordinates is None:
+        origin = geocode_es(req.origen)
+        destination = geocode_es(req.destino)
+        route_coordinates = [[origin.lon, origin.lat], [destination.lon, destination.lat]]
+    else:
+        origin = destination = None
+        route_coordinates = coordinates
     ors_data = ors_client.directions_hgv(route_coordinates, req.vehicle)
-    return build_ruta_alternativa_response(req, ors_data)
+    response = build_ruta_alternativa_response(req, ors_data)
+    if origin and destination:
+        response["origen"] = {"label": origin.label, "lon": origin.lon, "lat": origin.lat}
+        response["destino"] = {"label": destination.label, "lon": destination.lon, "lat": destination.lat}
+    return response
