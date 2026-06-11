@@ -287,15 +287,28 @@ form.addEventListener('submit', async (event) => {
   const payload = Object.fromEntries(new FormData(form).entries())
   button.disabled = true
   results.hidden = true
-  setStatus('Calculando ruta y consultando restricciones. Puede tardar por OSRM/Overpass…')
+  setStatus('Calculando ruta alternativa ORS. Si falla, se usará el análisis clásico OSRM/Overpass…')
   try {
-    const response = await fetch('/api/ruta/analizar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-    const data = await response.json().catch(() => ({}))
-    if (!response.ok) throw new Error(data.detail || data.error || `Error HTTP ${response.status}`)
+    let data
+    let fallbackWarning = ''
+    try {
+      const altResponse = await fetch('/api/ruta/alternativa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      data = await altResponse.json().catch(() => ({}))
+      if (!altResponse.ok) throw new Error(data.detail || data.error || `Error HTTP ${altResponse.status}`)
+    } catch (altError) {
+      fallbackWarning = `Ruta alternativa no disponible (${altError.message}); usando análisis clásico.`
+      const response = await fetch('/api/ruta/analizar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.detail || data.error || `Error HTTP ${response.status}`)
+    }
     results.hidden = false
     renderConfidence(data)
     renderRoads(data.vias_detectadas)
@@ -303,7 +316,8 @@ form.addEventListener('submit', async (event) => {
     renderRouteSummary(data)
     drawMap(data)
     refreshMapSize()
-    setStatus(data.warnings?.length ? `Avisos: ${data.warnings.join(' · ')}` : '')
+    const warnings = [...(fallbackWarning ? [fallbackWarning] : []), ...(data.warnings || [])]
+    setStatus(warnings.length ? `Avisos: ${warnings.join(' · ')}` : '')
   } catch (error) {
     setStatus(`No se pudo analizar la ruta: ${error.message}`, 'error')
   } finally {
