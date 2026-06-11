@@ -114,9 +114,11 @@ function ensureMap() {
   if (map) return map
   const container = document.querySelector('#map')
   container.style.width = '100%'
-  map = L.map(container, { scrollWheelZoom: false }).setView([40.4, -3.7], 6)
+  map = L.map(container, { scrollWheelZoom: false, zoomControl: false, maxZoom: 19 }).setView([40.4, -3.7], 6)
+  L.control.zoom({ position: 'topright' }).addTo(map)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18,
+    maxZoom: 19,
+    maxNativeZoom: 19,
     attribution: '&copy; OpenStreetMap contributors',
   }).addTo(map)
   resizeObserver = new ResizeObserver(() => refreshMapSize())
@@ -124,11 +126,11 @@ function ensureMap() {
   return map
 }
 
-function refreshMapSize(bounds) {
+function refreshMapSize(bounds, options = {}) {
   if (!map) return
   const apply = () => {
     map.invalidateSize()
-    if (bounds?.isValid()) map.fitBounds(bounds, { padding: [28, 28], maxZoom: 11 })
+    if (bounds?.isValid() && options.fit !== false) map.fitBounds(bounds, { padding: [28, 28], maxZoom: options.maxZoom ?? 11 })
   }
   requestAnimationFrame(() => {
     apply()
@@ -169,14 +171,13 @@ function drawMap(data) {
   let routeBounds
   if (coords.length) {
     const latlngs = coords.map(([lon, lat]) => [lat, lon])
-    routeLayer = L.polyline(latlngs, { color: '#2563eb', weight: 6, opacity: .95 }).addTo(m)
+    routeLayer = L.polyline(latlngs, { color: '#2563eb', weight: 6, opacity: .95, smoothFactor: 0, noClip: true, lineJoin: 'round', lineCap: 'round' }).addTo(m)
     routeBounds = routeLayer.getBounds()
-    m.fitBounds(routeBounds, { padding: [28, 28], maxZoom: 11 })
   }
   const altCoords = data.alternative_route?.geometry?.coordinates || []
   if (altCoords.length) {
     const altLatLngs = altCoords.map(([lon, lat]) => [lat, lon])
-    alternativeLayer = L.polyline(altLatLngs, { color: '#22c55e', weight: 6, opacity: .95, dashArray: '10 8' }).addTo(m)
+    alternativeLayer = L.polyline(altLatLngs, { color: '#22c55e', weight: 6, opacity: .95, dashArray: '10 8', smoothFactor: 0, noClip: true, lineJoin: 'round', lineCap: 'round' }).addTo(m)
     routeBounds = routeBounds ? routeBounds.extend(alternativeLayer.getBounds()) : alternativeLayer.getBounds()
   }
   restrictionLayer = L.layerGroup().addTo(m)

@@ -64,3 +64,20 @@ button:disabled { opacity: .65; cursor: wait; }
 .metric strong { display: block; color: #f8fafc; font-size: 1.25rem; }
 .map-detail { background: #020617; border: 1px solid #334155; border-radius: 16px; padding: 12px; color: #e2e8f0; }
 @media (max-width: 640px) { .map { height: 62vh; min-height: 360px; } .sticky-cta { position: sticky; bottom: 10px; z-index: 900; } .map-toolbar { align-items: stretch; } .secondary-button { width: 100%; } }
+/* Zoom controls: always visible and touch-friendly for enlaces/rotondas. */
+.leaflet-control-zoom a,
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+  min-width: 40px !important;
+  min-height: 40px !important;
+  width: 40px !important;
+  height: 40px !important;
+  line-height: 40px !important;
+  font-size: 24px !important;
+  font-weight: 900 !important;
+}
+.leaflet-control-zoom {
+  border-radius: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, .35);
+}
