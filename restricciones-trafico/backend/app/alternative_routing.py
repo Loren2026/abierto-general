@@ -63,6 +63,7 @@ class RimpStatus(BaseModel):
 
 class RutaAlternativaResponse(BaseModel):
     provider: str
+    alternative_status: dict[str, Any] | None = None
     origen: dict[str, Any] | None = None
     destino: dict[str, Any] | None = None
     fixed_speed_kmh: int = FIXED_SPEED_KMH
@@ -242,8 +243,13 @@ def build_ruta_alternativa_response(req: RutaAlternativaRequest, ors_data: dict[
     if route_has_disallowed_local_roads(selected.get("categories", {})):
         warnings.append("No se encontró alternativa sin comarcales/locales; revisar manualmente.")
 
+    reason = None
+    if alternative_route is None:
+        reason = "No he encontrado rutas alternativas: ORS solo devolvió una ruta candidata y aún no hay avoid_polygons aplicables a esta consulta."
+        warnings.append(reason)
     response = RutaAlternativaResponse(
         provider="openrouteservice",
+        alternative_status={"found": alternative_route is not None, "reason": reason or alternative_route.reason},
         original_route=original_route,
         alternative_route=alternative_route,
         warnings=warnings,
@@ -251,6 +257,7 @@ def build_ruta_alternativa_response(req: RutaAlternativaRequest, ors_data: dict[
     # Compatibilidad UI con el flujo clásico: evita lista de vías vacía/confianza baja artificial.
     response_dict = response.model_dump()
     response_dict["vias_detectadas"] = original.get("roads", [])
+    response_dict["road_categories"] = original.get("categories", {})
     response_dict["route_confidence"] = "alta" if original.get("roads") else "media"
     return response_dict
 

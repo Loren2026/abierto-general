@@ -104,6 +104,36 @@ accessForm.addEventListener('submit', async (event) => {
 
 hasStoredAccess() ? showApp() : showGate()
 
+
+const WEEKDAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
+function formatDistanceKm(value) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return '— km'
+  return `${Number(value).toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`
+}
+function formatDuration(minutes) {
+  if (!Number.isFinite(Number(minutes))) return '—'
+  const total = Math.round(Number(minutes))
+  const h = Math.floor(total / 60)
+  const m = total % 60
+  return h ? `${h} h ${m} min` : `${m} min`
+}
+function formatArrival(iso) {
+  if (!iso) return 'Llegada: —'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return 'Llegada: —'
+  return `Llegada: ${WEEKDAYS[d.getDay()]} ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} a las ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+function routeMetric(label, route) {
+  return `<div class="metric"><span>${label}</span><strong>${formatDistanceKm(route.distance_km)}</strong><small>${formatDuration(route.eta_minutes)} · ${formatArrival(route.eta_at)}</small></div>`
+}
+function roadType(road = '') {
+  const value = String(road).toUpperCase().trim()
+  if (/^AP-/.test(value)) return 'autopista'
+  if (/^A-/.test(value)) return 'autovía'
+  if (/^N-/.test(value)) return 'nacional'
+  return 'otras'
+}
+
 function setStatus(message, type = 'info') {
   statusBox.hidden = !message
   statusBox.textContent = message || ''
@@ -205,12 +235,13 @@ function renderRouteSummary(data) {
   if (!original && !data.summary && data.distance_km === undefined) { routeSummary.innerHTML = '<p class="empty">Sin resumen de ruta.</p>'; return }
   const cards = []
   if (original) {
-    cards.push(`<div class="metric"><span>Original</span><strong>${original.distance_km} km</strong><small>ETA ${original.eta_at || '—'} · ${original.eta_minutes || '—'} min</small></div>`)
+    cards.push(routeMetric('Original', original))
   }
   if (alternative) {
-    cards.push(`<div class="metric"><span>Alternativa</span><strong>${alternative.distance_km} km</strong><small>ETA ${alternative.eta_at || '—'} · ${alternative.eta_minutes || '—'} min</small></div>`)
+    cards.push(routeMetric('Alternativa', alternative))
   }
-  if (!cards.length && data.distance_km !== undefined) cards.push(`<div class="metric"><span>Ruta clásica</span><strong>${data.distance_km} km</strong><small>ETA ${data.eta_at || '—'} · ${data.eta_minutes || '—'} min</small></div>`)
+  if (!cards.length && data.distance_km !== undefined) cards.push(routeMetric('Ruta clásica', data))
+  if (data.alternative_status && data.alternative_status.found === false) cards.push(`<div class="metric"><span>Alternativas</span><strong>No he encontrado rutas alternativas</strong><small>${data.alternative_status.reason || 'Sin motivo detallado'}</small></div>`)
   if (data.summary) cards.push(`<div class="metric"><span>Vías</span><strong>${data.summary?.total_vias ?? '—'}</strong><small>Restricciones: ${data.summary?.total_restricciones ?? '—'}</small></div>`)
   routeSummary.innerHTML = cards.join('')
 }
@@ -226,16 +257,16 @@ function renderConfidence(data) {
     : 'Detección de vías suficiente. Revisa igualmente el detalle antes de salir.'
 }
 
-function renderRoads(roads = []) {
+function renderRoads(roads = [], data = {}) {
   roadsList.innerHTML = ''
   if (!roads.length) {
-    roadsList.innerHTML = '<p class="empty">No se detectaron vías suficientes. Revisión manual obligatoria.</p>'
+    roadsList.innerHTML = '<p class="empty">No se detectaron vías suficientes. Puede deberse a que el proveedor no devolvió nombres de vía o a fallo de enriquecimiento Overpass.</p>'
     return
   }
   for (const road of roads) {
     const span = document.createElement('span')
     span.className = 'chip'
-    span.textContent = road
+    span.textContent = `${road} · ${roadType(road)}`
     roadsList.appendChild(span)
   }
 }
@@ -256,10 +287,16 @@ function formatPk(pk = {}) {
   return parts.join(' ') || 'PK no detallado'
 }
 
-function renderRestrictions(items = []) {
+function renderRestrictions(items = [], data = {}) {
   restrictionsList.innerHTML = ''
   if (!items.length) {
-    restrictionsList.innerHTML = '<p class="empty">No hay restricciones cruzadas, pero solo es fiable si la confianza de vías es alta.</p>'
+    restrictionsList.innerHTML = '<p class="empty">Ningún tramo restringido cruzado en la fecha/hora indicadas.</p>'
+    if ((data.warnings || []).some((w) => String(w).includes('ADR') || String(w).includes('Anexo'))) {
+      const div = document.createElement('article')
+      div.className = 'restriction-item'
+      div.innerHTML = `<div class="restriction-head"><span class="road">Aviso ADR calendario</span><span class="badge">informativo</span></div><div class="meta">${(data.warnings || []).filter((w) => String(w).includes('ADR') || String(w).includes('Anexo')).join('<br>')}</div><div class="meta">Referencia: BOE-A-2026-1255, anexos ADR.</div>`
+      restrictionsList.appendChild(div)
+    }
     return
   }
   for (const item of items) {
@@ -307,7 +344,7 @@ form.addEventListener('submit', async (event) => {
       }
     } catch (altError) {
       if (altError.userFixable) throw altError
-      fallbackWarning = `Ruta alternativa no disponible (${altError.message}); usando análisis clásico.`
+      fallbackWarning = `No he encontrado rutas alternativas: proveedor de rutas no disponible o error técnico (${altError.message}); usando ruta clásica.`
       const response = await fetch('/api/ruta/analizar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -318,8 +355,8 @@ form.addEventListener('submit', async (event) => {
     }
     results.hidden = false
     renderConfidence(data)
-    renderRoads(data.vias_detectadas)
-    renderRestrictions(data.restricciones || data.crossed_restrictions)
+    renderRoads(data.vias_detectadas, data)
+    renderRestrictions(data.restricciones || data.crossed_restrictions, data)
     renderRouteSummary(data)
     drawMap(data)
     refreshMapSize()
