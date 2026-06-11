@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 from enum import Enum
 from math import ceil
-from typing import Any, Literal
+import re
+from typing import Any, Literal, Protocol
 from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, Field, field_validator
@@ -68,6 +69,10 @@ class RutaAlternativaResponse(BaseModel):
     warnings: list[str] = Field(default_factory=list)
 
 
+class OrsClientProtocol(Protocol):
+    def directions_hgv(self, coordinates: list[list[float]], vehicle: RoutingVehicle, avoid_polygons: dict[str, Any] | None = None) -> dict[str, Any]: ...
+
+
 ROAD_CATEGORY_WEIGHTS = {
     "motorway": 100,
     "autopista": 100,
@@ -114,6 +119,32 @@ def route_has_disallowed_local_roads(route_categories: dict[str, float]) -> bool
     return route_categories.get("comarcal_local", 0) > 0
 
 
+def road_category_from_name(name: str) -> str:
+    value = (name or "").upper().replace(" ", "")
+    if re.search(r"\bAP-?\d+", value):
+        return "autopista"
+    if re.search(r"\bA-?\d+", value):
+        return "autovia"
+    if re.search(r"\bN-?\d+", value):
+        return "nacional"
+    if re.search(r"\b(?:AS|CV|CM|CL|EX|GI|BI|NA|BU|LE|ZA|O|P|VA|VP|M)-?\d+", value):
+        return "comarcal_local"
+    return "resto"
+
+
+def categories_from_ors_feature(feature: dict[str, Any]) -> dict[str, float]:
+    categories = {"autopista": 0.0, "autovia": 0.0, "nacional": 0.0, "resto": 0.0, "comarcal_local": 0.0}
+    for segment in feature.get("properties", {}).get("segments", []) or []:
+        for step in segment.get("steps", []) or []:
+            distance_km = float(step.get("distance") or 0) / 1000
+            category = road_category_from_name(step.get("name") or "")
+            categories[category] += distance_km
+    if not any(categories.values()):
+        distance_km = float(feature.get("properties", {}).get("summary", {}).get("distance") or 0) / 1000
+        categories["resto"] = distance_km
+    return categories
+
+
 def select_best_route(candidates: list[dict[str, Any]]) -> dict[str, Any] | None:
     """Selecciona la ruta con mejor categoría y, dentro de ese criterio, menor ETA/distancia.
 
@@ -149,3 +180,67 @@ def select_best_route(candidates: list[dict[str, Any]]) -> dict[str, Any] | None
         return (-best_category_tier(categories), eta_minutes, candidate.get("distance_km", 0), -score)
 
     return sorted(pool, key=sort_key)[0]
+
+
+def route_metrics_from_ors_feature(feature: dict[str, Any], req: RutaAlternativaRequest) -> dict[str, Any]:
+    distance_km = float(feature.get("properties", {}).get("summary", {}).get("distance") or 0) / 1000
+    categories = categories_from_ors_feature(feature)
+    score = score_road_categories(
+        km_autopista=categories.get("autopista", 0),
+        km_autovia=categories.get("autovia", 0),
+        km_nacional=categories.get("nacional", 0),
+        km_resto=categories.get("resto", 0),
+        km_comarcal_local=categories.get("comarcal_local", 0),
+    )
+    eta = calculate_eta(distance_km, req.fecha_salida, req.hora_salida)
+    return {
+        "geometry": feature.get("geometry"),
+        "distance_km": round(distance_km, 3),
+        "eta_minutes": eta["eta_minutes"],
+        "eta_at": eta["eta_at"],
+        "road_category_score": score,
+        "categories": categories,
+    }
+
+
+def build_ruta_alternativa_response(req: RutaAlternativaRequest, ors_data: dict[str, Any]) -> RutaAlternativaResponse:
+    features = ors_data.get("features") or []
+    if not features:
+        raise ValueError("ORS no devolvió rutas candidatas")
+
+    candidates = []
+    for idx, feature in enumerate(features):
+        metrics = route_metrics_from_ors_feature(feature, req)
+        candidates.append({"id": idx, "feature": feature, **metrics})
+    selected = select_best_route(candidates) or candidates[0]
+    original = candidates[0]
+
+    original_route = RouteMetrics(**{key: original[key] for key in ["geometry", "distance_km", "eta_minutes", "eta_at", "road_category_score"]})
+    alternative_route = None
+    if selected["id"] != original["id"] or len(candidates) > 1:
+        alternative_route = AlternativeRoute(
+            selected=True,
+            reason="Seleccionada por categoría de vía y ETA/distancia a 78 km/h",
+            **{key: selected[key] for key in ["geometry", "distance_km", "eta_minutes", "eta_at", "road_category_score"]},
+        )
+
+    warnings = []
+    if req.cargo_type == CargoType.adr:
+        warnings.append("ADR/RIMP 2026 en modo informativo: no bloquea rutas todavía.")
+    if route_has_disallowed_local_roads(selected.get("categories", {})):
+        warnings.append("No se encontró alternativa sin comarcales/locales; revisar manualmente.")
+
+    return RutaAlternativaResponse(
+        provider="openrouteservice",
+        original_route=original_route,
+        alternative_route=alternative_route,
+        warnings=warnings,
+    )
+
+
+def calculate_alternative_route(req: RutaAlternativaRequest, ors_client: OrsClientProtocol, coordinates: list[list[float]] | None = None) -> RutaAlternativaResponse:
+    # Fase 2: coordinates permite tests/mock sin activar geocoding ni consumir proveedores externos.
+    # La geocodificación real queda para una fase posterior del prototipo.
+    route_coordinates = coordinates or [[-3.7038, 40.4168], [-0.3763, 39.4699]]
+    ors_data = ors_client.directions_hgv(route_coordinates, req.vehicle)
+    return build_ruta_alternativa_response(req, ors_data)
