@@ -202,7 +202,7 @@ function drawMap(data) {
 function renderRouteSummary(data) {
   const original = data.original_route
   const alternative = data.alternative_route
-  if (!original && !data.summary) { routeSummary.innerHTML = '<p class="empty">Sin resumen de ruta.</p>'; return }
+  if (!original && !data.summary && data.distance_km === undefined) { routeSummary.innerHTML = '<p class="empty">Sin resumen de ruta.</p>'; return }
   const cards = []
   if (original) {
     cards.push(`<div class="metric"><span>Original</span><strong>${original.distance_km} km</strong><small>ETA ${original.eta_at || '—'} · ${original.eta_minutes || '—'} min</small></div>`)
@@ -210,7 +210,8 @@ function renderRouteSummary(data) {
   if (alternative) {
     cards.push(`<div class="metric"><span>Alternativa</span><strong>${alternative.distance_km} km</strong><small>ETA ${alternative.eta_at || '—'} · ${alternative.eta_minutes || '—'} min</small></div>`)
   }
-  if (!cards.length) cards.push(`<div class="metric"><span>Vías</span><strong>${data.summary?.total_vias ?? '—'}</strong><small>Restricciones: ${data.summary?.total_restricciones ?? '—'}</small></div>`)
+  if (!cards.length && data.distance_km !== undefined) cards.push(`<div class="metric"><span>Ruta clásica</span><strong>${data.distance_km} km</strong><small>ETA ${data.eta_at || '—'} · ${data.eta_minutes || '—'} min</small></div>`)
+  if (data.summary) cards.push(`<div class="metric"><span>Vías</span><strong>${data.summary?.total_vias ?? '—'}</strong><small>Restricciones: ${data.summary?.total_restricciones ?? '—'}</small></div>`)
   routeSummary.innerHTML = cards.join('')
 }
 

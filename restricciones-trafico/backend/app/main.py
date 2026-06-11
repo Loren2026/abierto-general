@@ -22,6 +22,7 @@ class RutaAnalizarRequest(BaseModel):
     destino: str
     fecha_salida: str
     fecha_llegada: str
+    hora_salida: str | None = None
 
 @app.get("/health")
 def health():
@@ -36,7 +37,13 @@ def post_consulta(req: ConsultaRequest):
 
 @app.post("/api/ruta/analizar")
 def post_ruta_analizar(req: RutaAnalizarRequest):
-    return analyze_route(req.origen, req.destino, req.fecha_salida, req.fecha_llegada)
+    # Compatibilidad fallback: inyecta hora manual sin cambiar la firma pública del analizador.
+    provider = None
+    if req.hora_salida:
+        from .routing import NominatimOsrmProvider
+        provider = NominatimOsrmProvider()
+        provider.hora_salida = req.hora_salida
+    return analyze_route(req.origen, req.destino, req.fecha_salida, req.fecha_llegada, provider=provider)
 
 @app.post("/api/ruta/alternativa")
 def post_ruta_alternativa(req: RutaAlternativaRequest):

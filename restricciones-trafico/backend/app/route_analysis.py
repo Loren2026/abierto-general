@@ -1,6 +1,8 @@
 import json
 import sqlite3
 from pathlib import Path
+from math import atan2, cos, radians, sin, sqrt
+from .alternative_routing import FIXED_SPEED_KMH, calculate_eta
 from .osm_enrichment import refs_from_geometry
 from .query import affected_days, expand_days
 from .routing import NominatimOsrmProvider, RoutingProvider, normalize_road_code
@@ -88,6 +90,21 @@ def find_route_restrictions(fecha_salida: str, fecha_llegada: str, roads: list[s
     out.sort(key=lambda item: (item["confidence"], item["via"] or "", item["id"]))
     return out
 
+
+def geometry_distance_km(geometry: dict | None) -> float:
+    coords = (geometry or {}).get("coordinates") or []
+    if len(coords) < 2:
+        return 0.0
+    radius_km = 6371.0088
+    total = 0.0
+    for (lon1, lat1), (lon2, lat2) in zip(coords, coords[1:]):
+        phi1, phi2 = radians(lat1), radians(lat2)
+        dphi = radians(lat2 - lat1)
+        dlambda = radians(lon2 - lon1)
+        a = sin(dphi / 2) ** 2 + cos(phi1) * cos(phi2) * sin(dlambda / 2) ** 2
+        total += 2 * radius_km * atan2(sqrt(a), sqrt(1 - a))
+    return total
+
 def analyze_route(
     origen: str,
     destino: str,
@@ -120,6 +137,10 @@ def analyze_route(
     # Un aviso inicial de OSRM por pocos nombres no fuerza baja si Overpass recuperó refs principales.
     route_confidence = calculate_route_confidence(route.confidence, roads, enrichment)
     restrictions = find_route_restrictions(fecha_salida, fecha_llegada, roads, route_confidence)
+    distance_km = round(geometry_distance_km(route.geometry), 3)
+    # El flujo clásico no tiene hora propia; si el frontend la envía añadida al payload, main la pasa.
+    hora_salida = getattr(provider, "hora_salida", None) or "08:00"
+    eta = calculate_eta(distance_km, fecha_salida, hora_salida)
     return {
         "provider": route.provider,
         "origen": route.origin,
@@ -130,6 +151,10 @@ def analyze_route(
         "route_confidence": route_confidence,
         "warnings": warnings,
         "geometry": route.geometry,
+        "distance_km": distance_km,
+        "fixed_speed_kmh": FIXED_SPEED_KMH,
+        "eta_minutes": eta["eta_minutes"],
+        "eta_at": eta["eta_at"],
         "enrichment": enrichment,
         "restricciones": restrictions,
         "summary": {
