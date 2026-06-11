@@ -1,0 +1,1126 @@
+{
+  "type": "FeatureCollection",
+  "name": "priority_restriction_geometries_pending_osm_match",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0001",
+        "restriction_id": "dgt-2026-g-0001",
+        "source_scope": "DGT",
+        "road_normalized": "N-230",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | N-230 | 64,1 Benabarre | 116,1 Santoréns | 17,00-24,00 | Frontera Francia"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            36.5
+          ],
+          [
+            -8.292,
+            36.569333
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0002",
+        "restriction_id": "dgt-2026-g-0002",
+        "source_scope": "DGT",
+        "road_normalized": "N-230",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | N-230 | 119,5 Buira | 120,9 Bonansa | 17,00-24,00 | Frontera Francia"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            36.68
+          ],
+          [
+            -8.47,
+            36.69
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0003",
+        "restriction_id": "dgt-2026-g-0003",
+        "source_scope": "DGT",
+        "road_normalized": "N-230",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | N-230 | 133,6 Ginaste | 149,2 Aneto | 17,00-24,00 | Frontera Francia"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            36.86
+          ],
+          [
+            -8.4376,
+            36.8808
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0004",
+        "restriction_id": "dgt-2026-g-0004",
+        "source_scope": "DGT",
+        "road_normalized": "A-49",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | A-49 | 0 Camas | 23 Huévar del Aljarafe | 10,00-14,00 | Ayamonte"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            37.04
+          ],
+          [
+            -8.408,
+            37.070667
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0005",
+        "restriction_id": "dgt-2026-g-0005",
+        "source_scope": "DGT",
+        "road_normalized": "AP-4",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | AP-4 | 13,5 Dos Hermanas | 78 Jerez de la Frontera | 10,00-13,00 | Cádiz"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            37.22
+          ],
+          [
+            -8.242,
+            37.306
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0006",
+        "restriction_id": "dgt-2026-g-0006",
+        "source_scope": "DGT",
+        "road_normalized": "N-4",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | N-4 | 573 Los Palacios y Villafranca | 627 Jerez de la Frontera | 10,00-13,00 | Cádiz"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            37.4
+          ],
+          [
+            -8.284,
+            37.472
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0007",
+        "restriction_id": "dgt-2026-g-0007",
+        "source_scope": "DGT",
+        "road_normalized": "A-483",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | A-483 | 0 Bollullos Par Cd. | 41,33 Matalascañas | 11,00-22,00 | Ambos sentidos"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            37.58
+          ],
+          [
+            -8.33468,
+            37.635107
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0008",
+        "restriction_id": "dgt-2026-g-0008",
+        "source_scope": "DGT",
+        "road_normalized": "A-497",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | A-497 | 0 Huelva | 17,05 Punta Umbría | 11,00-22,00 | Ambos sentidos"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            37.76
+          ],
+          [
+            -8.4318,
+            37.782733
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0009",
+        "restriction_id": "dgt-2026-g-0009",
+        "source_scope": "DGT",
+        "road_normalized": "A-5056",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | A-5056 | 0 Lepe | 4,8 La Antilla | 11,00-22,00 | Ambos sentidos"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            37.94
+          ],
+          [
+            -8.47,
+            37.95
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0010",
+        "restriction_id": "dgt-2026-g-0010",
+        "source_scope": "DGT",
+        "road_normalized": "A-5076",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | A-5076 | 0 Lepe (N-431) | 5,4 La Antilla (A-5056) | 11,00-22,00 | Ambos sentidos"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            38.12
+          ],
+          [
+            -8.47,
+            38.13
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0011",
+        "restriction_id": "dgt-2026-g-0011",
+        "source_scope": "DGT",
+        "road_normalized": "A-370",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | A-370 | 0 Los Gallardos | 12,16 Garrucha | 11,00-22,00 | Ambos sentidos"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            38.3
+          ],
+          [
+            -8.45136,
+            38.316213
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0012",
+        "restriction_id": "dgt-2026-g-0012",
+        "source_scope": "DGT",
+        "road_normalized": "A-8",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | A-8 | 139,2 Castro-Urdiales | 169 Laredo | 11,00-14,00 | Santander"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            38.48
+          ],
+          [
+            -8.3808,
+            38.519733
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0013",
+        "restriction_id": "dgt-2026-g-0013",
+        "source_scope": "DGT",
+        "road_normalized": "A-8",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | A-8 | 169 Laredo | 139,2 Castro-Urdiales | 16,00-22,00 | Bilbao"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            38.66
+          ],
+          [
+            -8.3808,
+            38.699733
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0014",
+        "restriction_id": "dgt-2026-g-0014",
+        "source_scope": "DGT",
+        "road_normalized": "N-230",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | N-230 | 149,2 Aneto | 133,6 Ginaste | 13,00-20,00 | Benabarre"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            38.84
+          ],
+          [
+            -8.4376,
+            38.8608
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0015",
+        "restriction_id": "dgt-2026-g-0015",
+        "source_scope": "DGT",
+        "road_normalized": "N-230",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | N-230 | 120,9 Bonansa | 119,5 Buira | 13,00-20,00 | Benabarre"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            39.02
+          ],
+          [
+            -8.47,
+            39.03
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0016",
+        "restriction_id": "dgt-2026-g-0016",
+        "source_scope": "DGT",
+        "road_normalized": "N-230",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | N-230 | 116,1 Santoréns | 64,1 Benabarre | 13,00-20,00 | Benabarre"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            39.2
+          ],
+          [
+            -8.292,
+            39.269333
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0017",
+        "restriction_id": "dgt-2026-g-0017",
+        "source_scope": "DGT",
+        "road_normalized": "A-49",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | A-49 | 76,9 San Juan del Puerto | 0 Camas | 15,00-24,00 | Sevilla"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            39.38
+          ],
+          [
+            -8.1924,
+            39.482533
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0018",
+        "restriction_id": "dgt-2026-g-0018",
+        "source_scope": "DGT",
+        "road_normalized": "AP-4",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | AP-4 | 78 Jerez de la Frontera | 13,5 Dos Hermanas | 16,00-20,00 | Sevilla"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            39.56
+          ],
+          [
+            -8.242,
+            39.646
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0019",
+        "restriction_id": "dgt-2026-g-0019",
+        "source_scope": "DGT",
+        "road_normalized": "N-4",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | N-4 | 627 Jerez de la Frontera | 573 Los Palacios y Villafranca | 16,00-20,00 | Sevilla"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            39.74
+          ],
+          [
+            -8.284,
+            39.812
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0020",
+        "restriction_id": "dgt-2026-g-0020",
+        "source_scope": "DGT",
+        "road_normalized": "A-45",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | A-45 | 142 Málaga | 115 Alto Las Pedrizas | 17,00-24,00 | Córdoba"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            39.92
+          ],
+          [
+            -8.392,
+            39.956
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0021",
+        "restriction_id": "dgt-2026-g-0021",
+        "source_scope": "DGT",
+        "road_normalized": "AP-4",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | AP-4 | 78 Jerez de la Frontera | 13,5 Dos Hermanas | 16,00-20,00 | Sevilla"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.3,
+            36.5
+          ],
+          [
+            -7.042,
+            36.586
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0022",
+        "restriction_id": "dgt-2026-g-0022",
+        "source_scope": "DGT",
+        "road_normalized": "N-4",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | N-4 | 627 Jerez de la Frontera | 573 Los Palacios y Villafranca | 16,00-20,00 | Sevilla"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.3,
+            36.68
+          ],
+          [
+            -7.084,
+            36.752
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0023",
+        "restriction_id": "dgt-2026-g-0023",
+        "source_scope": "DGT",
+        "road_normalized": "N-230",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | N-230 | 149,2 Aneto | 133,6 Ginaste | 17,00-22,00 | Benabarre"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.3,
+            36.86
+          ],
+          [
+            -7.2376,
+            36.8808
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0024",
+        "restriction_id": "dgt-2026-g-0024",
+        "source_scope": "DGT",
+        "road_normalized": "A-1",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | A-1 | 118,3 Boceguillas | 11,8 Madrid (enlace M-40) | 21,00-23,00 | Entrada Madrid"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.3,
+            37.04
+          ],
+          [
+            -6.95,
+            37.156667
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0025",
+        "restriction_id": "dgt-2026-g-0025",
+        "source_scope": "DGT",
+        "road_normalized": "A-2",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | A-2 | 107 Mirabueno | 10,8 Madrid (enlace M-40) | 21,00-23,00 | Entrada Madrid"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.3,
+            37.22
+          ],
+          [
+            -6.95,
+            37.336667
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0026",
+        "restriction_id": "dgt-2026-g-0026",
+        "source_scope": "DGT",
+        "road_normalized": "A-3",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | A-3 | 177 Atalaya del Cañavate | 6,9 Madrid (enlace M-40) | 21,00-23,00 | Entrada Madrid"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.3,
+            37.4
+          ],
+          [
+            -6.95,
+            37.516667
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0027",
+        "restriction_id": "dgt-2026-g-0027",
+        "source_scope": "DGT",
+        "road_normalized": "A-5",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | A-5 | 75 Maqueda | 11,8 Madrid (enlace M-40) | 21,00-24,00 | Entrada Madrid"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.3,
+            37.58
+          ],
+          [
+            -7.0472,
+            37.664267
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0028",
+        "restriction_id": "dgt-2026-g-0028",
+        "source_scope": "DGT",
+        "road_normalized": "A-6",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | A-6 | 123 Arévalo | 110 Adanero | 21,00-23,00 | Entrada Madrid"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.3,
+            37.76
+          ],
+          [
+            -7.248,
+            37.777333
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0029",
+        "restriction_id": "dgt-2026-g-0029",
+        "source_scope": "DGT",
+        "road_normalized": "AP-6",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | AP-6 | 110 Adanero | 60,5 San Rafael | 21,00-23,00 | Entrada Madrid"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.3,
+            37.94
+          ],
+          [
+            -7.102,
+            38.006
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0030",
+        "restriction_id": "dgt-2026-g-0030",
+        "source_scope": "DGT",
+        "road_normalized": "A-6",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | A-6 | 22,3 Las Rozas (enlace M-50) | 6,8 Madrid | 21,00-23,00 | Entrada Madrid"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.3,
+            38.12
+          ],
+          [
+            -7.238,
+            38.140667
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0031",
+        "restriction_id": "dgt-2026-g-0031",
+        "source_scope": "DGT",
+        "road_normalized": "N-6",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | N-6 | 110 Adanero | 42,5 Collado Villalba | 21,00-23,00 | Entrada Madrid"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.3,
+            38.3
+          ],
+          [
+            -7.03,
+            38.39
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0032",
+        "restriction_id": "dgt-2026-g-0032",
+        "source_scope": "DGT",
+        "road_normalized": "AP-51",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | AP-51 | 104,8 Ávila | 81,8 Villacastín (enlace AP-6) | 21,00-23,00 | Entrada Madrid"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.3,
+            38.48
+          ],
+          [
+            -7.208,
+            38.510667
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0033",
+        "restriction_id": "dgt-2026-g-0033",
+        "source_scope": "DGT",
+        "road_normalized": "AP-61",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | AP-61 | 88,55 Segovia | 61,50 San Rafael (enlace AP-6) | 21,00-23,00 | Entrada Madrid"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.3,
+            38.66
+          ],
+          [
+            -7.1918,
+            38.696067
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0034",
+        "restriction_id": "dgt-2026-g-0034",
+        "source_scope": "DGT",
+        "road_normalized": "N-110",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | N-110 | 246 Berrocalejo Aragona | 228 Villacastín (enlace AP-6) | 21,00-23,00 | Entrada Madrid"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.3,
+            38.84
+          ],
+          [
+            -7.228,
+            38.864
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0035",
+        "restriction_id": "dgt-2026-g-0035",
+        "source_scope": "DGT",
+        "road_normalized": "N-603",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | N-603 | 74,9 Otero de Herreros | 64 San Rafael (enlace AP-6) | 21,00-23,00 | Entrada Madrid"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.3,
+            39.02
+          ],
+          [
+            -7.2564,
+            39.034533
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0036",
+        "restriction_id": "dgt-2026-g-0036",
+        "source_scope": "DGT",
+        "road_normalized": "M-501",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | M-501 | 59,5 S. Martín de Valdeiglesias | 0 Madrid (enlace M-40) | 21,00-23,00 | Entrada Madrid"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.3,
+            39.2
+          ],
+          [
+            -7.062,
+            39.279333
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0037",
+        "restriction_id": "dgt-2026-g-0037",
+        "source_scope": "DGT",
+        "road_normalized": "A-45",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | A-45 | 142 Málaga | 115 Alto Las Pedrizas | 17,00-24,00 | Córdoba"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.3,
+            39.38
+          ],
+          [
+            -7.192,
+            39.416
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0038",
+        "restriction_id": "dgt-2026-g-0038",
+        "source_scope": "DGT",
+        "road_normalized": "A-49",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | A-49 | 0 Camas | 50 Bollullos Par del Condado | 15,00-24,00 | Ayamonte"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.3,
+            39.56
+          ],
+          [
+            -7.1,
+            39.626667
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0039",
+        "restriction_id": "dgt-2026-g-0039",
+        "source_scope": "DGT",
+        "road_normalized": "A-49",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | A-49 | 76,9 San Juan del Puerto | 0 Camas | 15,00-24,00 | Sevilla"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.3,
+            39.74
+          ],
+          [
+            -6.9924,
+            39.842533
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-g-0040",
+        "restriction_id": "dgt-2026-g-0040",
+        "source_scope": "DGT",
+        "road_normalized": "N-630",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "estimated_from_road_pk_pending_osm_match",
+        "confidence": "media",
+        "source_reference": "ANEXO II | N-630 | 782 El Garrobo | 810 Camas | 10,00-14,00 | Ambos sentidos"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.3,
+            39.92
+          ],
+          [
+            -7.188,
+            39.957333
+          ]
+        ]
+      }
+    }
+  ]
+}
