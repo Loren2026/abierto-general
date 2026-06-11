@@ -1,0 +1,246 @@
+from datetime import datetime, timedelta
+from enum import Enum
+from math import ceil
+import re
+from typing import Any, Literal, Protocol
+from zoneinfo import ZoneInfo
+
+from pydantic import BaseModel, Field, field_validator
+
+FIXED_SPEED_KMH = 78
+DEFAULT_TIMEZONE = "Europe/Madrid"
+
+
+class CargoType(str, Enum):
+    general = "general"
+    adr = "adr"
+
+
+class RoutingVehicle(BaseModel):
+    mass_kg: int = Field(default=7500, ge=1)
+    length_m: float = Field(default=17, gt=0)
+    height_m: float = Field(default=4, gt=0)
+
+
+class RutaAlternativaRequest(BaseModel):
+    origen: str = Field(min_length=1)
+    destino: str = Field(min_length=1)
+    fecha_salida: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    hora_salida: str = Field(pattern=r"^\d{2}:\d{2}$")
+    cargo_type: CargoType = CargoType.general
+    vehicle: RoutingVehicle = Field(default_factory=RoutingVehicle)
+
+    @field_validator("hora_salida")
+    @classmethod
+    def validate_hora_salida(cls, value: str) -> str:
+        hour, minute = [int(part) for part in value.split(":")]
+        if hour > 23 or minute > 59:
+            raise ValueError("hora_salida debe estar en formato HH:MM válido")
+        return value
+
+
+class RouteMetrics(BaseModel):
+    geometry: dict[str, Any] | None = None
+    distance_km: float
+    eta_minutes: int
+    eta_at: str
+    road_category_score: float
+
+
+class AlternativeRoute(RouteMetrics):
+    selected: bool = False
+    reason: str | None = None
+
+
+class RimpStatus(BaseModel):
+    mode: Literal["informativo"] = "informativo"
+    status: Literal["en_preparacion"] = "en_preparacion"
+    message: str = "RIMP 2026 pendiente de carga validada por PATRÓN ORO"
+
+
+class RutaAlternativaResponse(BaseModel):
+    provider: str
+    fixed_speed_kmh: int = FIXED_SPEED_KMH
+    original_route: RouteMetrics
+    alternative_route: AlternativeRoute | None = None
+    crossed_restrictions: list[dict[str, Any]] = Field(default_factory=list)
+    avoid_polygons_used: list[dict[str, Any]] = Field(default_factory=list)
+    rimp: RimpStatus = Field(default_factory=RimpStatus)
+    warnings: list[str] = Field(default_factory=list)
+
+
+class OrsClientProtocol(Protocol):
+    def directions_hgv(self, coordinates: list[list[float]], vehicle: RoutingVehicle, avoid_polygons: dict[str, Any] | None = None) -> dict[str, Any]: ...
+
+
+ROAD_CATEGORY_WEIGHTS = {
+    "motorway": 100,
+    "autopista": 100,
+    "autovia": 90,
+    "trunk": 90,
+    "nacional": 70,
+    "resto": 10,
+}
+LOCAL_ROAD_PENALTY = 1000
+RESTRICTION_PENALTY = 10000
+
+
+def calculate_eta(distance_km: float, fecha_salida: str, hora_salida: str, speed_kmh: int = FIXED_SPEED_KMH, tz: str = DEFAULT_TIMEZONE) -> dict[str, Any]:
+    if distance_km < 0:
+        raise ValueError("distance_km no puede ser negativa")
+    if speed_kmh <= 0:
+        raise ValueError("speed_kmh debe ser mayor que cero")
+    departure = datetime.fromisoformat(f"{fecha_salida}T{hora_salida}:00").replace(tzinfo=ZoneInfo(tz))
+    minutes = int(round((distance_km / speed_kmh) * 60))
+    eta = departure + timedelta(minutes=minutes)
+    return {"eta_minutes": minutes, "eta_at": eta.isoformat(), "fixed_speed_kmh": speed_kmh}
+
+
+def score_road_categories(
+    *,
+    km_autopista: float = 0,
+    km_autovia: float = 0,
+    km_nacional: float = 0,
+    km_resto: float = 0,
+    km_comarcal_local: float = 0,
+    restricciones_cruzadas: int = 0,
+) -> float:
+    return (
+        km_autopista * ROAD_CATEGORY_WEIGHTS["autopista"]
+        + km_autovia * ROAD_CATEGORY_WEIGHTS["autovia"]
+        + km_nacional * ROAD_CATEGORY_WEIGHTS["nacional"]
+        + km_resto * ROAD_CATEGORY_WEIGHTS["resto"]
+        - km_comarcal_local * LOCAL_ROAD_PENALTY
+        - restricciones_cruzadas * RESTRICTION_PENALTY
+    )
+
+
+def route_has_disallowed_local_roads(route_categories: dict[str, float]) -> bool:
+    return route_categories.get("comarcal_local", 0) > 0
+
+
+def road_category_from_name(name: str) -> str:
+    value = (name or "").upper().replace(" ", "")
+    if re.search(r"\bAP-?\d+", value):
+        return "autopista"
+    if re.search(r"\bA-?\d+", value):
+        return "autovia"
+    if re.search(r"\bN-?\d+", value):
+        return "nacional"
+    if re.search(r"\b(?:AS|CV|CM|CL|EX|GI|BI|NA|BU|LE|ZA|O|P|VA|VP|M)-?\d+", value):
+        return "comarcal_local"
+    return "resto"
+
+
+def categories_from_ors_feature(feature: dict[str, Any]) -> dict[str, float]:
+    categories = {"autopista": 0.0, "autovia": 0.0, "nacional": 0.0, "resto": 0.0, "comarcal_local": 0.0}
+    for segment in feature.get("properties", {}).get("segments", []) or []:
+        for step in segment.get("steps", []) or []:
+            distance_km = float(step.get("distance") or 0) / 1000
+            category = road_category_from_name(step.get("name") or "")
+            categories[category] += distance_km
+    if not any(categories.values()):
+        distance_km = float(feature.get("properties", {}).get("summary", {}).get("distance") or 0) / 1000
+        categories["resto"] = distance_km
+    return categories
+
+
+def select_best_route(candidates: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """Selecciona la ruta con mejor categoría y, dentro de ese criterio, menor ETA/distancia.
+
+    Las candidatas con comarcales/locales se descartan si existe alguna alternativa sin ellas.
+    """
+    if not candidates:
+        return None
+    viable = [candidate for candidate in candidates if not route_has_disallowed_local_roads(candidate.get("categories", {}))]
+    pool = viable or candidates
+
+    def best_category_tier(categories: dict[str, float]) -> int:
+        if categories.get("autopista", 0) > 0:
+            return 4
+        if categories.get("autovia", 0) > 0:
+            return 3
+        if categories.get("nacional", 0) > 0:
+            return 2
+        if categories.get("resto", 0) > 0:
+            return 1
+        return 0
+
+    def sort_key(candidate: dict[str, Any]):
+        categories = candidate.get("categories", {})
+        score = score_road_categories(
+            km_autopista=categories.get("autopista", 0),
+            km_autovia=categories.get("autovia", 0),
+            km_nacional=categories.get("nacional", 0),
+            km_resto=categories.get("resto", 0),
+            km_comarcal_local=categories.get("comarcal_local", 0),
+            restricciones_cruzadas=candidate.get("restricciones_cruzadas", 0),
+        )
+        eta_minutes = ceil((candidate.get("distance_km", 0) / FIXED_SPEED_KMH) * 60)
+        return (-best_category_tier(categories), eta_minutes, candidate.get("distance_km", 0), -score)
+
+    return sorted(pool, key=sort_key)[0]
+
+
+def route_metrics_from_ors_feature(feature: dict[str, Any], req: RutaAlternativaRequest) -> dict[str, Any]:
+    distance_km = float(feature.get("properties", {}).get("summary", {}).get("distance") or 0) / 1000
+    categories = categories_from_ors_feature(feature)
+    score = score_road_categories(
+        km_autopista=categories.get("autopista", 0),
+        km_autovia=categories.get("autovia", 0),
+        km_nacional=categories.get("nacional", 0),
+        km_resto=categories.get("resto", 0),
+        km_comarcal_local=categories.get("comarcal_local", 0),
+    )
+    eta = calculate_eta(distance_km, req.fecha_salida, req.hora_salida)
+    return {
+        "geometry": feature.get("geometry"),
+        "distance_km": round(distance_km, 3),
+        "eta_minutes": eta["eta_minutes"],
+        "eta_at": eta["eta_at"],
+        "road_category_score": score,
+        "categories": categories,
+    }
+
+
+def build_ruta_alternativa_response(req: RutaAlternativaRequest, ors_data: dict[str, Any]) -> RutaAlternativaResponse:
+    features = ors_data.get("features") or []
+    if not features:
+        raise ValueError("ORS no devolvió rutas candidatas")
+
+    candidates = []
+    for idx, feature in enumerate(features):
+        metrics = route_metrics_from_ors_feature(feature, req)
+        candidates.append({"id": idx, "feature": feature, **metrics})
+    selected = select_best_route(candidates) or candidates[0]
+    original = candidates[0]
+
+    original_route = RouteMetrics(**{key: original[key] for key in ["geometry", "distance_km", "eta_minutes", "eta_at", "road_category_score"]})
+    alternative_route = None
+    if selected["id"] != original["id"] or len(candidates) > 1:
+        alternative_route = AlternativeRoute(
+            selected=True,
+            reason="Seleccionada por categoría de vía y ETA/distancia a 78 km/h",
+            **{key: selected[key] for key in ["geometry", "distance_km", "eta_minutes", "eta_at", "road_category_score"]},
+        )
+
+    warnings = []
+    if req.cargo_type == CargoType.adr:
+        warnings.append("ADR/RIMP 2026 en modo informativo: no bloquea rutas todavía.")
+    if route_has_disallowed_local_roads(selected.get("categories", {})):
+        warnings.append("No se encontró alternativa sin comarcales/locales; revisar manualmente.")
+
+    return RutaAlternativaResponse(
+        provider="openrouteservice",
+        original_route=original_route,
+        alternative_route=alternative_route,
+        warnings=warnings,
+    )
+
+
+def calculate_alternative_route(req: RutaAlternativaRequest, ors_client: OrsClientProtocol, coordinates: list[list[float]] | None = None) -> RutaAlternativaResponse:
+    # Fase 2: coordinates permite tests/mock sin activar geocoding ni consumir proveedores externos.
+    # La geocodificación real queda para una fase posterior del prototipo.
+    route_coordinates = coordinates or [[-3.7038, 40.4168], [-0.3763, 39.4699]]
+    ors_data = ors_client.directions_hgv(route_coordinates, req.vehicle)
+    return build_ruta_alternativa_response(req, ors_data)
