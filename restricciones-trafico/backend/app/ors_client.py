@@ -1,9 +1,32 @@
 import json
 import os
+import urllib.error
 import urllib.request
 from typing import Any
 
 from .alternative_routing import RoutingVehicle
+
+ORS_SNAP_RADIUS_METERS = 1500
+
+
+class OrsApiError(RuntimeError):
+    """Error tipado de ORS con detalle legible para API/PWA."""
+
+    def __init__(self, status_code: int | None, ors_code: int | None, message: str, raw_body: str | None = None):
+        self.status_code = status_code
+        self.ors_code = ors_code
+        self.message = message
+        self.raw_body = raw_body
+        super().__init__(message)
+
+    def to_public_detail(self) -> dict[str, Any]:
+        return {
+            "provider": "openrouteservice",
+            "status_code": self.status_code,
+            "ors_code": self.ors_code,
+            "message": self.message,
+            "suggestion": "Prueba con un municipio mayor o un punto sobre carretera.",
+        }
 
 
 class OpenRouteServiceClient:
@@ -21,6 +44,9 @@ class OpenRouteServiceClient:
             "profile": "driving-hgv",
             "format": "geojson",
             "instructions": True,
+            # 1500 m permite enganchar geocodificaciones de pueblos pequeños a vías HGV cercanas
+            # sin usar -1 (ilimitado), que puede enganchar a un punto demasiado lejano y confuso.
+            "radiuses": [ORS_SNAP_RADIUS_METERS for _ in coordinates],
             "options": {
                 "profile_params": {
                     "restrictions": {
@@ -45,5 +71,18 @@ class OpenRouteServiceClient:
             },
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=30) as response:
-            return json.loads(response.read().decode("utf-8"))
+        try:
+            with urllib.request.urlopen(req, timeout=30) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            raw_body = exc.read().decode("utf-8", errors="replace")
+            ors_code = None
+            message = raw_body or str(exc)
+            try:
+                parsed = json.loads(raw_body)
+                error = parsed.get("error") or parsed
+                ors_code = error.get("code")
+                message = error.get("message") or parsed.get("message") or message
+            except json.JSONDecodeError:
+                pass
+            raise OrsApiError(exc.code, ors_code, message, raw_body) from exc

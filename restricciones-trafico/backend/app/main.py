@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from .alternative_routing import RutaAlternativaRequest, calculate_alternative_route
-from .ors_client import OpenRouteServiceClient
+from .ors_client import OpenRouteServiceClient, OrsApiError
 from .query import consulta
 from .route_analysis import analyze_route
 
@@ -49,6 +49,8 @@ def post_ruta_analizar(req: RutaAnalizarRequest):
 def post_ruta_alternativa(req: RutaAlternativaRequest):
     try:
         return calculate_alternative_route(req, OpenRouteServiceClient())
+    except OrsApiError as exc:
+        raise HTTPException(status_code=502, detail=exc.to_public_detail()) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
