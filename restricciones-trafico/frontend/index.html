@@ -79,7 +79,13 @@
               <span><i class="legend-line restriction-high"></i> Restricción</span>
               <span><i class="legend-line restriction-low"></i> Baja confianza</span>
             </div>
-            <button id="center-map" class="secondary-button" type="button">Centrar ruta</button>
+          </div>
+          <div class="map-controls-row" aria-label="Controles del mapa">
+            <button id="center-map" class="map-action-button" type="button">Centrar ruta</button>
+            <div class="map-zoom-actions" aria-label="Zoom del mapa">
+              <button id="zoom-in-map" class="map-zoom-button" type="button" aria-label="Acercar mapa">+</button>
+              <button id="zoom-out-map" class="map-zoom-button" type="button" aria-label="Alejar mapa">−</button>
+            </div>
           </div>
           <div id="map" class="map" aria-label="Mapa de ruta"></div>
           <article id="map-detail" class="map-detail" hidden></article>
