@@ -1,3 +1,69 @@
+# PROPUESTA — ORS avoid_polygons para alternativas reales
+
+## Objetivo
+Conectar las 9 geometrías de restricciones de confianza alta guardadas en Supabase al endpoint `POST /api/ruta/alternativa`, construyendo `options.avoid_polygons` para OpenRouteService `driving-hgv`, de forma que la alternativa sea una ruta real evitando restricciones y no una segunda candidata genérica.
+
+## 1. Lectura de `restriction_geometries` desde Supabase
+
+- El backend leerá desde `public.restriction_geometries` usando `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`.
+- La consulta REST será de solo lectura y filtrará `confidence=eq.alta`.
+- En esta fase se limita explícitamente a las geometrías de confianza alta esperadas por Loren: 9 registros.
+- Se usará preferentemente `buffer_geojson` si existe, porque ORS necesita polígonos/ multipolígonos para `avoid_polygons`; si no existe, se descartará honestamente la geometría y se devolverá aviso técnico.
+- Turín no tiene claves de Supabase en su contenedor: las pruebas reales quedan preparadas para ejecutar desde el host con `.env` real.
+
+## 2. Construcción de `avoid_polygons` para ORS
+
+- ORS acepta `options.avoid_polygons` como GeoJSON `Polygon` o `MultiPolygon` en el endpoint `/v2/directions/driving-hgv/geojson`.
+- Límite documentado de ORS para avoid polygons: área total máxima aproximada de 200 km² y extensión máxima de 20 km en alto o ancho.
+- Implementación:
+  - Parsear cada `buffer_geojson`.
+  - Aceptar `Polygon` y `MultiPolygon`.
+  - Construir un único `MultiPolygon`.
+  - Medir extensión aproximada por bounding box en km.
+  - Si se supera el límite de extensión, simplificar de forma conservadora usando un bounding box reducido alrededor del centroide, con aviso.
+  - Si se supera el presupuesto de área aproximada, incluir primero las geometrías válidas hasta el límite y devolver aviso en `warnings` / `alternative_status`.
+
+## 3. Estrategia de respuesta
+
+- Se solicitarán dos rutas ORS:
+  1. Ruta original sin `avoid_polygons`.
+  2. Ruta alternativa con `avoid_polygons`.
+- La respuesta mantiene `original_route` con distancia y ETA calculada a 78 km/h.
+- `alternative_route` solo aparece si ORS encuentra ruta evitando polígonos.
+- Criterio vinculante de Loren:
+  - Prioridad absoluta a mejor categoría de vía.
+  - Nunca seleccionar comarcales/locales si existe ruta por autopista/autovía/nacional.
+  - ETA siempre calculada a 78 km/h desde la hora manual de salida.
+
+## 4. Caché vs lectura por petición
+
+- Opción elegida: lectura por petición con caché corto en memoria, TTL 300 segundos.
+- Justificación: reduce llamadas a Supabase sin congelar datos; ante actualización urgente el desfase máximo esperado es de 5 minutos.
+- Si faltan credenciales de Supabase, el endpoint no inventa alternativas: devuelve `alternative_status` indicando que no se aplicaron `avoid_polygons` por configuración ausente.
+
+## 5. Manejo honesto de errores
+
+- Si ORS no encuentra ruta con `avoid_polygons`, se devuelve `alternative_status.found=false` con motivo concreto.
+- No hay fallback mudo al análisis clásico dentro de `/api/ruta/alternativa`.
+- Motivos explícitos contemplados: Supabase no configurado, no hay geometrías válidas, ORS rechazó polígonos, ORS no encontró ruta alternativa.
+
+## 6. Fecha/vigencia
+
+- En esta fase no se filtra por fecha/vigencia porque `restriction_geometries` no contiene campos de ventana temporal de restricción; almacena geometrías priorizadas.
+- El filtrado temporal queda preparado para una fase posterior enlazando `restriction_id` con la fuente canónica de restricciones vigentes.
+
+## 7. Tests
+
+- Tests con mock de Supabase: 9 geometrías alta, construcción de `MultiPolygon`, y estado honesto sin datos/configuración.
+- Tests con mock de ORS: dos llamadas — original sin avoid y alternativa con avoid —, verificación de `avoid_polygons`, y fallo ORS con conservación de ruta original + motivo concreto.
+
+## Límite irreversible
+
+- Permitido en esta rama: código, tests, commit y push.
+- PREPARADO PERO SIN EJECUTAR: merge a `main`, despliegue en producción, ejecución real contra Supabase/ORS con claves del host.
+
+---
+
 # PROPUESTA.md — App Restricciones Tráfico 2026
 
 ## 0. Objetivo
