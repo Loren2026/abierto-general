@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from .adr_calendar import adr_calendar_warnings
 from .geocoding import geocode_es
+from .supabase_geometries import build_avoid_polygons, fetch_high_confidence_geometries, supabase_configured
 
 FIXED_SPEED_KMH = 78
 DEFAULT_TIMEZONE = "Europe/Madrid"
@@ -216,7 +217,7 @@ def route_metrics_from_ors_feature(feature: dict[str, Any], req: RutaAlternativa
     }
 
 
-def build_ruta_alternativa_response(req: RutaAlternativaRequest, ors_data: dict[str, Any]) -> RutaAlternativaResponse:
+def build_ruta_alternativa_response(req: RutaAlternativaRequest, ors_data: dict[str, Any], *, alternative_ors_data: dict[str, Any] | None = None, alternative_error: str | None = None, avoid_polygons_used: list[dict[str, Any]] | None = None, avoid_warnings: list[str] | None = None) -> RutaAlternativaResponse:
     features = ors_data.get("features") or []
     if not features:
         raise ValueError("ORS no devolvió rutas candidatas")
@@ -230,28 +231,45 @@ def build_ruta_alternativa_response(req: RutaAlternativaRequest, ors_data: dict[
 
     original_route = RouteMetrics(**{key: original[key] for key in ["geometry", "distance_km", "eta_minutes", "eta_at", "road_category_score"]})
     alternative_route = None
-    if selected["id"] != original["id"] or len(candidates) > 1:
+    alternative_reason = None
+    if alternative_ors_data:
+        alternative_features = alternative_ors_data.get("features") or []
+        alternative_candidates = []
+        for idx, feature in enumerate(alternative_features):
+            metrics = route_metrics_from_ors_feature(feature, req)
+            alternative_candidates.append({"id": idx, "feature": feature, **metrics})
+        selected_alternative = select_best_route(alternative_candidates)
+        if selected_alternative:
+            alternative_reason = "Ruta calculada por ORS driving-hgv evitando restriction_geometries de confianza alta; seleccionada por categoría de vía y ETA/distancia a 78 km/h"
+            alternative_route = AlternativeRoute(
+                selected=True,
+                reason=alternative_reason,
+                **{key: selected_alternative[key] for key in ["geometry", "distance_km", "eta_minutes", "eta_at", "road_category_score"]},
+            )
+    elif selected["id"] != original["id"] or len(candidates) > 1:
+        alternative_reason = "Seleccionada por categoría de vía y ETA/distancia a 78 km/h sin avoid_polygons aplicados"
         alternative_route = AlternativeRoute(
             selected=True,
-            reason="Seleccionada por categoría de vía y ETA/distancia a 78 km/h",
+            reason=alternative_reason,
             **{key: selected[key] for key in ["geometry", "distance_km", "eta_minutes", "eta_at", "road_category_score"]},
         )
 
-    warnings = []
+    warnings = list(avoid_warnings or [])
     if req.cargo_type == CargoType.adr:
         warnings.extend(adr_calendar_warnings(req.fecha_salida, req.hora_salida, original.get("eta_minutes")))
     if route_has_disallowed_local_roads(selected.get("categories", {})):
         warnings.append("No se encontró alternativa sin comarcales/locales; revisar manualmente.")
 
-    reason = None
+    reason = alternative_error
     if alternative_route is None:
-        reason = "No he encontrado rutas alternativas: ORS solo devolvió una ruta candidata y aún no hay avoid_polygons aplicables a esta consulta."
+        reason = reason or "No he encontrado rutas alternativas: ORS no devolvió una ruta alternativa válida con los criterios actuales."
         warnings.append(reason)
     response = RutaAlternativaResponse(
         provider="openrouteservice",
-        alternative_status={"found": alternative_route is not None, "reason": reason or alternative_route.reason},
+        alternative_status={"found": alternative_route is not None, "reason": reason or alternative_reason, "avoid_polygons": bool(avoid_polygons_used)},
         original_route=original_route,
         alternative_route=alternative_route,
+        avoid_polygons_used=avoid_polygons_used or [],
         warnings=warnings,
     )
     # Compatibilidad UI con el flujo clásico: evita lista de vías vacía/confianza baja artificial.
@@ -271,7 +289,27 @@ def calculate_alternative_route(req: RutaAlternativaRequest, ors_client: OrsClie
         origin = destination = None
         route_coordinates = coordinates
     ors_data = ors_client.directions_hgv(route_coordinates, req.vehicle)
-    response = build_ruta_alternativa_response(req, ors_data)
+    avoid_polygons = None
+    avoid_used: list[dict[str, Any]] = []
+    avoid_warnings: list[str] = []
+    alternative_ors_data = None
+    alternative_error = None
+    if supabase_configured():
+        try:
+            records = fetch_high_confidence_geometries(limit=9)
+            avoid_polygons, avoid_used, avoid_warnings = build_avoid_polygons(records)
+            if avoid_polygons:
+                try:
+                    alternative_ors_data = ors_client.directions_hgv(route_coordinates, req.vehicle, avoid_polygons=avoid_polygons)
+                except Exception as exc:  # noqa: BLE001 - devolver motivo honesto al usuario/API
+                    alternative_error = f"ORS no encontró o rechazó ruta alternativa con avoid_polygons: {exc}"
+            else:
+                alternative_error = "No hay polígonos válidos de confianza alta para enviar a ORS avoid_polygons"
+        except Exception as exc:  # noqa: BLE001 - configuración/datos externos; no ocultar motivo
+            alternative_error = f"No se pudieron leer restriction_geometries de Supabase: {exc}"
+    else:
+        alternative_error = "Supabase no configurado en este entorno; avoid_polygons no aplicado"
+    response = build_ruta_alternativa_response(req, ors_data, alternative_ors_data=alternative_ors_data, alternative_error=alternative_error, avoid_polygons_used=avoid_used, avoid_warnings=avoid_warnings)
     if origin and destination:
         response["origen"] = {"label": origin.label, "lon": origin.lon, "lat": origin.lat}
         response["destino"] = {"label": destination.label, "lon": destination.lon, "lat": destination.lat}
