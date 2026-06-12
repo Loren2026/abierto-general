@@ -95,7 +95,8 @@ class OrsAvoidPolygonsTests(unittest.TestCase):
         fake_client = FakeOrsClient()
         with patch("app.alternative_routing.geocode_es") as geocode, \
              patch("app.alternative_routing.supabase_configured", return_value=True), \
-             patch("app.alternative_routing.fetch_high_confidence_geometries", return_value=[polygon_record(i) for i in range(1, 10)]):
+             patch("app.alternative_routing.fetch_high_confidence_geometries", return_value=[polygon_record(i) for i in range(1, 10)]), \
+             patch("app.alternative_routing.crossed_restrictions_for_route", return_value=([], {"checked": True, "reason": "mock"})):
             geocode.side_effect = [type("P", (), {"lon": -3.7, "lat": 40.4, "label": "Madrid"})(), type("P", (), {"lon": -0.3, "lat": 39.4, "label": "Valencia"})()]
             result = calculate_alternative_route(self.req, fake_client)
         self.assertEqual(len(fake_client.calls), 2)
@@ -110,7 +111,8 @@ class OrsAvoidPolygonsTests(unittest.TestCase):
         fake_client = FakeOrsClient(fail_avoid=True)
         with patch("app.alternative_routing.geocode_es") as geocode, \
              patch("app.alternative_routing.supabase_configured", return_value=True), \
-             patch("app.alternative_routing.fetch_high_confidence_geometries", return_value=[polygon_record()]):
+             patch("app.alternative_routing.fetch_high_confidence_geometries", return_value=[polygon_record()]), \
+             patch("app.alternative_routing.crossed_restrictions_for_route", return_value=([], {"checked": True, "reason": "mock"})):
             geocode.side_effect = [type("P", (), {"lon": -3.7, "lat": 40.4, "label": "Madrid"})(), type("P", (), {"lon": -0.3, "lat": 39.4, "label": "Valencia"})()]
             result = calculate_alternative_route(self.req, fake_client)
         self.assertEqual(result["original_route"]["distance_km"], 156)

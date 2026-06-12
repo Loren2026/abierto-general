@@ -17,28 +17,35 @@ def supabase_configured() -> bool:
     return bool(os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
 
 
-def fetch_high_confidence_geometries(limit: int = 9) -> list[dict[str, Any]]:
-    cached = _cache.get("records")
+def fetch_restriction_geometries(limit: int = 12, confidence: str | None = None) -> list[dict[str, Any]]:
+    cache_key = f"records:{confidence or 'all'}:{limit}"
+    cached = _cache.get(cache_key)
     if cached is not None and time.time() < float(_cache.get("expires_at") or 0):
         return cached
     url = os.getenv("SUPABASE_URL")
     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
     if not url or not key:
         raise ValueError("SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY no configuradas")
-    query = urllib.parse.urlencode({
+    params = {
         "select": "id,restriction_id,road_normalized,buffer_geojson,geometry_geojson,confidence",
-        "confidence": "eq.alta",
         "limit": str(limit),
-    })
+    }
+    if confidence:
+        params["confidence"] = f"eq.{confidence}"
+    query = urllib.parse.urlencode(params)
     req = urllib.request.Request(
         f"{url.rstrip('/')}/rest/v1/restriction_geometries?{query}",
         headers={"apikey": key, "Authorization": f"Bearer {key}", "Accept": "application/json"},
     )
     with urllib.request.urlopen(req, timeout=20) as response:
         records = json.loads(response.read().decode("utf-8"))
-    _cache["records"] = records
+    _cache[cache_key] = records
     _cache["expires_at"] = time.time() + CACHE_TTL_SECONDS
     return records
+
+
+def fetch_high_confidence_geometries(limit: int = 9) -> list[dict[str, Any]]:
+    return fetch_restriction_geometries(limit=limit, confidence="alta")
 
 
 def _iter_positions(coords: Any):

@@ -291,7 +291,12 @@ function formatPk(pk = {}) {
 function renderRestrictions(items = [], data = {}) {
   restrictionsList.innerHTML = ''
   if (!items.length) {
-    restrictionsList.innerHTML = '<p class="empty">Ningún tramo restringido cruzado en la fecha/hora indicadas.</p>'
+    const crossedStatus = data.crossed_status
+    if (crossedStatus && crossedStatus.checked === false) {
+      restrictionsList.innerHTML = `<p class="empty">No se pudo comprobar el cruce real de restricciones: ${crossedStatus.reason || 'motivo no detallado'}.</p>`
+    } else {
+      restrictionsList.innerHTML = '<p class="empty">Comprobado: ningún tramo restringido cruzado en la fecha/hora indicadas.</p>'
+    }
     if ((data.warnings || []).some((w) => String(w).includes('ADR') || String(w).includes('Anexo'))) {
       const div = document.createElement('article')
       div.className = 'restriction-item'
