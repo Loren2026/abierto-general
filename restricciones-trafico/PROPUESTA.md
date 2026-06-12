@@ -1288,3 +1288,41 @@ No ejecutar sin autorización explícita de Loren:
 - Tocar Traefik, CORS o compose de producción.
 
 Estado actual de esta propuesta: **PREPARADO PERO SIN EJECUTAR**.
+
+---
+
+# PROPUESTA — Ampliación prioritaria de restriction_geometries para 44t nacional
+
+## Objetivo
+Ampliar la cobertura geométrica inicial desde las 12 geometrías actuales a tramos de mayor impacto real para tráiler de 44t, manteniendo formato idéntico a `restriction_geometries` y confianza honesta.
+
+## Grupos incluidos en artefacto preparado
+
+Artefactos generados:
+- `data/geometries/restriction_geometries_priority_expanded.json`
+- `data/geometries/restriction_geometries_priority_expanded.geojson`
+
+Conteo preparado:
+- País Vasco patrón oro con PKs: 52 geometrías.
+- DGT Anexo VII que aplica a Loren: 4 geometrías.
+- Cataluña red obligatoria mínima ADR/RIMP: 15 geometrías.
+- Total preparado: 71 geometrías.
+
+## Fuentes
+- `data/processed/pais-vasco-2026.json` para patrón oro PV con PKs.
+- `data/patron-oro/dgt-2026/*anexo7*.json` para permanentes DGT Anexo VII aplicables a Loren.
+- `data/rimp-2026/cataluna-boe-a-2026-6095.html`, apartado rutas obligatorias, para Cataluña.
+
+## Confianza
+- No se infla confianza a `alta` en esta rama porque falta map-match real host/OSM validado tramo a tramo.
+- PV y DGT con PKs verificables quedan como `media` hasta validación espacial real.
+- Cataluña con PK inicial/final queda `media`; rutas descritas sin PK completo quedan `baja`.
+- Todos los registros incluyen `buffer_geojson`, `geometry_geojson`, `buffer_meters=60` y `source_reference` trazable.
+
+## Carga
+PREPARADO PERO SIN EJECUTAR en host:
+1. Revisar artefactos JSON/GeoJSON.
+2. Si Claude/Loren aprueban, adaptar `scripts/load_restriction_geometries_supabase.py` para apuntar temporalmente a `restriction_geometries_priority_expanded.json` o copiar ese fichero sobre el input esperado.
+3. Ejecutar en host con `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` reales.
+
+No se ejecuta carga desde el contenedor de Turín porque no tiene claves Supabase.

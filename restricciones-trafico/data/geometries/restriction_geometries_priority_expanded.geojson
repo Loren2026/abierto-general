@@ -1,0 +1,1994 @@
+{
+  "type": "FeatureCollection",
+  "name": "restriction_geometries_priority_expanded",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0001",
+        "restriction_id": "pv-2026-0001",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "A-8",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | A-8 | Autopista del Cantábrico | 119,5 | 139,21 Cantabria | Cantabria"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            36.5
+          ],
+          [
+            -8.4343,
+            36.516425
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0002",
+        "restriction_id": "pv-2026-0002",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "A-1",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | A-1 | Madrid-Irún | 352 Enlace N-622 | 336 Treviño | Burgos"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.8,
+            36.5
+          ],
+          [
+            -7.746667,
+            36.513333
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0003",
+        "restriction_id": "pv-2026-0003",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "A-1",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | A-1 | Madrid-Irún | 329 Treviño | 321 Burgos | Burgos"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.1,
+            36.5
+          ],
+          [
+            -7.073333,
+            36.506667
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0004",
+        "restriction_id": "pv-2026-0004",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "A-8",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | A-8 | Autopista del Cantábrico | 139,21 Cantabria | 119,5 | Bilbao | 16:00-22:00"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -6.4,
+            36.5
+          ],
+          [
+            -6.3343,
+            36.516425
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0005",
+        "restriction_id": "pv-2026-0005",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "A-1",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | A-1 | Madrid-Irún | 321 Burgos | 329 Treviño | Vitoria-Gasteiz | 16:00-21:00"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -5.7,
+            36.5
+          ],
+          [
+            -5.673333,
+            36.506667
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0006",
+        "restriction_id": "pv-2026-0006",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "A-1",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | A-1 | Madrid-Irún | 336 Treviño | 352 Enlace N-622 | Vitoria-Gasteiz | 16:00-21:00"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -5.0,
+            36.5
+          ],
+          [
+            -4.946667,
+            36.513333
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0007",
+        "restriction_id": "pv-2026-0007",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "A-8",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | A-8 | Autopista del Cantábrico | 119,5 | 139,21 Cantabria | Cantabria"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -4.3,
+            36.5
+          ],
+          [
+            -4.2343,
+            36.516425
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0008",
+        "restriction_id": "pv-2026-0008",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "N-634",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | N-634 | Donostia-San Sebastián/Santander | 107 | 120,690 | Cantabria"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -3.6,
+            36.5
+          ],
+          [
+            -3.554367,
+            36.511408
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0009",
+        "restriction_id": "pv-2026-0009",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "BI-3724",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | BI-3724 | Antigua N-634 (Barakaldo-El Bao) | 120,690 | 128,120 | Cantabria"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -2.9,
+            36.5
+          ],
+          [
+            -2.875233,
+            36.506192
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0010",
+        "restriction_id": "pv-2026-0010",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "BI-734",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | BI-734 | Antigua N-634 (El Bao-LP.Cantabria) | 128,120 | 136,140 Cantabria | Cantabria"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -2.2,
+            36.5
+          ],
+          [
+            -2.173267,
+            36.506683
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0011",
+        "restriction_id": "pv-2026-0011",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "A-8",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | A-8 | Autopista del Cantábrico | 139,21 Cantabria | 119,5 | Bilbao"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -1.5,
+            36.5
+          ],
+          [
+            -1.4343,
+            36.516425
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0012",
+        "restriction_id": "pv-2026-0012",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "BI-734",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | BI-734 | Antigua N-634 (El Bao-LP.Cantabria) | 136,140 Cantabria | 128,120 | Bilbao"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -0.8,
+            36.5
+          ],
+          [
+            -0.773267,
+            36.506683
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0013",
+        "restriction_id": "pv-2026-0013",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "BI-3724",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | BI-3724 | Antigua N-634 (Barakaldo-El Bao) | 128,120 | 120,690 | Bilbao"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -0.1,
+            36.5
+          ],
+          [
+            -0.075233,
+            36.506192
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0014",
+        "restriction_id": "pv-2026-0014",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "N-634",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | N-634 | Donostia-San Sebastián/Santander | 120,690 | 107 | Bilbao"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            0.6,
+            36.5
+          ],
+          [
+            0.645633,
+            36.511408
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0015",
+        "restriction_id": "pv-2026-0015",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "A-8",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | A-8 | Autopista Cantábrico | 119,5 | 139,21 Cantabria | Cantabria"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            1.3,
+            36.5
+          ],
+          [
+            1.3657,
+            36.516425
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0016",
+        "restriction_id": "pv-2026-0016",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "N-634",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | N-634 | Donostia-San Sebastián/Santander | 107 | 120,690 | Cantabria"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.0,
+            36.5
+          ],
+          [
+            2.045633,
+            36.511408
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0017",
+        "restriction_id": "pv-2026-0017",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "BI-3724",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | BI-3724 | Antigua N-634 (Barakaldo-El Bao) | 120,690 | 128,120 | Cantabria"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.7,
+            36.5
+          ],
+          [
+            2.724767,
+            36.506192
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0018",
+        "restriction_id": "pv-2026-0018",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "BI-734",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | BI-734 | Antigua N-634 (El Bao-LP.Cantabria) | 128,120 | 136,140 Cantabria | Cantabria"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            3.4,
+            36.5
+          ],
+          [
+            3.426733,
+            36.506683
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0019",
+        "restriction_id": "pv-2026-0019",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "AP-1",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | AP-1 | Burgos-Cantábrico | 83,20 | 77,20 | Burgos"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            36.85
+          ],
+          [
+            -8.48,
+            36.855
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0020",
+        "restriction_id": "pv-2026-0020",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "A-1",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | A-1 | Madrid-Irún | 352 Enlace N-622 | 336 Treviño | Burgos"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.8,
+            36.85
+          ],
+          [
+            -7.746667,
+            36.863333
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0021",
+        "restriction_id": "pv-2026-0021",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "A-1",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | A-1 | Madrid-Irún | 329 Treviño | 321 Burgos | Burgos"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.1,
+            36.85
+          ],
+          [
+            -7.073333,
+            36.856667
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0022",
+        "restriction_id": "pv-2026-0022",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "N-240",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | N-240 | Tarragona-Bilbao por Barazar | 55,77 Bizkaia | 23,08 Bizkaia | Vitoria-Gasteiz"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -6.4,
+            36.85
+          ],
+          [
+            -6.291033,
+            36.877242
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0023",
+        "restriction_id": "pv-2026-0023",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "N-240",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | N-240 | Tarragona-Bilbao por Barazar | 23,08 Araba | 4,9 Araba | Vitoria-Gasteiz"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -5.7,
+            36.85
+          ],
+          [
+            -5.6394,
+            36.86515
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0024",
+        "restriction_id": "pv-2026-0024",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "A-8",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | A-8 | Autopista Cantábrico | 119,5 | 139,21 Cantabria | Cantabria"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -5.0,
+            36.85
+          ],
+          [
+            -4.9343,
+            36.866425
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0025",
+        "restriction_id": "pv-2026-0025",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "N-634",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | N-634 | Donostia-San Sebastián/Santander | 107 | 120,690 | Cantabria"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -4.3,
+            36.85
+          ],
+          [
+            -4.254367,
+            36.861408
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0026",
+        "restriction_id": "pv-2026-0026",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "BI-3724",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | BI-3724 | Antigua N-634 (Barakaldo-El Bao) | 120,690 | 128,120 | Cantabria"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -3.6,
+            36.85
+          ],
+          [
+            -3.575233,
+            36.856192
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0027",
+        "restriction_id": "pv-2026-0027",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "BI-734",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | BI-734 | Antigua N-634 (El Bao-LP.Cantabria) | 128,120 | 136,140 Cantabria | Cantabria"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -2.9,
+            36.85
+          ],
+          [
+            -2.873267,
+            36.856683
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0028",
+        "restriction_id": "pv-2026-0028",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "AP-1",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | AP-1 | Burgos-Cantábrico | 83,20 | 77,20 | Burgos"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -2.2,
+            36.85
+          ],
+          [
+            -2.18,
+            36.855
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0029",
+        "restriction_id": "pv-2026-0029",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "A-1",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | A-1 | Madrid-Irún | 352 Enlace N-622 | 336 Treviño | Burgos"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -1.5,
+            36.85
+          ],
+          [
+            -1.446667,
+            36.863333
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0030",
+        "restriction_id": "pv-2026-0030",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "A-1",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | A-1 | Madrid-Irún | 329 Treviño | 321 Burgos | Burgos"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -0.8,
+            36.85
+          ],
+          [
+            -0.773333,
+            36.856667
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0031",
+        "restriction_id": "pv-2026-0031",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "N-240",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | N-240 | Tarragona-Bilbao por Barazar | 55,77 Bizkaia | 23,08 Bizkaia | Vitoria-Gasteiz"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -0.1,
+            36.85
+          ],
+          [
+            0.008967,
+            36.877242
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0032",
+        "restriction_id": "pv-2026-0032",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "N-240",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | N-240 | Tarragona-Bilbao por Barazar | 23,08 Araba | 10 Araba | Vitoria-Gasteiz"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            0.6,
+            36.85
+          ],
+          [
+            0.6436,
+            36.8609
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0033",
+        "restriction_id": "pv-2026-0033",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "N-622",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | N-622 | Autovía Altube/Vitoria-Gasteiz | 7,6 | 4,5 | Vitoria-Gasteiz"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            1.3,
+            36.85
+          ],
+          [
+            1.32,
+            36.855
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0034",
+        "restriction_id": "pv-2026-0034",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "A-8",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | A-8 | Autopista Cantábrico | 139,21 Cantabria | 119,5 | Bilbao"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.0,
+            36.85
+          ],
+          [
+            2.0657,
+            36.866425
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0035",
+        "restriction_id": "pv-2026-0035",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "BI-734",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | BI-734 | Antigua N-634 (El Bao-LP.Cantabria) | 136,140 Cantabria | 128,120 | Bilbao"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.7,
+            36.85
+          ],
+          [
+            2.726733,
+            36.856683
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0036",
+        "restriction_id": "pv-2026-0036",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "BI-3724",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | BI-3724 | Antigua N-634 (Barakaldo-El Bao) | 128,120 | 120,690 | Bilbao"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            3.4,
+            36.85
+          ],
+          [
+            3.424767,
+            36.856192
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0037",
+        "restriction_id": "pv-2026-0037",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "N-634",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | N-634 | Donostia-San Sebastián/Santander | 120,690 | 107 | Bilbao"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            37.2
+          ],
+          [
+            -8.454367,
+            37.211408
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0038",
+        "restriction_id": "pv-2026-0038",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "AP-1",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | AP-1 | Burgos-Cantábrico | 77,20 | 83,20 | Vitoria-Gasteiz"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.8,
+            37.2
+          ],
+          [
+            -7.78,
+            37.205
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0039",
+        "restriction_id": "pv-2026-0039",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "A-1",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | A-1 | Madrid-Irún | 336 Treviño | 352 Enlace N-622 | Vitoria-Gasteiz"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.1,
+            37.2
+          ],
+          [
+            -7.046667,
+            37.213333
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0040",
+        "restriction_id": "pv-2026-0040",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "A-1",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | A-1 | Madrid-Irún | 321 Burgos | 329 Treviño | Vitoria-Gasteiz"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -6.4,
+            37.2
+          ],
+          [
+            -6.373333,
+            37.206667
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0041",
+        "restriction_id": "pv-2026-0041",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "N-240",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | N-240 | Tarragona-Bilbao por Barazar | 23,08 Bizkaia | 55,77 Bizkaia | Bilbao"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -5.7,
+            37.2
+          ],
+          [
+            -5.591033,
+            37.227242
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0042",
+        "restriction_id": "pv-2026-0042",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "N-240",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | N-240 | Tarragona-Bilbao por Barazar | 4,9 Araba | 23,08 Araba | Bilbao"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -5.0,
+            37.2
+          ],
+          [
+            -4.9394,
+            37.21515
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0043",
+        "restriction_id": "pv-2026-0043",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "AP-8",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | AP-8 | Autopista Cantábrico | 100 Amorebieta | 0 Frontera Francia | Behobia"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -4.3,
+            37.2
+          ],
+          [
+            -3.966667,
+            37.283333
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0044",
+        "restriction_id": "pv-2026-0044",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "GI-20",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | GI-20 | Variante de Donostia-San Sebastián | 15,572 enlace AP-8 Aritzeta | 0 Enlace AP-8 Errenteria | Francia"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -3.6,
+            37.2
+          ],
+          [
+            -3.548093,
+            37.212977
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0045",
+        "restriction_id": "pv-2026-0045",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "A-15",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | A-15 | Autovía Navarra-Gipuzkoa | 139,7 Navarra | 156,560 Enlace N-I | Andoain"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -2.9,
+            37.2
+          ],
+          [
+            -2.8438,
+            37.21405
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0046",
+        "restriction_id": "pv-2026-0046",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "AP-1",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | AP-1 | Autopista Vitoria/Gasteiz-Eibar | 102,700 Peaje Etxabarri-Ibiña | 146,150 Enlace Maltzaga con AP-8 | Irún"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -2.2,
+            37.2
+          ],
+          [
+            -2.055167,
+            37.236208
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0047",
+        "restriction_id": "pv-2026-0047",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "A-1",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | A-1 | Madrid-Irún | 321,4 Burgos | 329 Treviño | Vitoria-Gasteiz"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -1.5,
+            37.2
+          ],
+          [
+            -1.474667,
+            37.206333
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0048",
+        "restriction_id": "pv-2026-0048",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "A-1",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | A-1 | Madrid-Irún | 336 Treviño | 352 Enlace N-622 | Vitoria-Gasteiz"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -0.8,
+            37.2
+          ],
+          [
+            -0.746667,
+            37.213333
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0049",
+        "restriction_id": "pv-2026-0049",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "N-I",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | N-I | Madrid-Irún | 405,450 Navarra (Etzegarate) | 454,470 enlace AP-8/AP-1 Lasarte-Oria | Francia"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -0.1,
+            37.2
+          ],
+          [
+            0.0634,
+            37.24085
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0050",
+        "restriction_id": "pv-2026-0050",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "GI-636",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | GI-636 | Errenteria-Irún (antigua N-I) | 0 enlace GI-20 Pasaia | 17,235 Behobia | Francia"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            0.6,
+            37.2
+          ],
+          [
+            0.65745,
+            37.214363
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0051",
+        "restriction_id": "pv-2026-0051",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "GI-11",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | GI-11 | Lasarte-Donostia/San Sebastián (antigua N-IA) | 0 enlace N-I | 2,523 enlace GI-20 | Donostia-San Sebastián"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            1.3,
+            37.2
+          ],
+          [
+            1.32,
+            37.205
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-pv-2026-0052",
+        "restriction_id": "pv-2026-0052",
+        "source_scope": "PAIS_VASCO",
+        "road_normalized": "N-121A",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "sentido_destino",
+        "method": "priority_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "PV patrón oro | ANEXO II | N-121A | Behobia/Navarra | 68,460 Navarra | 75,020 Behobia | Francia"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.0,
+            37.2
+          ],
+          [
+            2.021867,
+            37.205467
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-p-0001",
+        "restriction_id": "dgt-2026-p-0001",
+        "source_scope": "DGT",
+        "road_normalized": "N-340",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "anexo_vii_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "DGT Anexo VII aplica Loren | N-340 | 957 Salida 278 A-7 (Nules) | 997 Salida 997 AP-7 (Oropesa) | MMA > 7.5 t | Ambos sentidos"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.7,
+            37.2
+          ],
+          [
+            2.833333,
+            37.233333
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-p-0002",
+        "restriction_id": "dgt-2026-p-0002",
+        "source_scope": "DGT",
+        "road_normalized": "N-340",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "anexo_vii_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "DGT Anexo VII aplica Loren | N-340 | 1012,2 Torreblanca | 1058,44 Limite Castellón-Tarragona | 4 o más ejes | Ambos sentidos"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            3.4,
+            37.2
+          ],
+          [
+            3.554133,
+            37.238533
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-p-0003",
+        "restriction_id": "dgt-2026-p-0003",
+        "source_scope": "DGT",
+        "road_normalized": "N-124",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "anexo_vii_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "DGT Anexo VII aplica Loren | N-124 | 45,99 Límite Álava-La Rioja (Briñas) | 39 Gimileo | 4 o más ejes | Ambos sentidos | (*) Excepto vehiculos origen/destino Haro"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -8.5,
+            37.55
+          ],
+          [
+            -8.4767,
+            37.555825
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-dgt-2026-p-0004",
+        "restriction_id": "dgt-2026-p-0004",
+        "source_scope": "DGT",
+        "road_normalized": "N-232",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "anexo_vii_pk_estimated_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "DGT Anexo VII aplica Loren | N-232 | 446,71 Gimileo | 330,875 Límite Navarra-La Rioja (Alfaro) | 4 o más ejes | Ambos sentidos"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.8,
+            37.55
+          ],
+          [
+            -7.413883,
+            37.646529
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-cat-rimp-2026-001",
+        "restriction_id": "cat-rimp-2026-001",
+        "source_scope": "CATALUNA_RIMP",
+        "road_normalized": "AP-7",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "cataluna_rimp_priority_manual_pk_pending_host_map_match",
+        "confidence": "baja",
+        "source_reference": "BOE-A-2026-6095 rutas obligatorias ADR/RIMP | Autopista AP-7/E-15"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.1,
+            37.55
+          ],
+          [
+            -7.08,
+            37.555
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-cat-rimp-2026-002",
+        "restriction_id": "cat-rimp-2026-002",
+        "source_scope": "CATALUNA_RIMP",
+        "road_normalized": "A-27",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "cataluna_rimp_priority_manual_pk_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "BOE-A-2026-6095 rutas obligatorias ADR/RIMP | Tarragona - El Morell"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -6.4,
+            37.55
+          ],
+          [
+            -6.37,
+            37.5575
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-cat-rimp-2026-003",
+        "restriction_id": "cat-rimp-2026-003",
+        "source_scope": "CATALUNA_RIMP",
+        "road_normalized": "C-16",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "cataluna_rimp_priority_manual_pk_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "BOE-A-2026-6095 rutas obligatorias ADR/RIMP | Sant Cugat AP-7 - Berga"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -5.7,
+            37.55
+          ],
+          [
+            -5.425,
+            37.61875
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-cat-rimp-2026-004",
+        "restriction_id": "cat-rimp-2026-004",
+        "source_scope": "CATALUNA_RIMP",
+        "road_normalized": "A-22",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "cataluna_rimp_priority_manual_pk_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "BOE-A-2026-6095 rutas obligatorias ADR/RIMP | Enlace A-2 - Almacelles"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -5.0,
+            37.55
+          ],
+          [
+            -4.936667,
+            37.565833
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-cat-rimp-2026-005",
+        "restriction_id": "cat-rimp-2026-005",
+        "source_scope": "CATALUNA_RIMP",
+        "road_normalized": "C-44",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "cataluna_rimp_priority_manual_pk_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "BOE-A-2026-6095 rutas obligatorias ADR/RIMP | AP-7 L Hospitalet - Móra la Nova"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -4.3,
+            37.55
+          ],
+          [
+            -4.215,
+            37.57125
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-cat-rimp-2026-006",
+        "restriction_id": "cat-rimp-2026-006",
+        "source_scope": "CATALUNA_RIMP",
+        "road_normalized": "C-25",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "cataluna_rimp_priority_manual_pk_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "BOE-A-2026-6095 rutas obligatorias ADR/RIMP | Cervera A-2 - Caldes de Malavella A-2"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -3.6,
+            37.55
+          ],
+          [
+            -3.15,
+            37.6625
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-cat-rimp-2026-007",
+        "restriction_id": "cat-rimp-2026-007",
+        "source_scope": "CATALUNA_RIMP",
+        "road_normalized": "A-2",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "cataluna_rimp_priority_manual_pk_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "BOE-A-2026-6095 rutas obligatorias ADR/RIMP | Caldes de Malavella C-25 - Riudellots AP-7"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -2.9,
+            37.55
+          ],
+          [
+            -2.88,
+            37.555
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-cat-rimp-2026-008",
+        "restriction_id": "cat-rimp-2026-008",
+        "source_scope": "CATALUNA_RIMP",
+        "road_normalized": "A-2",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "cataluna_rimp_priority_manual_pk_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "BOE-A-2026-6095 rutas obligatorias ADR/RIMP | Cervera C-25 - Soses"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -2.2,
+            37.55
+          ],
+          [
+            -1.946667,
+            37.613333
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-cat-rimp-2026-009",
+        "restriction_id": "cat-rimp-2026-009",
+        "source_scope": "CATALUNA_RIMP",
+        "road_normalized": "C-26",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "cataluna_rimp_priority_manual_pk_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "BOE-A-2026-6095 rutas obligatorias ADR/RIMP | Borrassà AP-7 - Ordis N-260"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -1.5,
+            37.55
+          ],
+          [
+            -1.476667,
+            37.555833
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-cat-rimp-2026-010",
+        "restriction_id": "cat-rimp-2026-010",
+        "source_scope": "CATALUNA_RIMP",
+        "road_normalized": "A-26",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "cataluna_rimp_priority_manual_pk_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "BOE-A-2026-6095 rutas obligatorias ADR/RIMP | Besalú - Olot"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -0.8,
+            37.55
+          ],
+          [
+            -0.726667,
+            37.568333
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-cat-rimp-2026-011",
+        "restriction_id": "cat-rimp-2026-011",
+        "source_scope": "CATALUNA_RIMP",
+        "road_normalized": "A-2",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "cataluna_rimp_priority_manual_pk_pending_host_map_match",
+        "confidence": "baja",
+        "source_reference": "BOE-A-2026-6095 rutas obligatorias ADR/RIMP | Barcelona/Lleida evitando túnel El Bruc por N-IIz"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -0.1,
+            37.55
+          ],
+          [
+            -0.08,
+            37.555
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-cat-rimp-2026-012",
+        "restriction_id": "cat-rimp-2026-012",
+        "source_scope": "CATALUNA_RIMP",
+        "road_normalized": "C-17",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "cataluna_rimp_priority_manual_pk_pending_host_map_match",
+        "confidence": "baja",
+        "source_reference": "BOE-A-2026-6095 rutas obligatorias ADR/RIMP | AP-7 - Tona/Vic/Granollers"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            0.6,
+            37.55
+          ],
+          [
+            0.62,
+            37.555
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-cat-rimp-2026-013",
+        "restriction_id": "cat-rimp-2026-013",
+        "source_scope": "CATALUNA_RIMP",
+        "road_normalized": "AP-2",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "cataluna_rimp_priority_manual_pk_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "BOE-A-2026-6095 rutas obligatorias ADR/RIMP | La Bisbal del Penedès - AP-7"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            1.3,
+            37.55
+          ],
+          [
+            1.32,
+            37.555
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-cat-rimp-2026-014",
+        "restriction_id": "cat-rimp-2026-014",
+        "source_scope": "CATALUNA_RIMP",
+        "road_normalized": "C-32",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "cataluna_rimp_priority_manual_pk_pending_host_map_match",
+        "confidence": "media",
+        "source_reference": "BOE-A-2026-6095 rutas obligatorias ADR/RIMP | El Vendrell - Vilanova i la Geltrú"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.0,
+            37.55
+          ],
+          [
+            2.075,
+            37.56875
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "geom-cat-rimp-2026-015",
+        "restriction_id": "cat-rimp-2026-015",
+        "source_scope": "CATALUNA_RIMP",
+        "road_normalized": "B-23",
+        "geometry_type": "LineString",
+        "buffer_meters": 60,
+        "direction": "ambos",
+        "method": "cataluna_rimp_priority_manual_pk_pending_host_map_match",
+        "confidence": "baja",
+        "source_reference": "BOE-A-2026-6095 rutas obligatorias ADR/RIMP | Sant Joan Despí - El Papiol/AP-7"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.7,
+            37.55
+          ],
+          [
+            2.75,
+            37.5625
+          ]
+        ]
+      }
+    }
+  ]
+}
