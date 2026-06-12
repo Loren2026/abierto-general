@@ -66,6 +66,31 @@ class OrsAvoidPolygonsTests(unittest.TestCase):
         self.assertEqual(len(used), 9)
         self.assertEqual(warnings, [])
 
+    def test_large_geometry_is_split_not_shrunk_and_warns(self):
+        large_record = polygon_record(99)
+        large_record["restriction_id"] = "restr-larga"
+        large_record["buffer_geojson"] = json.dumps({
+            "type": "Polygon",
+            "coordinates": [[[-3.3, 40.0], [-2.9, 40.0], [-2.9, 40.04], [-3.3, 40.04], [-3.3, 40.0]]],
+        })
+        avoid, used, warnings = build_avoid_polygons([large_record])
+        self.assertEqual(avoid["type"], "MultiPolygon")
+        self.assertGreater(len(avoid["coordinates"]), 1)
+        self.assertEqual(used[0]["restriction_id"], "restr-larga")
+        self.assertTrue(any("troceada" in warning for warning in warnings))
+
+    def test_large_geometry_over_area_budget_is_discarded_with_uncovered_warning(self):
+        large_record = polygon_record(100)
+        large_record["restriction_id"] = "restr-sin-cubrir"
+        large_record["buffer_geojson"] = json.dumps({
+            "type": "Polygon",
+            "coordinates": [[[-4.0, 40.0], [-3.2, 40.0], [-3.2, 40.4], [-4.0, 40.4], [-4.0, 40.0]]],
+        })
+        avoid, used, warnings = build_avoid_polygons([large_record], max_area_km2=10)
+        self.assertIsNone(avoid)
+        self.assertEqual(used, [])
+        self.assertTrue(any("restr-sin-cubrir" in warning and "SIN cubrir" in warning for warning in warnings))
+
     def test_calculate_route_calls_ors_original_and_alternative_with_avoid_polygons(self):
         fake_client = FakeOrsClient()
         with patch("app.alternative_routing.geocode_es") as geocode, \

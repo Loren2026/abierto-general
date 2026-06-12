@@ -132,6 +132,8 @@ def road_category_from_name(name: str) -> str:
         return "autopista"
     if re.search(r"\bA-?\d+", value):
         return "autovia"
+    if re.search(r"\bM-?(?:30|40|45|50)\b", value):
+        return "autovia"
     if re.search(r"\bN-?\d+", value):
         return "nacional"
     if re.search(r"\b(?:AS|CV|CM|CL|EX|GI|BI|NA|BU|LE|ZA|O|P|VA|VP|M)-?\d+", value):

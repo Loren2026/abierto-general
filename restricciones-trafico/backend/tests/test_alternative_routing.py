@@ -4,6 +4,8 @@ from pydantic import ValidationError
 from app.alternative_routing import (
     RutaAlternativaRequest,
     calculate_eta,
+    categories_from_ors_feature,
+    road_category_from_name,
     score_road_categories,
     select_best_route,
 )
@@ -59,6 +61,13 @@ class RoadCategoryScoringTests(unittest.TestCase):
         high_capacity_with_local = score_road_categories(km_autopista=100, km_comarcal_local=5)
         pure_autovia = score_road_categories(km_autovia=80)
         self.assertLess(high_capacity_with_local, pure_autovia)
+
+    def test_m40_is_high_capacity_not_local_road(self):
+        self.assertEqual(road_category_from_name("M-40"), "autovia")
+        feature = {"properties": {"segments": [{"steps": [{"name": "M-40", "distance": 12000}]}]}}
+        categories = categories_from_ors_feature(feature)
+        self.assertEqual(categories["autovia"], 12)
+        self.assertEqual(categories["comarcal_local"], 0)
 
     def test_select_best_route_discards_local_roads_when_viable_route_exists(self):
         best = select_best_route([

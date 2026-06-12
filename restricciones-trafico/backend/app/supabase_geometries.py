@@ -63,24 +63,35 @@ def _bbox_km(geometry: dict[str, Any]) -> tuple[float, float, float]:
     return width, height, width * height
 
 
-def _shrink_polygon_to_extent(geometry: dict[str, Any], max_extent_km: float = ORS_AVOID_MAX_EXTENT_KM) -> dict[str, Any]:
+def _split_polygon_to_extent(geometry: dict[str, Any], max_extent_km: float = ORS_AVOID_MAX_EXTENT_KM) -> list[dict[str, Any]]:
+    """Trocea el bbox de una geometría en polígonos contiguos <= límite ORS.
+
+    No deforma la cobertura a un cuadrado centrado: conserva el área rectangular
+    que envolvía la geometría original. Es una aproximación conservadora para
+    respetar ORS; si no cabe en el límite de área, el llamador descartará con aviso.
+    """
     points = list(_iter_positions(geometry.get("coordinates")))
     if not points:
-        return geometry
+        return []
     lons = [p[0] for p in points]
     lats = [p[1] for p in points]
-    center_lon = (min(lons) + max(lons)) / 2
-    center_lat = (min(lats) + max(lats)) / 2
-    half_lat = (max_extent_km / 2) / 110.57
-    half_lon = (max_extent_km / 2) / (111.32 * max(cos(radians(center_lat)), 0.01))
-    ring = [
-        [center_lon - half_lon, center_lat - half_lat],
-        [center_lon + half_lon, center_lat - half_lat],
-        [center_lon + half_lon, center_lat + half_lat],
-        [center_lon - half_lon, center_lat + half_lat],
-        [center_lon - half_lon, center_lat - half_lat],
-    ]
-    return {"type": "Polygon", "coordinates": [ring]}
+    min_lon, max_lon, min_lat, max_lat = min(lons), max(lons), min(lats), min(lats)
+    max_lat = max(lats)
+    mid_lat = (min_lat + max_lat) / 2
+    max_lon_step = max_extent_km / (111.32 * max(cos(radians(mid_lat)), 0.01))
+    max_lat_step = max_extent_km / 110.57
+    pieces: list[dict[str, Any]] = []
+    lon = min_lon
+    while lon < max_lon:
+        next_lon = min(lon + max_lon_step, max_lon)
+        lat = min_lat
+        while lat < max_lat:
+            next_lat = min(lat + max_lat_step, max_lat)
+            ring = [[lon, lat], [next_lon, lat], [next_lon, next_lat], [lon, next_lat], [lon, lat]]
+            pieces.append({"type": "Polygon", "coordinates": [ring]})
+            lat = next_lat
+        lon = next_lon
+    return pieces
 
 
 def _polygons_from_geojson(geometry: dict[str, Any]) -> list[list[Any]]:
@@ -110,14 +121,20 @@ def build_avoid_polygons(records: list[dict[str, Any]], *, max_area_km2: float =
             warnings.append(f"Geometría {record.get('id')} descartada: ORS avoid_polygons requiere Polygon/MultiPolygon")
             continue
         width, height, area = _bbox_km(geometry)
+        geometries = [geometry]
         if width > ORS_AVOID_MAX_EXTENT_KM or height > ORS_AVOID_MAX_EXTENT_KM:
-            geometry = _shrink_polygon_to_extent(geometry)
-            width, height, area = _bbox_km(geometry)
-            warnings.append(f"Geometría {record.get('id')} simplificada por límite ORS de 20 km de extensión")
+            geometries = _split_polygon_to_extent(geometry)
+            if not geometries:
+                warnings.append(f"Restricción {record.get('restriction_id') or record.get('id')} queda SIN cubrir: no se pudo trocear geometría >20 km")
+                continue
+            area = sum(_bbox_km(piece)[2] for piece in geometries)
+            warnings.append(f"Geometría {record.get('id')} troceada en {len(geometries)} polígonos por límite ORS de 20 km de extensión")
         if total_area + area > max_area_km2:
-            warnings.append("Límite ORS de 200 km² alcanzado; se omiten geometrías restantes")
-            break
-        extracted = _polygons_from_geojson(geometry)
+            warnings.append(f"Restricción {record.get('restriction_id') or record.get('id')} queda SIN cubrir: excede límite ORS de 200 km² de avoid_polygons")
+            continue
+        extracted: list[list[Any]] = []
+        for candidate_geometry in geometries:
+            extracted.extend(_polygons_from_geojson(candidate_geometry))
         if not extracted:
             continue
         polygons.extend(extracted)
