@@ -19,6 +19,8 @@ const restrictionsList = document.querySelector('#restrictions-list')
 const roadsList = document.querySelector('#roads-list')
 const routeSummary = document.querySelector('#route-summary')
 const centerMapButton = document.querySelector('#center-map')
+const zoomInMapButton = document.querySelector('#zoom-in-map')
+const zoomOutMapButton = document.querySelector('#zoom-out-map')
 const mapDetail = document.querySelector('#map-detail')
 const cargoType = document.querySelector('#cargo_type')
 const adrWarning = document.querySelector('#adr-warning')
@@ -144,8 +146,7 @@ function ensureMap() {
   if (map) return map
   const container = document.querySelector('#map')
   container.style.width = '100%'
-  map = L.map(container, { scrollWheelZoom: false, zoomControl: false, maxZoom: 19 }).setView([40.4, -3.7], 6)
-  L.control.zoom({ position: 'topright' }).addTo(map)
+  map = L.map(container, { scrollWheelZoom: false, touchZoom: true, zoomControl: false, maxZoom: 19 }).setView([40.4, -3.7], 6)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     maxNativeZoom: 19,
@@ -320,6 +321,8 @@ function renderRestrictions(items = [], data = {}) {
 
 cargoType.addEventListener('change', () => { adrWarning.hidden = cargoType.value !== 'adr' })
 centerMapButton.addEventListener('click', () => refreshMapSize(lastBounds))
+zoomInMapButton.addEventListener('click', () => { if (map) map.zoomIn() })
+zoomOutMapButton.addEventListener('click', () => { if (map) map.zoomOut() })
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault()
