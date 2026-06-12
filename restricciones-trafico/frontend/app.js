@@ -295,7 +295,8 @@ function renderRestrictions(items = [], data = {}) {
     if (crossedStatus && crossedStatus.checked === false) {
       restrictionsList.innerHTML = `<p class="empty">No se pudo comprobar el cruce real de restricciones: ${crossedStatus.reason || 'motivo no detallado'}.</p>`
     } else {
-      restrictionsList.innerHTML = '<p class="empty">Comprobado: ningún tramo restringido cruzado en la fecha/hora indicadas.</p>'
+      const count = crossedStatus?.geometry_count ?? 'las'
+      restrictionsList.innerHTML = `<p class="empty">Comprobado contra ${count} geometrías cargadas de restricciones: ningún tramo restringido cruzado en esa cobertura parcial y fecha/hora indicadas.</p>`
     }
     if ((data.warnings || []).some((w) => String(w).includes('ADR') || String(w).includes('Anexo'))) {
       const div = document.createElement('article')

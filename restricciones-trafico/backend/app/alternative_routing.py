@@ -44,6 +44,10 @@ class RutaAlternativaRequest(BaseModel):
             raise ValueError("hora_salida debe estar en formato HH:MM válido")
         return value
 
+    def model_post_init(self, __context: Any) -> None:
+        if self.fecha_llegada is None:
+            self.fecha_llegada = self.fecha_salida
+
 
 class RouteMetrics(BaseModel):
     geometry: dict[str, Any] | None = None
@@ -318,7 +322,7 @@ def calculate_alternative_route(req: RutaAlternativaRequest, ors_client: OrsClie
         alternative_error = "Supabase no configurado en este entorno; avoid_polygons no aplicado"
     route_features = (ors_data.get("features") or [])
     route_geometry = route_features[0].get("geometry") if route_features else None
-    crossed, crossed_status = crossed_restrictions_for_route(route_geometry, req.fecha_salida, getattr(req, "fecha_llegada", req.fecha_salida))
+    crossed, crossed_status = crossed_restrictions_for_route(route_geometry, req.fecha_salida, req.fecha_llegada)
     response = build_ruta_alternativa_response(req, ors_data, alternative_ors_data=alternative_ors_data, alternative_error=alternative_error, avoid_polygons_used=avoid_used, avoid_warnings=avoid_warnings, crossed_restrictions=crossed, crossed_status=crossed_status)
     if origin and destination:
         response["origen"] = {"label": origin.label, "lon": origin.lon, "lat": origin.lat}
