@@ -1326,3 +1326,30 @@ PREPARADO PERO SIN EJECUTAR en host:
 3. Ejecutar en host con `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` reales.
 
 No se ejecuta carga desde el contenedor de Turín porque no tiene claves Supabase.
+
+## Corrección auditoría Claude — sin geometría inventada
+
+Se elimina la generación sintética tipo cuadrícula (`bbox_line`). La rama queda corregida para que `prepare_priority_geometry_expansion.py` use exclusivamente geometría real devuelta por Overpass (`out geom`) filtrando por `ref` de vía.
+
+Reglas nuevas:
+- Si Overpass no devuelve geometría real, el registro se EXCLUYE del artefacto de carga.
+- Si falta PK completo o el recorte por PK no es fiable, se EXCLUYE.
+- Los excluidos quedan listados en `data/geometries/restriction_geometries_priority_excluded.json` con motivo.
+- Confianza máxima: `media` hasta validación visual; `baja` si el recorte por PK queda dudoso.
+- Recorte PK: interpolación por distancia acumulada sobre polilínea OSM real. Margen de error: puede fallar si el sentido kilométrico oficial no coincide con el orden OSM o si OSM fragmenta la vía; por eso requiere contraste visual antes de carga.
+
+Verificación en contenedor:
+- La red Overpass queda protegida por `ALLOW_OVERPASS_NETWORK=1`; sin esa variable, no se llama a Overpass y todo queda excluido honestamente.
+- Comando ejecutado: `python3 restricciones-trafico/scripts/prepare_priority_geometry_expansion.py --limit 3`.
+- Resultado: `reliable_geometries=0 excluded=3`; controles A-1 Treviño, AP-7 Cataluña y A-8 PV marcados `SIN GEOMETRÍA FIABLE` porque no se ejecutó Overpass real en contenedor.
+
+PREPARADO EN HOST, SIN EJECUTAR AQUÍ:
+```bash
+ALLOW_OVERPASS_NETWORK=1 python3 restricciones-trafico/scripts/prepare_priority_geometry_expansion.py
+```
+Ese comando debe imprimir para contraste manual:
+- `CONTROL A-1 Treviño PK 336-352: first=[lon,lat] last=[lon,lat]`
+- `CONTROL AP-7 Cataluña: first=[lon,lat] last=[lon,lat]`
+- `CONTROL A-8 PV: first=[lon,lat] last=[lon,lat]`
+
+Solo si esos controles cuadran visualmente se debe preparar la carga Supabase. Si no cuadran, los registros afectados quedan excluidos y no contaminan `crossed_restrictions` ni `avoid_polygons`.
