@@ -59,7 +59,7 @@ class RutaAlternativaEndpointTests(unittest.TestCase):
             hora_salida="08:30",
             vehicle={"mass_kg": 7500, "length_m": 17, "height_m": 4},
         )
-        with patch("app.main.OpenRouteServiceClient", return_value=fake_client), patch("app.alternative_routing.geocode_es") as geocode:
+        with patch("app.main.OpenRouteServiceClient", return_value=fake_client), patch("app.alternative_routing.geocode_es") as geocode, patch("app.alternative_routing.crossed_restrictions_for_route", return_value=([], {"checked": True, "reason": "mock"})):
             geocode.side_effect = [type("P", (), {"lon": -3.7, "lat": 40.4, "label": "Madrid"})(), type("P", (), {"lon": -0.3, "lat": 39.4, "label": "Valencia"})()]
             result = post_ruta_alternativa(req)
         self.assertEqual(result["provider"], "openrouteservice")

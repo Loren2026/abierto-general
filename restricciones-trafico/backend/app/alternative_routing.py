@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 from pydantic import BaseModel, Field, field_validator
 
 from .adr_calendar import adr_calendar_warnings
+from .crossed_restrictions import crossed_restrictions_for_route
 from .geocoding import geocode_es
 from .supabase_geometries import build_avoid_polygons, fetch_high_confidence_geometries, supabase_configured
 
@@ -31,6 +32,7 @@ class RutaAlternativaRequest(BaseModel):
     destino: str = Field(min_length=1)
     fecha_salida: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
     hora_salida: str = Field(pattern=r"^\d{2}:\d{2}$")
+    fecha_llegada: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
     cargo_type: CargoType = CargoType.general
     vehicle: RoutingVehicle = Field(default_factory=RoutingVehicle)
 
@@ -41,6 +43,10 @@ class RutaAlternativaRequest(BaseModel):
         if hour > 23 or minute > 59:
             raise ValueError("hora_salida debe estar en formato HH:MM válido")
         return value
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.fecha_llegada is None:
+            self.fecha_llegada = self.fecha_salida
 
 
 class RouteMetrics(BaseModel):
@@ -71,6 +77,7 @@ class RutaAlternativaResponse(BaseModel):
     original_route: RouteMetrics
     alternative_route: AlternativeRoute | None = None
     crossed_restrictions: list[dict[str, Any]] = Field(default_factory=list)
+    crossed_status: dict[str, Any] = Field(default_factory=lambda: {"checked": False, "reason": "No calculado"})
     avoid_polygons_used: list[dict[str, Any]] = Field(default_factory=list)
     rimp: RimpStatus = Field(default_factory=RimpStatus)
     warnings: list[str] = Field(default_factory=list)
@@ -219,7 +226,7 @@ def route_metrics_from_ors_feature(feature: dict[str, Any], req: RutaAlternativa
     }
 
 
-def build_ruta_alternativa_response(req: RutaAlternativaRequest, ors_data: dict[str, Any], *, alternative_ors_data: dict[str, Any] | None = None, alternative_error: str | None = None, avoid_polygons_used: list[dict[str, Any]] | None = None, avoid_warnings: list[str] | None = None) -> RutaAlternativaResponse:
+def build_ruta_alternativa_response(req: RutaAlternativaRequest, ors_data: dict[str, Any], *, alternative_ors_data: dict[str, Any] | None = None, alternative_error: str | None = None, avoid_polygons_used: list[dict[str, Any]] | None = None, avoid_warnings: list[str] | None = None, crossed_restrictions: list[dict[str, Any]] | None = None, crossed_status: dict[str, Any] | None = None) -> RutaAlternativaResponse:
     features = ors_data.get("features") or []
     if not features:
         raise ValueError("ORS no devolvió rutas candidatas")
@@ -271,6 +278,8 @@ def build_ruta_alternativa_response(req: RutaAlternativaRequest, ors_data: dict[
         alternative_status={"found": alternative_route is not None, "reason": reason or alternative_reason, "avoid_polygons": bool(avoid_polygons_used)},
         original_route=original_route,
         alternative_route=alternative_route,
+        crossed_restrictions=crossed_restrictions or [],
+        crossed_status=crossed_status or {"checked": False, "reason": "No calculado"},
         avoid_polygons_used=avoid_polygons_used or [],
         warnings=warnings,
     )
@@ -311,7 +320,10 @@ def calculate_alternative_route(req: RutaAlternativaRequest, ors_client: OrsClie
             alternative_error = f"No se pudieron leer restriction_geometries de Supabase: {exc}"
     else:
         alternative_error = "Supabase no configurado en este entorno; avoid_polygons no aplicado"
-    response = build_ruta_alternativa_response(req, ors_data, alternative_ors_data=alternative_ors_data, alternative_error=alternative_error, avoid_polygons_used=avoid_used, avoid_warnings=avoid_warnings)
+    route_features = (ors_data.get("features") or [])
+    route_geometry = route_features[0].get("geometry") if route_features else None
+    crossed, crossed_status = crossed_restrictions_for_route(route_geometry, req.fecha_salida, req.fecha_llegada)
+    response = build_ruta_alternativa_response(req, ors_data, alternative_ors_data=alternative_ors_data, alternative_error=alternative_error, avoid_polygons_used=avoid_used, avoid_warnings=avoid_warnings, crossed_restrictions=crossed, crossed_status=crossed_status)
     if origin and destination:
         response["origen"] = {"label": origin.label, "lon": origin.lon, "lat": origin.lat}
         response["destino"] = {"label": destination.label, "lon": destination.lon, "lat": destination.lat}
