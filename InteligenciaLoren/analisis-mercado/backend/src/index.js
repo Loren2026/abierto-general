@@ -4,6 +4,7 @@ const { config, validateConfig } = require('./config/env');
 const fmpRoutes = require('./routes/fmp');
 const analysisRoutes = require('./routes/analysis');
 const recommendationRoutes = require('./routes/recommendations');
+const optionsRoutes = require('./routes/options');
 
 validateConfig();
 
@@ -21,6 +22,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/fmp', fmpRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/options', optionsRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error('[server] controlled error:', err.message);

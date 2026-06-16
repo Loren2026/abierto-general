@@ -418,6 +418,11 @@ async function fetchBackendRecommendation(tk){
   });
 }
 
+async function fetchOptionsStatus(){
+  try { return await backendFetch('/api/options/status'); }
+  catch(err){ return { enabled:false, status:'backend_unavailable', message:'Estado de opciones no disponible: '+err.message }; }
+}
+
 async function fetchAllFmpData(tk){
   const [quote, is, bs, cf] = await Promise.all([
     fmpFetch('quote', tk),
@@ -1265,6 +1270,7 @@ function rConfig(){
   document.getElementById('v-config').innerHTML=`<h2 style="font-size:22px;font-weight:900;color:var(--blue);margin-bottom:14px">Configuración</h2>
   <div class="card"><div class="card-t">🔌 Conexiones backend</div>
     <div style="font-size:13px;color:var(--ink3);line-height:1.5">Las claves de FMP y Claude ya no se introducen en el navegador. Viven en el backend seguro. Backend actual: <b>${window.BACKEND_URL}</b></div>
+    <div id="options-status" style="font-size:12px;color:var(--ink3);margin-top:10px;line-height:1.5">Opciones: consultando estado...</div>
   </div>
 
   <div class="card"><div class="card-t">📋 Tarifas del broker</div>
@@ -1296,6 +1302,10 @@ function rConfig(){
     </div>
   </div>
   <div class="card"><button onclick="if(confirm('¿Borrar todos los datos y restaurar la app a su estado inicial?')){localStorage.removeItem('idc7');location.reload()}" style="width:100%;padding:16px;border:1.5px solid var(--red-bg);border-radius:14px;background:var(--red-bg);font-family:var(--sans);font-size:15px;font-weight:700;color:var(--red);cursor:pointer">🔄 Restaurar datos originales</button></div>`;
+  fetchOptionsStatus().then(status => {
+    const el = document.getElementById('options-status');
+    if(el) el.textContent = `Opciones: ${status.message || status.status || 'sin permiso confirmado'}`;
+  });
 }
 
 // ═══ DETAIL VIEW (Cartera) — sin cambios ═══

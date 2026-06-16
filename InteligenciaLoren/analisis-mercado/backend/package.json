@@ -4,7 +4,8 @@
   "description": "Backend independiente para Análisis Mercado dentro de panel-inteligencialoren.",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "test": "node --test"
   },
   "dependencies": {
     "cors": "^2.8.5",

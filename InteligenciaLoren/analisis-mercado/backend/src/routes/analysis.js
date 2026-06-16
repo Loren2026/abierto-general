@@ -1,4 +1,5 @@
 const express = require('express');
+const { publicError } = require('../utils/errorResponse');
 const { analyzeWithClaude } = require('../services/claudeService');
 
 const router = express.Router();
@@ -8,11 +9,8 @@ router.post('/', async (req, res) => {
     const result = await analyzeWithClaude(req.body || {});
     res.json({ status: 'ok', ...result });
   } catch (error) {
-    res.status(error.status || 502).json({
-      status: 'error',
-      message: error.message || 'Claude analysis proxy error',
-      provider: 'claude'
-    });
+    const response = publicError(error, 'Claude analysis proxy error', 'claude');
+    res.status(response.status).json(response.body);
   }
 });
 

@@ -1,4 +1,5 @@
 const express = require('express');
+const { publicError } = require('../utils/errorResponse');
 const { fetchFmp } = require('../services/fmpService');
 
 const router = express.Router();
@@ -8,11 +9,8 @@ async function proxyFmp(req, res, endpointKey, extraParams = {}) {
     const data = await fetchFmp(endpointKey, req.params.symbol, extraParams);
     res.json(data);
   } catch (error) {
-    res.status(error.status || 502).json({
-      status: 'error',
-      message: error.message || 'FMP proxy error',
-      provider: 'fmp'
-    });
+    const response = publicError(error, 'FMP proxy error', 'fmp');
+    res.status(response.status).json(response.body);
   }
 }
 

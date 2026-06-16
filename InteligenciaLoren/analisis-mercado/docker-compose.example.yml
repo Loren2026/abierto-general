@@ -1,0 +1,17 @@
+# PREPARADO PERO SIN EJECUTAR.
+# Copiar a docker-compose.yml en el host y completar .env real fuera de Git.
+services:
+  analisis-mercado-backend:
+    build: ./backend
+    container_name: analisis-mercado-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s

@@ -12,7 +12,8 @@ const config = {
   port: readPort(process.env.PORT),
   fmpApiKey: process.env.FMP_API_KEY || '',
   claudeApiKey: process.env.CLAUDE_API_KEY || '',
-  claudeModel: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514'
+  claudeModel: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
+  optionsEnabled: String(process.env.OPTIONS_ENABLED || 'false').toLowerCase() === 'true'
 };
 
 function validateConfig() {

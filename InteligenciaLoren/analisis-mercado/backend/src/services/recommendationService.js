@@ -1,12 +1,6 @@
 const { fetchFmp } = require('./fmpService');
 const { analyzeWithClaude } = require('./claudeService');
-
-const KNOWN_MARKET_COSTS = {
-  UK: [{ name: 'UK Stamp Duty', side: 'compra', rate: 0.005 }],
-  ES: [{ name: 'FTT española', side: 'compra', rate: 0.002 }],
-  FR: [{ name: 'FTT francesa', side: 'compra', rate: 0.003 }],
-  IT: [{ name: 'FTT italiana', side: 'compra', rate: 0.001 }]
-};
+const { estimateMarketCosts } = require('../config/marketCosts');
 
 const MOCK_SYMBOLS = {
   AAPL: {
@@ -127,28 +121,7 @@ function normalizeFinancialData(symbol, rawData) {
       flujo_caja_operativo: numberOrNull(cash?.operatingCashFlow),
       flujo_caja_libre: numberOrNull(cash?.freeCashFlow)
     },
-    costes_estimados: estimateCosts(market)
-  };
-}
-
-function estimateCosts(market) {
-  if (!market || !KNOWN_MARKET_COSTS[market]) {
-    return {
-      estado: 'no_calculado',
-      motivo: 'Mercado no identificado o sin tasas autorizadas/documentadas en Fase 3.',
-      tasas_aplicadas: []
-    };
-  }
-
-  return {
-    estado: 'calculado_parcial',
-    advertencia: 'Incluye solo impuestos proporcionados explícitamente por Loren; no incluye comisión concreta del broker si no está configurada.',
-    tasas_aplicadas: KNOWN_MARKET_COSTS[market].map((item) => ({
-      nombre: item.name,
-      lado: item.side,
-      porcentaje: item.rate,
-      descripcion: `${(item.rate * 100).toFixed(2)}% en ${item.side}`
-    }))
+    costes_estimados: estimateMarketCosts(market)
   };
 }
 
@@ -207,4 +180,4 @@ function numberOrNull(value) {
   return Number.isFinite(numeric) ? numeric : null;
 }
 
-module.exports = { analyzeRecommendations, normalizeFinancialData, estimateCosts, parseClaudeJson };
+module.exports = { analyzeRecommendations, normalizeFinancialData, parseClaudeJson };
