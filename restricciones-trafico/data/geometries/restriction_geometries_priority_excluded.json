@@ -1,0 +1,23 @@
+[
+  {
+    "restriction_id": "pv-2026-0001",
+    "group": "PV patrón oro",
+    "road_normalized": "A-8",
+    "reason": "Overpass no ejecutado en contenedor; ejecutar en host con ALLOW_OVERPASS_NETWORK=1",
+    "source_reference": "A-8 | Autopista del Cantábrico | 119,5 | 139,21 Cantabria | Cantabria"
+  },
+  {
+    "restriction_id": "pv-2026-0002",
+    "group": "PV patrón oro",
+    "road_normalized": "A-1",
+    "reason": "Overpass no ejecutado en contenedor; ejecutar en host con ALLOW_OVERPASS_NETWORK=1",
+    "source_reference": "A-1 | Madrid-Irún | 352 Enlace N-622 | 336 Treviño | Burgos"
+  },
+  {
+    "restriction_id": "pv-2026-0003",
+    "group": "PV patrón oro",
+    "road_normalized": "A-1",
+    "reason": "Overpass no ejecutado en contenedor; ejecutar en host con ALLOW_OVERPASS_NETWORK=1",
+    "source_reference": "A-1 | Madrid-Irún | 329 Treviño | 321 Burgos | Burgos"
+  }
+]

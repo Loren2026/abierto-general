@@ -1288,3 +1288,68 @@ No ejecutar sin autorización explícita de Loren:
 - Tocar Traefik, CORS o compose de producción.
 
 Estado actual de esta propuesta: **PREPARADO PERO SIN EJECUTAR**.
+
+---
+
+# PROPUESTA — Ampliación prioritaria de restriction_geometries para 44t nacional
+
+## Objetivo
+Ampliar la cobertura geométrica inicial desde las 12 geometrías actuales a tramos de mayor impacto real para tráiler de 44t, manteniendo formato idéntico a `restriction_geometries` y confianza honesta.
+
+## Grupos incluidos en artefacto preparado
+
+Artefactos generados:
+- `data/geometries/restriction_geometries_priority_expanded.json`
+- `data/geometries/restriction_geometries_priority_expanded.geojson`
+
+Conteo preparado:
+- País Vasco patrón oro con PKs: 52 geometrías.
+- DGT Anexo VII que aplica a Loren: 4 geometrías.
+- Cataluña red obligatoria mínima ADR/RIMP: 15 geometrías.
+- Total preparado: 71 geometrías.
+
+## Fuentes
+- `data/processed/pais-vasco-2026.json` para patrón oro PV con PKs.
+- `data/patron-oro/dgt-2026/*anexo7*.json` para permanentes DGT Anexo VII aplicables a Loren.
+- `data/rimp-2026/cataluna-boe-a-2026-6095.html`, apartado rutas obligatorias, para Cataluña.
+
+## Confianza
+- No se infla confianza a `alta` en esta rama porque falta map-match real host/OSM validado tramo a tramo.
+- PV y DGT con PKs verificables quedan como `media` hasta validación espacial real.
+- Cataluña con PK inicial/final queda `media`; rutas descritas sin PK completo quedan `baja`.
+- Todos los registros incluyen `buffer_geojson`, `geometry_geojson`, `buffer_meters=60` y `source_reference` trazable.
+
+## Carga
+PREPARADO PERO SIN EJECUTAR en host:
+1. Revisar artefactos JSON/GeoJSON.
+2. Si Claude/Loren aprueban, adaptar `scripts/load_restriction_geometries_supabase.py` para apuntar temporalmente a `restriction_geometries_priority_expanded.json` o copiar ese fichero sobre el input esperado.
+3. Ejecutar en host con `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` reales.
+
+No se ejecuta carga desde el contenedor de Turín porque no tiene claves Supabase.
+
+## Corrección auditoría Claude — sin geometría inventada
+
+Se elimina la generación sintética tipo cuadrícula (`bbox_line`). La rama queda corregida para que `prepare_priority_geometry_expansion.py` use exclusivamente geometría real devuelta por Overpass (`out geom`) filtrando por `ref` de vía.
+
+Reglas nuevas:
+- Si Overpass no devuelve geometría real, el registro se EXCLUYE del artefacto de carga.
+- Si falta PK completo o el recorte por PK no es fiable, se EXCLUYE.
+- Los excluidos quedan listados en `data/geometries/restriction_geometries_priority_excluded.json` con motivo.
+- Confianza máxima: `media` hasta validación visual; `baja` si el recorte por PK queda dudoso.
+- Recorte PK: interpolación por distancia acumulada sobre polilínea OSM real. Margen de error: puede fallar si el sentido kilométrico oficial no coincide con el orden OSM o si OSM fragmenta la vía; por eso requiere contraste visual antes de carga.
+
+Verificación en contenedor:
+- La red Overpass queda protegida por `ALLOW_OVERPASS_NETWORK=1`; sin esa variable, no se llama a Overpass y todo queda excluido honestamente.
+- Comando ejecutado: `python3 restricciones-trafico/scripts/prepare_priority_geometry_expansion.py --limit 3`.
+- Resultado: `reliable_geometries=0 excluded=3`; controles A-1 Treviño, AP-7 Cataluña y A-8 PV marcados `SIN GEOMETRÍA FIABLE` porque no se ejecutó Overpass real en contenedor.
+
+PREPARADO EN HOST, SIN EJECUTAR AQUÍ:
+```bash
+ALLOW_OVERPASS_NETWORK=1 python3 restricciones-trafico/scripts/prepare_priority_geometry_expansion.py
+```
+Ese comando debe imprimir para contraste manual:
+- `CONTROL A-1 Treviño PK 336-352: first=[lon,lat] last=[lon,lat]`
+- `CONTROL AP-7 Cataluña: first=[lon,lat] last=[lon,lat]`
+- `CONTROL A-8 PV: first=[lon,lat] last=[lon,lat]`
+
+Solo si esos controles cuadran visualmente se debe preparar la carga Supabase. Si no cuadran, los registros afectados quedan excluidos y no contaminan `crossed_restrictions` ni `avoid_polygons`.
