@@ -179,11 +179,6 @@ export class OpenClawGatewayClient {
       message: body,
       deliver: false,
       idempotencyKey,
-      metadata: {
-        source: 'inteligencialoren-workspace-bridge',
-        threadId,
-        messageId,
-      },
     })
 
     this.runId = sendResult?.runId || sendResult?.id || sendResult?.taskId || this.runId
