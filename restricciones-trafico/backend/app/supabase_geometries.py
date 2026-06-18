@@ -109,6 +109,57 @@ def _polygons_from_geojson(geometry: dict[str, Any]) -> list[list[Any]]:
     return []
 
 
+def _bbox_intersects(a: tuple[float, float, float, float], b: tuple[float, float, float, float]) -> bool:
+    return not (a[2] < b[0] or a[0] > b[2] or a[3] < b[1] or a[1] > b[3])
+
+
+def _geometry_bbox(geometry: dict[str, Any]) -> tuple[float, float, float, float] | None:
+    points = list(_iter_positions(geometry.get("coordinates")))
+    if not points:
+        return None
+    lons = [p[0] for p in points]
+    lats = [p[1] for p in points]
+    return min(lons), min(lats), max(lons), max(lats)
+
+
+def _expand_bbox_km(bbox: tuple[float, float, float, float], margin_km: float) -> tuple[float, float, float, float]:
+    min_lon, min_lat, max_lon, max_lat = bbox
+    mid_lat = (min_lat + max_lat) / 2
+    delta_lat = margin_km / 110.57
+    delta_lon = margin_km / (111.32 * max(cos(radians(mid_lat)), 0.01))
+    return min_lon - delta_lon, min_lat - delta_lat, max_lon + delta_lon, max_lat + delta_lat
+
+
+def bbox_from_linestring(coords: list[list[float]], margin_km: float = 0.0) -> tuple[float, float, float, float] | None:
+    if not coords:
+        return None
+    lons = [float(p[0]) for p in coords]
+    lats = [float(p[1]) for p in coords]
+    bbox = (min(lons), min(lats), max(lons), max(lats))
+    return _expand_bbox_km(bbox, margin_km) if margin_km else bbox
+
+
+def filter_records_by_corridor(records: list[dict[str, Any]], coords: list[list[float]], margin_km: float = 50.0) -> list[dict[str, Any]]:
+    corridor_bbox = bbox_from_linestring(coords, margin_km=margin_km)
+    if not corridor_bbox:
+        return []
+    filtered: list[dict[str, Any]] = []
+    for record in records:
+        raw = record.get("buffer_geojson") or record.get("geometry_geojson")
+        if not raw:
+            continue
+        try:
+            geometry = json.loads(raw) if isinstance(raw, str) else raw
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(geometry, dict):
+            continue
+        geometry_bbox = _geometry_bbox(geometry)
+        if geometry_bbox and _bbox_intersects(corridor_bbox, geometry_bbox):
+            filtered.append(record)
+    return filtered
+
+
 def build_avoid_polygons(records: list[dict[str, Any]], *, max_area_km2: float = ORS_AVOID_MAX_AREA_KM2) -> tuple[dict[str, Any] | None, list[dict[str, Any]], list[str]]:
     polygons: list[list[Any]] = []
     used: list[dict[str, Any]] = []

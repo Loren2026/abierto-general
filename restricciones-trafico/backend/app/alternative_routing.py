@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from enum import Enum
 from math import ceil
+import os
 import re
 from typing import Any, Literal, Protocol
 from zoneinfo import ZoneInfo
@@ -10,10 +11,12 @@ from pydantic import BaseModel, Field, field_validator
 from .adr_calendar import adr_calendar_warnings
 from .crossed_restrictions import crossed_restrictions_for_route
 from .geocoding import geocode_es
-from .supabase_geometries import build_avoid_polygons, fetch_high_confidence_geometries, supabase_configured
+from .route_segmentation import linestring_distance_km, merge_ors_segment_responses, split_linestring_by_distance
+from .supabase_geometries import build_avoid_polygons, fetch_high_confidence_geometries, filter_records_by_corridor, supabase_configured
 
 FIXED_SPEED_KMH = 78
 DEFAULT_TIMEZONE = "Europe/Madrid"
+SEGMENTED_AVOID_MAX_KM = 140.0
 
 
 class CargoType(str, Enum):
@@ -291,6 +294,47 @@ def build_ruta_alternativa_response(req: RutaAlternativaRequest, ors_data: dict[
     return response_dict
 
 
+def segmented_avoid_enabled() -> bool:
+    return os.getenv("SEGMENTED_AVOID_ROUTING_ENABLED", "false").lower() in {"1", "true", "yes", "on"}
+
+
+def calculate_segmented_avoid_route(route_coordinates: list[list[float]], req: RutaAlternativaRequest, ors_client: OrsClientProtocol, records: list[dict[str, Any]], route_geometry: dict[str, Any] | None, *, max_segment_km: float = SEGMENTED_AVOID_MAX_KM) -> tuple[dict[str, Any] | None, list[dict[str, Any]], list[str], dict[str, Any]]:
+    coords = (route_geometry or {}).get("coordinates") or []
+    if len(coords) < 2 or linestring_distance_km(coords) <= max_segment_km:
+        segment_records = filter_records_by_corridor(records, coords or route_coordinates)
+        avoid_polygons, avoid_used, avoid_warnings = build_avoid_polygons(segment_records)
+        if not avoid_polygons:
+            return None, avoid_used, avoid_warnings or ["No hay polígonos válidos cercanos al corredor para enviar a ORS avoid_polygons"], {"enabled": False, "segment_count": 1, "segment_max_km": max_segment_km, "segments_with_avoid": 0, "segments_fallback_without_avoid": 0}
+        return ors_client.directions_hgv(route_coordinates, req.vehicle, avoid_polygons=avoid_polygons), avoid_used, avoid_warnings, {"enabled": False, "segment_count": 1, "segment_max_km": max_segment_km, "segments_with_avoid": 1, "segments_fallback_without_avoid": 0}
+
+    segments = split_linestring_by_distance(coords, max_km=max_segment_km)
+    responses: list[dict[str, Any]] = []
+    used_by_id: dict[str, dict[str, Any]] = {}
+    warnings: list[str] = []
+    segments_with_avoid = 0
+    fallback_without_avoid = 0
+    for idx, segment_coords in enumerate(segments, start=1):
+        segment_records = filter_records_by_corridor(records, segment_coords)
+        avoid_polygons, avoid_used, avoid_warnings = build_avoid_polygons(segment_records)
+        warnings.extend([f"Tramo {idx}: {warning}" for warning in avoid_warnings])
+        for item in avoid_used:
+            used_by_id[str(item.get("id"))] = item
+        try:
+            if avoid_polygons:
+                responses.append(ors_client.directions_hgv([segment_coords[0], segment_coords[-1]], req.vehicle, avoid_polygons=avoid_polygons))
+                segments_with_avoid += 1
+            else:
+                responses.append(ors_client.directions_hgv([segment_coords[0], segment_coords[-1]], req.vehicle))
+                fallback_without_avoid += 1
+                warnings.append(f"Tramo {idx}: sin avoid_polygons aplicables; calculado sin avoid_polygons")
+        except Exception as exc:  # noqa: BLE001 - fallback parcial honesto por tramo
+            responses.append(ors_client.directions_hgv([segment_coords[0], segment_coords[-1]], req.vehicle))
+            fallback_without_avoid += 1
+            warnings.append(f"Tramo {idx}: ORS rechazó avoid_polygons ({exc}); calculado sin avoid_polygons")
+    status = {"enabled": True, "segment_count": len(segments), "segment_max_km": max_segment_km, "segments_with_avoid": segments_with_avoid, "segments_fallback_without_avoid": fallback_without_avoid}
+    return merge_ors_segment_responses(responses), list(used_by_id.values()), warnings, status
+
+
 def calculate_alternative_route(req: RutaAlternativaRequest, ors_client: OrsClientProtocol, coordinates: list[list[float]] | None = None) -> dict[str, Any]:
     if coordinates is None:
         origin = geocode_es(req.origen)
@@ -300,30 +344,41 @@ def calculate_alternative_route(req: RutaAlternativaRequest, ors_client: OrsClie
         origin = destination = None
         route_coordinates = coordinates
     ors_data = ors_client.directions_hgv(route_coordinates, req.vehicle)
+    route_features = (ors_data.get("features") or [])
+    route_geometry = route_features[0].get("geometry") if route_features else None
     avoid_polygons = None
     avoid_used: list[dict[str, Any]] = []
     avoid_warnings: list[str] = []
     alternative_ors_data = None
     alternative_error = None
+    segmented_status: dict[str, Any] | None = None
     if supabase_configured():
         try:
-            records = fetch_high_confidence_geometries(limit=9)
-            avoid_polygons, avoid_used, avoid_warnings = build_avoid_polygons(records)
-            if avoid_polygons:
+            records = fetch_high_confidence_geometries(limit=50 if segmented_avoid_enabled() else 9)
+            if segmented_avoid_enabled():
                 try:
-                    alternative_ors_data = ors_client.directions_hgv(route_coordinates, req.vehicle, avoid_polygons=avoid_polygons)
+                    alternative_ors_data, avoid_used, avoid_warnings, segmented_status = calculate_segmented_avoid_route(route_coordinates, req, ors_client, records, route_geometry)
+                    if alternative_ors_data is None:
+                        alternative_error = "No hay polígonos válidos de confianza alta para enviar a ORS avoid_polygons"
                 except Exception as exc:  # noqa: BLE001 - devolver motivo honesto al usuario/API
-                    alternative_error = f"ORS no encontró o rechazó ruta alternativa con avoid_polygons: {exc}"
+                    alternative_error = f"ORS no encontró o rechazó ruta alternativa segmentada con avoid_polygons: {exc}"
             else:
-                alternative_error = "No hay polígonos válidos de confianza alta para enviar a ORS avoid_polygons"
+                avoid_polygons, avoid_used, avoid_warnings = build_avoid_polygons(records)
+                if avoid_polygons:
+                    try:
+                        alternative_ors_data = ors_client.directions_hgv(route_coordinates, req.vehicle, avoid_polygons=avoid_polygons)
+                    except Exception as exc:  # noqa: BLE001 - devolver motivo honesto al usuario/API
+                        alternative_error = f"ORS no encontró o rechazó ruta alternativa con avoid_polygons: {exc}"
+                else:
+                    alternative_error = "No hay polígonos válidos de confianza alta para enviar a ORS avoid_polygons"
         except Exception as exc:  # noqa: BLE001 - configuración/datos externos; no ocultar motivo
             alternative_error = f"No se pudieron leer restriction_geometries de Supabase: {exc}"
     else:
         alternative_error = "Supabase no configurado en este entorno; avoid_polygons no aplicado"
-    route_features = (ors_data.get("features") or [])
-    route_geometry = route_features[0].get("geometry") if route_features else None
     crossed, crossed_status = crossed_restrictions_for_route(route_geometry, req.fecha_salida, req.fecha_llegada)
     response = build_ruta_alternativa_response(req, ors_data, alternative_ors_data=alternative_ors_data, alternative_error=alternative_error, avoid_polygons_used=avoid_used, avoid_warnings=avoid_warnings, crossed_restrictions=crossed, crossed_status=crossed_status)
+    if segmented_status:
+        response["segmented_routing"] = segmented_status
     if origin and destination:
         response["origen"] = {"label": origin.label, "lon": origin.lon, "lat": origin.lat}
         response["destino"] = {"label": destination.label, "lon": destination.lon, "lat": destination.lat}
