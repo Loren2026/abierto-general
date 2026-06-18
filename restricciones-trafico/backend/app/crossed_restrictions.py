@@ -107,6 +107,8 @@ def crossed_restrictions_for_route(route_geometry: dict[str, Any] | None, fecha_
             geometry = json.loads(raw) if isinstance(raw, str) else raw
         except json.JSONDecodeError:
             continue
+        if not isinstance(geometry, dict):
+            continue
         if _route_intersects_geometry(route_geometry, geometry):
             road = record.get("road_normalized")
             if road:
