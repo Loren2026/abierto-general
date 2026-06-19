@@ -48,7 +48,28 @@ def affected_days(restriction_type: str, rule: dict, days):
         return [d.isoformat() for d in days]
     return []
 
-def consulta(fecha_salida: str, fecha_llegada: str, vias: list[str]):
+def _time_to_minutes(value: str) -> int:
+    hour, minute = value.split(":")[:2]
+    return int(hour) * 60 + int(minute)
+
+
+def time_window_matches(windows: list[dict], hora: str | None) -> bool:
+    if not hora or not windows:
+        return True
+    minute = _time_to_minutes(hora)
+    for window in windows:
+        start = window.get("start")
+        end = window.get("end")
+        if not start or not end:
+            return True
+        a = _time_to_minutes(start)
+        b = 24 * 60 if end == "24:00" else _time_to_minutes(end)
+        if a <= minute <= b:
+            return True
+    return False
+
+
+def consulta(fecha_salida: str, fecha_llegada: str, vias: list[str], hora_salida: str | None = None):
     days = expand_days(fecha_salida, fecha_llegada)
     vias_norm = [v.upper() for v in vias]
     if not vias_norm:
@@ -65,7 +86,7 @@ def consulta(fecha_salida: str, fecha_llegada: str, vias: list[str]):
         rule = json.loads(row["date_rule"] or "{}")
         tw = json.loads(row["time_windows"] or "[]")
         hits = affected_days(row["restriction_type"], rule, days)
-        if not hits:
+        if not hits or not time_window_matches(tw, hora_salida):
             continue
         out.append({
             "id": row["id"],
@@ -78,5 +99,8 @@ def consulta(fecha_salida: str, fecha_llegada: str, vias: list[str]):
             "confidence": row["confidence"],
             "restriction_type": row["restriction_type"],
             "source_scope": row["source_scope"],
+            "source_annex": row["source_annex"],
+            "source_block": row["source_block"],
+            "date_rule": rule,
         })
     return out

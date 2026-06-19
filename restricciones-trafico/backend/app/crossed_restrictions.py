@@ -88,7 +88,7 @@ def _route_intersects_geometry(route_geometry: dict[str, Any] | None, restrictio
     return False
 
 
-def crossed_restrictions_for_route(route_geometry: dict[str, Any] | None, fecha_salida: str, fecha_llegada: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+def crossed_restrictions_for_route(route_geometry: dict[str, Any] | None, fecha_salida: str, fecha_llegada: str, hora_salida: str | None = None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     if not supabase_configured():
         return [], {"checked": False, "geometry_count": 0, "reason": "Supabase no configurado; no se pudo comprobar cruce real con restriction_geometries"}
     try:
@@ -99,6 +99,7 @@ def crossed_restrictions_for_route(route_geometry: dict[str, Any] | None, fecha_
     geometry_count = len(records)
     intersected_roads: list[str] = []
     intersected_ids: set[str] = set()
+    geometries_by_restriction_id: dict[str, dict[str, Any]] = {}
     for record in records:
         raw = record.get("buffer_geojson") or record.get("geometry_geojson")
         if not raw:
@@ -114,7 +115,14 @@ def crossed_restrictions_for_route(route_geometry: dict[str, Any] | None, fecha_
             if road:
                 intersected_roads.append(road)
             if record.get("restriction_id"):
-                intersected_ids.add(str(record["restriction_id"]))
+                restriction_id = str(record["restriction_id"])
+                intersected_ids.add(restriction_id)
+                geometries_by_restriction_id[restriction_id] = {
+                    "id": record.get("id"),
+                    "geometry": json.loads(record.get("geometry_geojson")) if isinstance(record.get("geometry_geojson"), str) else record.get("geometry_geojson"),
+                    "buffer": json.loads(record.get("buffer_geojson")) if isinstance(record.get("buffer_geojson"), str) else record.get("buffer_geojson"),
+                    "road_normalized": record.get("road_normalized"),
+                }
 
     intersected_roads_unique = sorted(set(intersected_roads))
     intersected_ids_list = sorted(intersected_ids)
@@ -124,13 +132,18 @@ def crossed_restrictions_for_route(route_geometry: dict[str, Any] | None, fecha_
             "geometry_count": geometry_count,
             "intersected_roads": [],
             "intersected_restriction_ids": [],
-            "reason": f"Comprobado contra {geometry_count} geometrías cargadas de restriction_geometries; sin cruces geométricos en esa cobertura parcial. No incluye todavía calendario general de pesados.",
+            "reason": f"Comprobado contra {geometry_count} geometrías cargadas de restriction_geometries; sin cruces geométricos en esa cobertura parcial. Solo marca restricciones activas si geometría y calendario coinciden.",
         }
 
-    candidates = consulta(fecha_salida, fecha_llegada, intersected_roads_unique)
-    filtered = [item for item in candidates if not intersected_ids or str(item.get("id")) in intersected_ids or item.get("via") in intersected_roads]
+    candidates = consulta(fecha_salida, fecha_llegada, intersected_roads_unique, hora_salida)
+    filtered = [item for item in candidates if (str(item.get("id")) in intersected_ids if intersected_ids else item.get("via") in intersected_roads)]
+    for item in filtered:
+        geom = geometries_by_restriction_id.get(str(item.get("id")))
+        if geom:
+            item["restriction_geometry"] = geom.get("geometry")
+            item["restriction_buffer"] = geom.get("buffer")
     if not filtered:
-        reason = "Hay geometrías de restricción que cruzan la ruta, pero ninguna regla temporal aplicable para la fecha consultada; se comunica como riesgo geométrico, no como alternativa automática."
+        reason = "Hay geometrías de restricción que cruzan la ruta, pero ninguna regla temporal aplicable para la fecha/hora consultada; se comunica como riesgo geométrico, no como alternativa automática."
     else:
         reason = f"Comprobado contra {geometry_count} geometrías cargadas de Supabase y reglas temporales SQLite"
     return filtered, {
