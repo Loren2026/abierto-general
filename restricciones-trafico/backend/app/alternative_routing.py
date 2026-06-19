@@ -202,6 +202,48 @@ def select_best_route(candidates: list[dict[str, Any]]) -> dict[str, Any] | None
     return sorted(pool, key=sort_key)[0]
 
 
+
+def _slice_linestring(coords: list[list[float]], way_points: list[int] | None) -> list[list[float]]:
+    if not way_points or len(way_points) < 2 or not coords:
+        return []
+    start, end = int(way_points[0]), int(way_points[-1])
+    start = max(0, min(start, len(coords) - 1))
+    end = max(start, min(end, len(coords) - 1))
+    segment = coords[start:end + 1]
+    return segment if len(segment) >= 2 else []
+
+
+def road_segments_from_ors_feature(feature: dict[str, Any], restrictions: list[dict[str, Any]] | None = None, *, include_restrictions: bool = False) -> list[dict[str, Any]]:
+    coords = (feature.get("geometry") or {}).get("coordinates") or []
+    if len(coords) < 2:
+        return []
+    restrictions_by_road: dict[str, list[dict[str, Any]]] = {}
+    for restriction in restrictions or []:
+        road = restriction.get("via")
+        if road:
+            restrictions_by_road.setdefault(str(road), []).append(restriction)
+    out: list[dict[str, Any]] = []
+    for segment in feature.get("properties", {}).get("segments", []) or []:
+        for step in segment.get("steps", []) or []:
+            road = step.get("name")
+            way_points = step.get("way_points")
+            geometry_coords = _slice_linestring(coords, way_points)
+            if not road or not geometry_coords:
+                continue
+            distance_km = round(float(step.get("distance") or 0) / 1000, 3)
+            item: dict[str, Any] = {
+                "road": road,
+                "type": road_category_from_name(road),
+                "distance_km": distance_km,
+                "geometry": {"type": "LineString", "coordinates": geometry_coords},
+            }
+            if include_restrictions:
+                road_restrictions = restrictions_by_road.get(str(road), [])
+                item["restricted"] = bool(road_restrictions)
+                item["restrictions"] = road_restrictions
+            out.append(item)
+    return out
+
 def route_metrics_from_ors_feature(feature: dict[str, Any], req: RutaAlternativaRequest) -> dict[str, Any]:
     distance_km = float(feature.get("properties", {}).get("summary", {}).get("distance") or 0) / 1000
     categories = categories_from_ors_feature(feature)
@@ -245,6 +287,7 @@ def build_ruta_alternativa_response(req: RutaAlternativaRequest, ors_data: dict[
     original_route = RouteMetrics(**{key: original[key] for key in ["geometry", "distance_km", "eta_minutes", "eta_at", "road_category_score"]})
     alternative_route = None
     alternative_reason = None
+    selected_alternative = None
     if alternative_ors_data:
         alternative_features = alternative_ors_data.get("features") or []
         alternative_candidates = []
@@ -292,6 +335,12 @@ def build_ruta_alternativa_response(req: RutaAlternativaRequest, ors_data: dict[
     response_dict = response.model_dump()
     response_dict["vias_detectadas"] = original.get("roads", [])
     response_dict["road_categories"] = original.get("categories", {})
+    response_dict["road_segments"] = {
+        "original": road_segments_from_ors_feature(original["feature"], crossed_restrictions or [], include_restrictions=True),
+        "alternative": road_segments_from_ors_feature(selected_alternative["feature"]) if alternative_route is not None and selected_alternative else [],
+    }
+    if alternative_route is not None and selected_alternative:
+        response_dict["alternative_route"]["roads"] = selected_alternative.get("roads", [])
     response_dict["route_confidence"] = "alta" if original.get("roads") else "media"
     return response_dict
 
