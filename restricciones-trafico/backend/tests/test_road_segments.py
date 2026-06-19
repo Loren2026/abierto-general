@@ -36,6 +36,18 @@ class RoadSegmentsTests(unittest.TestCase):
         self.assertFalse(segments[1]["restricted"])
         self.assertEqual(segments[1]["restrictions"], [])
 
+    def test_segments_under_one_km_are_filtered_out(self):
+        feature = {
+            "type": "Feature",
+            "geometry": {"type": "LineString", "coordinates": [[0, 0], [0.5, 0], [1, 0], [2, 0]]},
+            "properties": {"summary": {"distance": 2500}, "segments": [{"steps": [
+                {"name": "short-link", "distance": 200, "way_points": [0, 1]},
+                {"name": "A-1", "distance": 2300, "way_points": [1, 3]},
+            ]}]},
+        }
+        segments = road_segments_from_ors_feature(feature)
+        self.assertEqual([item["road"] for item in segments], ["A-1"])
+
     def test_fallback_without_way_points_returns_empty_segments(self):
         feature = {
             "type": "Feature",
