@@ -120,6 +120,47 @@ class OrsAvoidPolygonsTests(unittest.TestCase):
         self.assertFalse(result["alternative_status"]["found"])
         self.assertIn("no route found", result["alternative_status"]["reason"])
 
+    def test_segmented_avoid_flag_splits_long_route_and_filters_corridor(self):
+        long_response = {
+            "type": "FeatureCollection",
+            "features": [{
+                "type": "Feature",
+                "geometry": {"type": "LineString", "coordinates": [[-3.7, 40.4], [-2.0, 40.4], [-0.3, 39.4]]},
+                "properties": {"summary": {"distance": 320000}, "segments": [{"steps": [{"name": "A-3", "distance": 320000}]}]},
+            }],
+        }
+
+        class SegmentingFakeOrsClient(FakeOrsClient):
+            def directions_hgv(self, coordinates, vehicle, avoid_polygons=None):
+                self.calls.append({"coordinates": coordinates, "avoid_polygons": avoid_polygons})
+                if len(self.calls) == 1:
+                    return long_response
+                return {
+                    "type": "FeatureCollection",
+                    "features": [{
+                        "type": "Feature",
+                        "geometry": {"type": "LineString", "coordinates": coordinates},
+                        "properties": {"summary": {"distance": 120000}, "segments": [{"steps": [{"name": "A-3", "distance": 120000}]}]},
+                    }],
+                }
+
+        fake_client = SegmentingFakeOrsClient()
+        near = polygon_record(1)
+        far = polygon_record(2)
+        far["id"] = "geom-far"
+        far["buffer_geojson"] = json.dumps({"type": "Polygon", "coordinates": [[[10, 50], [10.01, 50], [10.01, 50.01], [10, 50.01], [10, 50]]]})
+        with patch.dict(os.environ, {"SEGMENTED_AVOID_ROUTING_ENABLED": "true"}), \
+             patch("app.alternative_routing.geocode_es") as geocode, \
+             patch("app.alternative_routing.supabase_configured", return_value=True), \
+             patch("app.alternative_routing.fetch_high_confidence_geometries", return_value=[near, far]), \
+             patch("app.alternative_routing.crossed_restrictions_for_route", return_value=([], {"checked": True, "reason": "mock"})):
+            geocode.side_effect = [type("P", (), {"lon": -3.7, "lat": 40.4, "label": "Madrid"})(), type("P", (), {"lon": -0.3, "lat": 39.4, "label": "Valencia"})()]
+            result = calculate_alternative_route(self.req, fake_client)
+        self.assertGreater(len(fake_client.calls), 2)
+        self.assertTrue(result["segmented_routing"]["enabled"])
+        self.assertTrue(result["alternative_status"]["found"])
+        self.assertEqual([item["id"] for item in result["avoid_polygons_used"]], ["geom-1"])
+
 
 if __name__ == "__main__":
     unittest.main()
