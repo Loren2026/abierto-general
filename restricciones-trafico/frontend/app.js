@@ -29,6 +29,7 @@ let routeLayer
 let alternativeLayer
 let restrictionLayer
 let lowConfidenceLayer
+let highlightLayer
 let lastBounds
 let resizeObserver
 
@@ -186,6 +187,31 @@ function showMapDetail(html) {
   mapDetail.hidden = false
 }
 
+function escapeHtml(value = '') {
+  return String(value).replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]))
+}
+
+function segmentPopup(segment) {
+  const restriction = (segment.restrictions || [])[0]
+  const restrictionText = restriction ? `<br><strong>Restricción:</strong> ${escapeHtml(restriction.id || restriction.via || 'restricción')}` : ''
+  return `<strong>${escapeHtml(segment.road || 'Vía')}</strong><br>${formatDistanceKm(segment.distance_km)} · ${escapeHtml(segment.type || roadType(segment.road))}${restrictionText}`
+}
+
+function highlightRoadSegment(segment) {
+  const m = ensureMap()
+  const coords = segment?.geometry?.coordinates || []
+  if (highlightLayer) highlightLayer.remove()
+  if (!coords.length) return
+  const latlngs = coords.map(([lon, lat]) => [lat, lon])
+  if (routeLayer) routeLayer.setStyle({ opacity: .2 })
+  if (alternativeLayer) alternativeLayer.setStyle({ opacity: .2 })
+  highlightLayer = L.polyline(latlngs, { color: '#facc15', weight: 11, opacity: 1, smoothFactor: 0, noClip: true, lineJoin: 'round', lineCap: 'round' }).addTo(m)
+  const html = segmentPopup(segment)
+  highlightLayer.bindPopup(html).openPopup()
+  showMapDetail(html)
+  refreshMapSize(highlightLayer.getBounds(), { maxZoom: 13 })
+}
+
 function bindDetail(layer, html) {
   layer.on('click', () => showMapDetail(html))
   return layer.bindPopup(html)
@@ -197,6 +223,8 @@ function drawMap(data) {
   if (alternativeLayer) alternativeLayer.remove()
   if (restrictionLayer) restrictionLayer.remove()
   if (lowConfidenceLayer) lowConfidenceLayer.remove()
+  if (highlightLayer) highlightLayer.remove()
+  highlightLayer = null
   mapDetail.hidden = true
   const coords = data.geometry?.coordinates || data.original_route?.geometry?.coordinates || []
   let routeBounds
@@ -258,18 +286,55 @@ function renderConfidence(data) {
     : 'Detección de vías suficiente. Revisa igualmente el detalle antes de salir.'
 }
 
+function roadSegmentButton(segment, fallbackRoad = '') {
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.className = `road-segment ${segment.restricted ? 'road-segment-restricted' : ''}`
+  const restriction = (segment.restrictions || [])[0]
+  button.innerHTML = `
+    <span class="road-segment-name">${escapeHtml(segment.road || fallbackRoad || 'Vía')}</span>
+    <span class="road-segment-meta">${formatDistanceKm(segment.distance_km)} · ${escapeHtml(segment.type || roadType(segment.road || fallbackRoad))}</span>
+    ${restriction ? `<span class="road-segment-alert">Restricción: ${escapeHtml(restriction.id || restriction.via || 'afecta')}</span>` : ''}
+  `
+  if (segment.geometry?.coordinates?.length) button.addEventListener('click', () => highlightRoadSegment(segment))
+  else button.disabled = true
+  return button
+}
+
+function renderRoadGroup(title, segments, fallbackRoads = [], emptyText = 'Sin vías en esta categoría.') {
+  const section = document.createElement('section')
+  section.className = 'road-group'
+  section.innerHTML = `<h3>${title}</h3>`
+  const list = document.createElement('div')
+  list.className = 'road-segment-list'
+  if (segments.length) {
+    for (const segment of segments) list.appendChild(roadSegmentButton(segment))
+  } else if (fallbackRoads.length) {
+    for (const road of fallbackRoads) list.appendChild(roadSegmentButton({ road, type: roadType(road), distance_km: null, geometry: null }))
+  } else {
+    list.innerHTML = `<p class="empty">${emptyText}</p>`
+  }
+  section.appendChild(list)
+  return section
+}
+
 function renderRoads(roads = [], data = {}) {
   roadsList.innerHTML = ''
-  if (!roads.length) {
+  const originalSegments = data.road_segments?.original || []
+  const alternativeSegments = data.road_segments?.alternative || []
+  const restrictedRoads = new Set((data.crossed_restrictions || data.restricciones || []).map((item) => item.via).filter(Boolean))
+  const freeSegments = originalSegments.filter((segment) => !segment.restricted)
+  const restrictedSegments = originalSegments.filter((segment) => segment.restricted)
+  const fallbackFreeRoads = originalSegments.length ? [] : roads.filter((road) => !restrictedRoads.has(road))
+  const fallbackRestrictedRoads = originalSegments.length ? [] : roads.filter((road) => restrictedRoads.has(road))
+
+  if (!roads.length && !originalSegments.length && !alternativeSegments.length) {
     roadsList.innerHTML = '<p class="empty">No se detectaron vías suficientes. Puede deberse a que el proveedor no devolvió nombres de vía o a fallo de enriquecimiento Overpass.</p>'
     return
   }
-  for (const road of roads) {
-    const span = document.createElement('span')
-    span.className = 'chip'
-    span.textContent = `${road} · ${roadType(road)}`
-    roadsList.appendChild(span)
-  }
+  roadsList.appendChild(renderRoadGroup('Vías detectadas libres', freeSegments, fallbackFreeRoads, 'No hay vías libres identificadas.'))
+  roadsList.appendChild(renderRoadGroup('Vías detectadas restringidas', restrictedSegments, fallbackRestrictedRoads, 'No hay vías restringidas confirmadas.'))
+  roadsList.appendChild(renderRoadGroup('Vías alternativas', alternativeSegments, data.alternative_route?.roads || [], 'No hay ruta alternativa calculada.'))
 }
 
 function formatDays(days = []) { return days.length ? days.join(', ') : 'Sin días concretos' }

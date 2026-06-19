@@ -69,3 +69,15 @@ button:disabled { opacity: .65; cursor: wait; }
 .metric strong { display: block; color: #f8fafc; font-size: 1.25rem; }
 .map-detail { background: #020617; border: 1px solid #334155; border-radius: 16px; padding: 12px; color: #e2e8f0; }
 @media (max-width: 640px) { .map { height: 62vh; min-height: 360px; } .sticky-cta { position: sticky; bottom: 10px; z-index: 900; } .map-toolbar { align-items: stretch; } .map-controls-row { gap: 12px; } .map-action-button { min-width: 0; flex: 1; } .map-zoom-actions { gap: 10px; } .map-zoom-button { width: 58px; min-width: 58px; } }
+
+.roads-panel { display: grid; gap: 14px; }
+.road-group { border: 1px solid #1e293b; background: #020617; border-radius: 16px; padding: 12px; }
+.road-group h3 { margin: 0 0 10px; font-size: .95rem; color: #e2e8f0; }
+.road-segment-list { display: grid; gap: 8px; }
+.road-segment { width: 100%; text-align: left; border: 1px solid #1d4ed8; border-radius: 14px; background: #0f172a; color: #bfdbfe; padding: 9px 10px; display: grid; gap: 3px; cursor: pointer; }
+.road-segment:disabled { cursor: default; opacity: .65; }
+.road-segment:not(:disabled):hover { border-color: #facc15; box-shadow: 0 0 0 2px rgba(250, 204, 21, .18); }
+.road-segment-restricted { border-color: #ef4444; color: #fecaca; }
+.road-segment-name { font-weight: 800; font-size: .86rem; line-height: 1.1; }
+.road-segment-meta, .road-segment-alert { font-size: .74rem; color: #94a3b8; }
+.road-segment-alert { color: #fca5a5; }
