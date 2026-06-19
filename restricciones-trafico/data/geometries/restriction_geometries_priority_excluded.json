@@ -3,21 +3,182 @@
     "restriction_id": "pv-2026-0001",
     "group": "PV patrón oro",
     "road_normalized": "A-8",
-    "reason": "Overpass no ejecutado en contenedor; ejecutar en host con ALLOW_OVERPASS_NETWORK=1",
+    "reason": "Overpass falló para A-8: The read operation timed out",
     "source_reference": "A-8 | Autopista del Cantábrico | 119,5 | 139,21 Cantabria | Cantabria"
   },
   {
-    "restriction_id": "pv-2026-0002",
+    "restriction_id": "pv-2026-0008",
     "group": "PV patrón oro",
-    "road_normalized": "A-1",
-    "reason": "Overpass no ejecutado en contenedor; ejecutar en host con ALLOW_OVERPASS_NETWORK=1",
-    "source_reference": "A-1 | Madrid-Irún | 352 Enlace N-622 | 336 Treviño | Burgos"
+    "road_normalized": "N-634",
+    "reason": "Overpass falló para N-634: The read operation timed out",
+    "source_reference": "N-634 | Donostia-San Sebastián/Santander | 107 | 120,690 | Cantabria"
   },
   {
-    "restriction_id": "pv-2026-0003",
+    "restriction_id": "pv-2026-0009",
     "group": "PV patrón oro",
-    "road_normalized": "A-1",
-    "reason": "Overpass no ejecutado en contenedor; ejecutar en host con ALLOW_OVERPASS_NETWORK=1",
-    "source_reference": "A-1 | Madrid-Irún | 329 Treviño | 321 Burgos | Burgos"
+    "road_normalized": "BI-3724",
+    "reason": "Overpass falló para BI-3724: The read operation timed out",
+    "source_reference": "BI-3724 | Antigua N-634 (Barakaldo-El Bao) | 120,690 | 128,120 | Cantabria"
+  },
+  {
+    "restriction_id": "pv-2026-0014",
+    "group": "PV patrón oro",
+    "road_normalized": "N-634",
+    "reason": "Overpass falló para N-634: The read operation timed out",
+    "source_reference": "N-634 | Donostia-San Sebastián/Santander | 120,690 | 107 | Bilbao"
+  },
+  {
+    "restriction_id": "pv-2026-0016",
+    "group": "PV patrón oro",
+    "road_normalized": "N-634",
+    "reason": "Overpass falló para N-634: The read operation timed out",
+    "source_reference": "N-634 | Donostia-San Sebastián/Santander | 107 | 120,690 | Cantabria"
+  },
+  {
+    "restriction_id": "pv-2026-0019",
+    "group": "PV patrón oro",
+    "road_normalized": "AP-1",
+    "reason": "Overpass falló para AP-1: The read operation timed out",
+    "source_reference": "AP-1 | Burgos-Cantábrico | 83,20 | 77,20 | Burgos"
+  },
+  {
+    "restriction_id": "pv-2026-0022",
+    "group": "PV patrón oro",
+    "road_normalized": "N-240",
+    "reason": "Overpass falló para N-240: The read operation timed out",
+    "source_reference": "N-240 | Tarragona-Bilbao por Barazar | 55,77 Bizkaia | 23,08 Bizkaia | Vitoria-Gasteiz"
+  },
+  {
+    "restriction_id": "pv-2026-0023",
+    "group": "PV patrón oro",
+    "road_normalized": "N-240",
+    "reason": "Overpass falló para N-240: The read operation timed out",
+    "source_reference": "N-240 | Tarragona-Bilbao por Barazar | 23,08 Araba | 4,9 Araba | Vitoria-Gasteiz"
+  },
+  {
+    "restriction_id": "pv-2026-0025",
+    "group": "PV patrón oro",
+    "road_normalized": "N-634",
+    "reason": "Overpass falló para N-634: The read operation timed out",
+    "source_reference": "N-634 | Donostia-San Sebastián/Santander | 107 | 120,690 | Cantabria"
+  },
+  {
+    "restriction_id": "pv-2026-0028",
+    "group": "PV patrón oro",
+    "road_normalized": "AP-1",
+    "reason": "Overpass falló para AP-1: The read operation timed out",
+    "source_reference": "AP-1 | Burgos-Cantábrico | 83,20 | 77,20 | Burgos"
+  },
+  {
+    "restriction_id": "pv-2026-0033",
+    "group": "PV patrón oro",
+    "road_normalized": "N-622",
+    "reason": "Overpass falló para N-622: The read operation timed out",
+    "source_reference": "N-622 | Autovía Altube/Vitoria-Gasteiz | 7,6 | 4,5 | Vitoria-Gasteiz"
+  },
+  {
+    "restriction_id": "pv-2026-0043",
+    "group": "PV patrón oro",
+    "road_normalized": "AP-8",
+    "reason": "Overpass falló para AP-8: The read operation timed out",
+    "source_reference": "AP-8 | Autopista Cantábrico | 100 Amorebieta | 0 Frontera Francia | Behobia"
+  },
+  {
+    "restriction_id": "pv-2026-0045",
+    "group": "PV patrón oro",
+    "road_normalized": "A-15",
+    "reason": "Overpass falló para A-15: The read operation timed out",
+    "source_reference": "A-15 | Autovía Navarra-Gipuzkoa | 139,7 Navarra | 156,560 Enlace N-I | Andoain"
+  },
+  {
+    "restriction_id": "pv-2026-0049",
+    "group": "PV patrón oro",
+    "road_normalized": "N-I",
+    "reason": "Overpass falló para N-I: The read operation timed out",
+    "source_reference": "N-I | Madrid-Irún | 405,450 Navarra (Etzegarate) | 454,470 enlace AP-8/AP-1 Lasarte-Oria | Francia"
+  },
+  {
+    "restriction_id": "pv-2026-0050",
+    "group": "PV patrón oro",
+    "road_normalized": "GI-636",
+    "reason": "Overpass falló para GI-636: The read operation timed out",
+    "source_reference": "GI-636 | Errenteria-Irún (antigua N-I) | 0 enlace GI-20 Pasaia | 17,235 Behobia | Francia"
+  },
+  {
+    "restriction_id": "pv-2026-0051",
+    "group": "PV patrón oro",
+    "road_normalized": "GI-11",
+    "reason": "Overpass falló para GI-11: The read operation timed out",
+    "source_reference": "GI-11 | Lasarte-Donostia/San Sebastián (antigua N-IA) | 0 enlace N-I | 2,523 enlace GI-20 | Donostia-San Sebastián"
+  },
+  {
+    "restriction_id": "pv-2026-0052",
+    "group": "PV patrón oro",
+    "road_normalized": "N-121A",
+    "reason": "Overpass falló para N-121A: The read operation timed out",
+    "source_reference": "N-121A | Behobia/Navarra | 68,460 Navarra | 75,020 Behobia | Francia"
+  },
+  {
+    "restriction_id": "cat-rimp-2026-001",
+    "group": "Cataluña red obligatoria mínima",
+    "road_normalized": "AP-7",
+    "reason": "Overpass falló para AP-7: The read operation timed out",
+    "source_reference": "AP-7/E-15 Maçanet de la Selva - L’Hospitalet de l’Infant"
+  },
+  {
+    "restriction_id": "cat-rimp-2026-002",
+    "group": "Cataluña red obligatoria mínima",
+    "road_normalized": "A-27",
+    "reason": "Overpass falló para A-27: The read operation timed out",
+    "source_reference": "Tarragona - El Morell"
+  },
+  {
+    "restriction_id": "cat-rimp-2026-003",
+    "group": "Cataluña red obligatoria mínima",
+    "road_normalized": "C-16",
+    "reason": "Overpass falló para C-16: The read operation timed out",
+    "source_reference": "Sant Cugat AP-7 - Berga"
+  },
+  {
+    "restriction_id": "cat-rimp-2026-006",
+    "group": "Cataluña red obligatoria mínima",
+    "road_normalized": "C-25",
+    "reason": "Overpass falló para C-25: The read operation timed out",
+    "source_reference": "Cervera A-2 - Caldes de Malavella A-2"
+  },
+  {
+    "restriction_id": "cat-rimp-2026-009",
+    "group": "Cataluña red obligatoria mínima",
+    "road_normalized": "C-26",
+    "reason": "Overpass falló para C-26: The read operation timed out",
+    "source_reference": "Borrassà AP-7 - Ordis N-260"
+  },
+  {
+    "restriction_id": "cat-rimp-2026-010",
+    "group": "Cataluña red obligatoria mínima",
+    "road_normalized": "A-26",
+    "reason": "Overpass falló para A-26: The read operation timed out",
+    "source_reference": "Besalú - Olot"
+  },
+  {
+    "restriction_id": "cat-rimp-2026-011",
+    "group": "Cataluña red obligatoria mínima",
+    "road_normalized": "A-2",
+    "reason": "sin PK completo o sin geometría OSM",
+    "source_reference": "Barcelona/Lleida evitando túnel El Bruc por N-IIz"
+  },
+  {
+    "restriction_id": "cat-rimp-2026-012",
+    "group": "Cataluña red obligatoria mínima",
+    "road_normalized": "C-17",
+    "reason": "Overpass falló para C-17: The read operation timed out",
+    "source_reference": "AP-7 - Tona/Vic/Granollers"
+  },
+  {
+    "restriction_id": "cat-rimp-2026-013",
+    "group": "Cataluña red obligatoria mínima",
+    "road_normalized": "AP-2",
+    "reason": "Overpass falló para AP-2: The read operation timed out",
+    "source_reference": "La Bisbal del Penedès - AP-7"
   }
 ]
