@@ -26,6 +26,15 @@ class RouteSegmentationTests(unittest.TestCase):
         self.assertEqual(feature["properties"]["summary"]["distance"], 3000)
         self.assertEqual(len(feature["properties"]["segments"]), 2)
 
+    def test_merge_ors_segment_responses_deduplicates_near_join_point_with_tolerance(self):
+        responses = [
+            {"features": [{"geometry": {"coordinates": [[0, 0], [1, 0]]}, "properties": {"summary": {"distance": 1000, "duration": 10}, "segments": []}}]},
+            {"features": [{"geometry": {"coordinates": [[1.00005, 0], [2, 0]]}, "properties": {"summary": {"distance": 2000, "duration": 20}, "segments": []}}]},
+        ]
+        merged = merge_ors_segment_responses(responses)
+        feature = merged["features"][0]
+        self.assertEqual(feature["geometry"]["coordinates"], [[0, 0], [1, 0], [2, 0]])
+
 
 if __name__ == "__main__":
     unittest.main()

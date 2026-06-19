@@ -2,6 +2,7 @@ from math import asin, cos, radians, sin, sqrt
 from typing import Any
 
 EARTH_RADIUS_KM = 6371.0088
+DEDUPLICATE_JOIN_TOLERANCE_KM = 0.01
 
 
 def distance_km_between_points(a: list[float], b: list[float]) -> float:
@@ -48,7 +49,7 @@ def merge_ors_segment_responses(responses: list[dict[str, Any]]) -> dict[str, An
             continue
         feature = features[0]
         coords = (feature.get("geometry") or {}).get("coordinates") or []
-        if merged_coords and coords and merged_coords[-1] == coords[0]:
+        if merged_coords and coords and distance_km_between_points(merged_coords[-1], coords[0]) < DEDUPLICATE_JOIN_TOLERANCE_KM:
             merged_coords.extend(coords[1:])
         else:
             merged_coords.extend(coords)
