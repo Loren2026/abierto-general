@@ -210,6 +210,7 @@ function highlightRoadSegment(segment) {
   highlightLayer.bindPopup(html).openPopup()
   showMapDetail(html)
   refreshMapSize(highlightLayer.getBounds(), { maxZoom: 13 })
+  document.getElementById('map')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 
 function bindDetail(layer, html) {
@@ -320,8 +321,8 @@ function renderRoadGroup(title, segments, fallbackRoads = [], emptyText = 'Sin v
 
 function renderRoads(roads = [], data = {}) {
   roadsList.innerHTML = ''
-  const originalSegments = data.road_segments?.original || []
-  const alternativeSegments = data.road_segments?.alternative || []
+  const originalSegments = (data.road_segments?.original || []).filter((segment) => Number(segment.distance_km || 0) >= 1)
+  const alternativeSegments = (data.road_segments?.alternative || []).filter((segment) => Number(segment.distance_km || 0) >= 1)
   const restrictedRoads = new Set((data.crossed_restrictions || data.restricciones || []).map((item) => item.via).filter(Boolean))
   const freeSegments = originalSegments.filter((segment) => !segment.restricted)
   const restrictedSegments = originalSegments.filter((segment) => segment.restricted)

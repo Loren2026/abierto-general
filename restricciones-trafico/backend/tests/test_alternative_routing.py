@@ -20,7 +20,7 @@ class RutaAlternativaModelTests(unittest.TestCase):
             hora_salida="08:30",
         )
         self.assertEqual(req.cargo_type.value, "general")
-        self.assertEqual(req.vehicle.mass_kg, 7500)
+        self.assertEqual(req.vehicle.mass_kg, 44000)
         self.assertEqual(req.vehicle.length_m, 17)
         self.assertEqual(req.vehicle.height_m, 4)
 

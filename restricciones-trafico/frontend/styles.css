@@ -35,6 +35,7 @@ button:disabled { opacity: .65; cursor: wait; }
 .legend-line.alternative { background: #22c55e; }
 .legend-line.restriction-high { background: #ef4444; }
 .legend-line.restriction-low { background: #f59e0b; }
+.legend-line.selected-segment { background: #facc15; }
 .map-controls-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 8px 0 2px; }
 .map-action-button, .map-zoom-button { min-height: 56px; border-radius: 18px; box-shadow: 0 16px 38px rgba(2, 6, 23, .42); border: 1px solid rgba(255, 255, 255, .22); }
 .map-action-button { min-width: min(220px, 48%); padding: 15px 22px; background: linear-gradient(135deg, #0f766e, #16a34a); color: #ecfdf5; }

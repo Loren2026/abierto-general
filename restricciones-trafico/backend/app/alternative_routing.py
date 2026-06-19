@@ -26,7 +26,7 @@ class CargoType(str, Enum):
 
 
 class RoutingVehicle(BaseModel):
-    mass_kg: int = Field(default=7500, ge=1)
+    mass_kg: int = Field(default=44000, ge=1)
     length_m: float = Field(default=17, gt=0)
     height_m: float = Field(default=4, gt=0)
 
@@ -213,7 +213,7 @@ def _slice_linestring(coords: list[list[float]], way_points: list[int] | None) -
     return segment if len(segment) >= 2 else []
 
 
-def road_segments_from_ors_feature(feature: dict[str, Any], restrictions: list[dict[str, Any]] | None = None, *, include_restrictions: bool = False) -> list[dict[str, Any]]:
+def road_segments_from_ors_feature(feature: dict[str, Any], restrictions: list[dict[str, Any]] | None = None, *, include_restrictions: bool = False, min_distance_km: float = 1.0) -> list[dict[str, Any]]:
     coords = (feature.get("geometry") or {}).get("coordinates") or []
     if len(coords) < 2:
         return []
@@ -231,6 +231,8 @@ def road_segments_from_ors_feature(feature: dict[str, Any], restrictions: list[d
             if not road or not geometry_coords:
                 continue
             distance_km = round(float(step.get("distance") or 0) / 1000, 3)
+            if distance_km < min_distance_km:
+                continue
             item: dict[str, Any] = {
                 "road": road,
                 "type": road_category_from_name(road),
