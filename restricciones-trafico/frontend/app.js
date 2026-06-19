@@ -243,9 +243,10 @@ function drawMap(data) {
   restrictionLayer = L.layerGroup().addTo(m)
   lowConfidenceLayer = L.layerGroup().addTo(m)
   for (const item of data.restricciones || data.crossed_restrictions || []) {
-    if (!coords.length) continue
-    const latlngs = coords.map(([lon, lat]) => [lat, lon])
-    const segment = restrictionLatLngs(item, latlngs)
+    const restrictionCoords = item.restriction_geometry?.coordinates || []
+    const latlngs = restrictionCoords.length ? restrictionCoords.map(([lon, lat]) => [lat, lon]) : coords.map(([lon, lat]) => [lat, lon])
+    if (!latlngs.length) continue
+    const segment = restrictionCoords.length ? latlngs : restrictionLatLngs(item, latlngs)
     if (segment.length > 1) {
       bindDetail(L.polyline(segment, { color: item.confidence === 'baja' ? '#f59e0b' : '#ef4444', weight: 9, opacity: .95 }), `<strong>${item.via || 'Restricción'}</strong><br>${item.source_scope || ''}<br>${item.id}`).addTo(item.confidence === 'baja' ? lowConfidenceLayer : restrictionLayer)
     } else {
@@ -283,18 +284,28 @@ function renderConfidence(data) {
   confidenceText.textContent = confidence
   const unsafe = confidence !== 'alta' || data.summary?.no_declarar_via_libre
   confidenceWarning.textContent = unsafe
-    ? 'No se puede garantizar vía libre, revisar manualmente.'
-    : 'Detección de vías suficiente. Revisa igualmente el detalle antes de salir.'
+    ? 'Revisar manualmente.'
+    : 'Vías detectadas.'
+}
+
+function roadCardTypeClass(type = '') {
+  const normalized = String(type).toLowerCase()
+  if (normalized.includes('autopista') || normalized.includes('autovia')) return 'road-type-blue'
+  if (normalized.includes('nacional')) return 'road-type-red'
+  if (normalized.includes('comarcal')) return 'road-type-orange'
+  if (normalized.includes('local')) return 'road-type-gray'
+  return 'road-type-green'
 }
 
 function roadSegmentButton(segment, fallbackRoad = '') {
   const button = document.createElement('button')
   button.type = 'button'
-  button.className = `road-segment ${segment.restricted ? 'road-segment-restricted' : ''}`
+  const type = segment.type || roadType(segment.road || fallbackRoad)
+  button.className = `road-segment ${roadCardTypeClass(type)} ${segment.restricted ? 'road-segment-restricted' : ''}`
   const restriction = (segment.restrictions || [])[0]
   button.innerHTML = `
     <span class="road-segment-name">${escapeHtml(segment.road || fallbackRoad || 'Vía')}</span>
-    <span class="road-segment-meta">${formatDistanceKm(segment.distance_km)} · ${escapeHtml(segment.type || roadType(segment.road || fallbackRoad))}</span>
+    <span class="road-segment-meta">${formatDistanceKm(segment.distance_km)} · ${escapeHtml(type)}</span>
     ${restriction ? `<span class="road-segment-alert">Restricción: ${escapeHtml(restriction.id || restriction.via || 'afecta')}</span>` : ''}
   `
   if (segment.geometry?.coordinates?.length) button.addEventListener('click', () => highlightRoadSegment(segment))
@@ -380,12 +391,11 @@ function renderRestrictions(items = [], data = {}) {
         <span class="road">${item.via || 'Genérica'}</span>
         <span class="badge">${item.confidence || 'baja'}</span>
       </div>
-      <div class="meta"><span class="meta-label">Ámbito:</span> <span class="meta-value">${item.source_scope || '—'}</span> · <span class="meta-label">ID:</span> <span class="meta-value">${item.id}</span></div>
-      <div class="meta"><span class="meta-label">Fechas afectadas:</span> <span class="meta-value">${formatDays(item.dias_afecta)}</span></div>
-      <div class="meta"><span class="meta-label">Regla fechas:</span> <span class="meta-value">${formatDateRule(item)}</span></div>
+      <div class="meta restriction-active">RESTRICCIÓN ACTIVA EN ESTE VIAJE</div>
+      <div class="meta"><span class="meta-label">Tramo:</span> <span class="meta-value">pk ${item.pk?.start ?? '—'} a pk ${item.pk?.end ?? '—'} · ${item.tramo?.inicio || '—'} → ${item.tramo?.fin || '—'}</span></div>
+      <div class="meta"><span class="meta-label">Días:</span> <span class="meta-value">${formatDateRule(item)} · ${formatDays(item.dias_afecta)}</span></div>
       <div class="meta"><span class="meta-label">Horario:</span> <span class="meta-value">${formatTimeWindows(item.franja_horaria)}</span></div>
-      <div class="meta"><span class="meta-label">Tramo:</span> <span class="meta-value">${item.tramo?.inicio || '—'} → ${item.tramo?.fin || '—'} · ${formatPk(item.pk)}</span></div>
-      <div class="meta"><span class="meta-label">Sentido:</span> <span class="meta-value">${item.sentido || 'No detallado'}</span> · <span class="meta-label">Tipo:</span> <span class="meta-value">${item.restriction_type || '—'}</span></div>
+      <div class="meta"><span class="meta-label">Fuente:</span> <span class="meta-value">${item.source_scope || '—'} · ${item.source_annex || '—'}</span></div>
     `
     restrictionsList.appendChild(div)
   }
@@ -436,7 +446,7 @@ form.addEventListener('submit', async (event) => {
     drawMap(data)
     refreshMapSize()
     const warnings = [...(fallbackWarning ? [fallbackWarning] : []), ...(data.warnings || [])]
-    setStatus(warnings.length ? `Avisos: ${warnings.join(' · ')}` : '')
+    setStatus(warnings.length ? `Avisos: ${warnings.slice(0, 3).map((w) => String(w).split(':')[0]).join(' · ')}` : '')
   } catch (error) {
     setStatus(`No se pudo analizar la ruta: ${error.message}`, 'error')
   } finally {

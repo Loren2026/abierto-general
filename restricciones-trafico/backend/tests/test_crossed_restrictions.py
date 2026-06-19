@@ -34,7 +34,7 @@ class CrossedRestrictionsTests(unittest.TestCase):
              patch("app.crossed_restrictions.consulta", return_value=sqlite_result) as consulta:
             crossed, status = crossed_restrictions_for_route(ROUTE_GEOMETRY, "2026-06-15", "2026-06-15")
         fetch.assert_called_once_with(limit=12, confidence=None)
-        consulta.assert_called_once_with("2026-06-15", "2026-06-15", ["A-3"])
+        consulta.assert_called_once_with("2026-06-15", "2026-06-15", ["A-3"], None)
         self.assertTrue(status["checked"])
         self.assertEqual(status["geometry_count"], 1)
         self.assertIn("1 geometrías", status["reason"])
@@ -54,6 +54,40 @@ class CrossedRestrictionsTests(unittest.TestCase):
         self.assertTrue(status["checked"])
         self.assertEqual(status["geometry_count"], 1)
         self.assertIn("cobertura parcial", status["reason"])
+
+    def test_geometry_cross_without_calendar_match_is_not_active(self):
+        route = {"type": "LineString", "coordinates": [[0, 0], [1, 0]]}
+        records = [{
+            "id": "geom-dgt-2026-g-0001",
+            "restriction_id": "dgt-2026-g-0001",
+            "road_normalized": "N-230",
+            "geometry_geojson": json.dumps({"type": "LineString", "coordinates": [[0.5, 0], [0.6, 0]]}),
+        }]
+        with patch("app.crossed_restrictions.supabase_configured", return_value=True), \
+             patch("app.crossed_restrictions.fetch_restriction_geometries", return_value=records):
+            crossed, status = crossed_restrictions_for_route(route, "2026-06-15", "2026-06-15", "18:00")
+        self.assertEqual(crossed, [])
+        self.assertTrue(status["checked"])
+        self.assertEqual(status["intersected_restriction_ids"], ["dgt-2026-g-0001"])
+        self.assertIn("ninguna regla temporal aplicable", status["reason"])
+
+    def test_geometry_and_calendar_match_marks_active_and_enriches_geometry(self):
+        route = {"type": "LineString", "coordinates": [[0, 0], [1, 0]]}
+        geometry = {"type": "LineString", "coordinates": [[0.5, 0], [0.6, 0]]}
+        records = [{
+            "id": "geom-dgt-2026-g-0001",
+            "restriction_id": "dgt-2026-g-0001",
+            "road_normalized": "N-230",
+            "geometry_geojson": json.dumps(geometry),
+        }]
+        with patch("app.crossed_restrictions.supabase_configured", return_value=True), \
+             patch("app.crossed_restrictions.fetch_restriction_geometries", return_value=records):
+            crossed, status = crossed_restrictions_for_route(route, "2026-01-02", "2026-01-02", "18:00")
+        self.assertEqual([item["id"] for item in crossed], ["dgt-2026-g-0001"])
+        self.assertEqual(crossed[0]["restriction_geometry"], geometry)
+        self.assertEqual(crossed[0]["source_annex"], "ANEXO II")
+        self.assertEqual(crossed[0]["pk"]["start"], 64.1)
+        self.assertTrue(status["checked"])
 
     def test_synthetic_long_route_performance_under_one_second(self):
         route = {"type": "LineString", "coordinates": [[-8 + i * 0.001, 38.0 + i * 0.0001] for i in range(5000)]}

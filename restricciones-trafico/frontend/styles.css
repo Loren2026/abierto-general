@@ -69,9 +69,9 @@ button:disabled { opacity: .65; cursor: wait; }
 .metric { background: #020617; border: 1px solid #334155; border-radius: 14px; padding: 12px; }
 .metric strong { display: block; color: #f8fafc; font-size: 1.25rem; }
 .map-detail { background: #020617; border: 1px solid #334155; border-radius: 16px; padding: 12px; color: #e2e8f0; }
-@media (max-width: 640px) { .map { height: 62vh; min-height: 360px; } .sticky-cta { position: sticky; bottom: 10px; z-index: 900; } .map-toolbar { align-items: stretch; } .map-controls-row { gap: 12px; } .map-action-button { min-width: 0; flex: 1; } .map-zoom-actions { gap: 10px; } .map-zoom-button { width: 58px; min-width: 58px; } }
+@media (max-width: 640px) { .roads-panel { grid-template-columns: 1fr; } .map { height: 62vh; min-height: 360px; } .sticky-cta { position: sticky; bottom: 10px; z-index: 900; } .map-toolbar { align-items: stretch; } .map-controls-row { gap: 12px; } .map-action-button { min-width: 0; flex: 1; } .map-zoom-actions { gap: 10px; } .map-zoom-button { width: 58px; min-width: 58px; } }
 
-.roads-panel { display: grid; gap: 14px; }
+.roads-panel { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .road-group { border: 1px solid #1e293b; background: #020617; border-radius: 16px; padding: 12px; }
 .road-group h3 { margin: 0 0 10px; font-size: .95rem; color: #e2e8f0; }
 .road-segment-list { display: grid; gap: 8px; }
@@ -82,3 +82,13 @@ button:disabled { opacity: .65; cursor: wait; }
 .road-segment-name { font-weight: 800; font-size: .86rem; line-height: 1.1; }
 .road-segment-meta, .road-segment-alert { font-size: .74rem; color: #94a3b8; }
 .road-segment-alert { color: #fca5a5; }
+
+.road-segment { padding: 6px 8px; gap: 5px; margin-bottom: 4px; }
+.road-segment-name { font-size: .72rem; }
+.road-segment-meta, .road-segment-alert { font-size: .64rem; }
+.road-type-blue { background: linear-gradient(135deg, #1d4ed8, #0f172a); border-color: #60a5fa; }
+.road-type-red { background: linear-gradient(135deg, #991b1b, #0f172a); border-color: #f87171; }
+.road-type-orange { background: linear-gradient(135deg, #c2410c, #0f172a); border-color: #fb923c; }
+.road-type-green { background: linear-gradient(135deg, #166534, #0f172a); border-color: #4ade80; }
+.road-type-gray { background: linear-gradient(135deg, #475569, #0f172a); border-color: #94a3b8; }
+.restriction-active { color: #ef4444; font-weight: 900; text-transform: uppercase; }

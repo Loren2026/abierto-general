@@ -11,7 +11,6 @@ from pydantic import BaseModel, Field, field_validator
 from .adr_calendar import adr_calendar_warnings
 from .crossed_restrictions import crossed_restrictions_for_route
 from .geocoding import geocode_es
-from .heavy_vehicle_calendar import general_heavy_vehicle_calendar_warnings
 from .route_segmentation import linestring_distance_km, merge_ors_segment_responses, split_linestring_by_distance
 from .supabase_geometries import build_avoid_polygons, fetch_high_confidence_geometries, filter_records_by_corridor, supabase_configured
 
@@ -315,7 +314,6 @@ def build_ruta_alternativa_response(req: RutaAlternativaRequest, ors_data: dict[
     warnings = list(avoid_warnings or [])
     if req.cargo_type == CargoType.adr:
         warnings.extend(adr_calendar_warnings(req.fecha_salida, req.hora_salida, original.get("eta_minutes")))
-    warnings.extend(general_heavy_vehicle_calendar_warnings(req.fecha_salida, req.hora_salida, original.get("eta_minutes"), cargo_type=req.cargo_type.value, mass_kg=req.vehicle.mass_kg))
     if route_has_disallowed_local_roads(selected.get("categories", {})):
         warnings.append("No se encontró alternativa sin comarcales/locales; revisar manualmente.")
 
@@ -405,7 +403,7 @@ def calculate_alternative_route(req: RutaAlternativaRequest, ors_client: OrsClie
     alternative_ors_data = None
     alternative_error = None
     segmented_status: dict[str, Any] | None = None
-    crossed, crossed_status = crossed_restrictions_for_route(route_geometry, req.fecha_salida, req.fecha_llegada)
+    crossed, crossed_status = crossed_restrictions_for_route(route_geometry, req.fecha_salida, req.fecha_llegada, req.hora_salida)
     crossed_roads = set(crossed_status.get("intersected_roads") or [])
     crossed_ids = set(crossed_status.get("intersected_restriction_ids") or [])
     if not crossed:
