@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field, field_validator
 from .adr_calendar import adr_calendar_warnings
 from .crossed_restrictions import crossed_restrictions_for_route
 from .geocoding import geocode_es
+from .heavy_vehicle_calendar import general_heavy_vehicle_calendar_warnings
 from .route_segmentation import linestring_distance_km, merge_ors_segment_responses, split_linestring_by_distance
 from .supabase_geometries import build_avoid_polygons, fetch_high_confidence_geometries, filter_records_by_corridor, supabase_configured
 
@@ -269,6 +270,7 @@ def build_ruta_alternativa_response(req: RutaAlternativaRequest, ors_data: dict[
     warnings = list(avoid_warnings or [])
     if req.cargo_type == CargoType.adr:
         warnings.extend(adr_calendar_warnings(req.fecha_salida, req.hora_salida, original.get("eta_minutes")))
+    warnings.extend(general_heavy_vehicle_calendar_warnings(req.fecha_salida, req.hora_salida, original.get("eta_minutes"), cargo_type=req.cargo_type.value, mass_kg=req.vehicle.mass_kg))
     if route_has_disallowed_local_roads(selected.get("categories", {})):
         warnings.append("No se encontró alternativa sin comarcales/locales; revisar manualmente.")
 
@@ -352,14 +354,26 @@ def calculate_alternative_route(req: RutaAlternativaRequest, ors_client: OrsClie
     alternative_ors_data = None
     alternative_error = None
     segmented_status: dict[str, Any] | None = None
-    if supabase_configured():
+    crossed, crossed_status = crossed_restrictions_for_route(route_geometry, req.fecha_salida, req.fecha_llegada)
+    crossed_roads = set(crossed_status.get("intersected_roads") or [])
+    crossed_ids = set(crossed_status.get("intersected_restriction_ids") or [])
+    if not crossed:
+        if crossed_roads or crossed_ids:
+            alternative_error = "Hay geometrías de restricción cruzadas, pero no hay reglas temporales aplicables para esta fecha; no se calcula alternativa automática."
+        else:
+            alternative_error = "No se calcula ruta alternativa porque no hay restricciones cruzadas confirmadas para esta fecha en la cobertura geométrica actual."
+    elif supabase_configured():
         try:
             records = fetch_high_confidence_geometries(limit=50 if segmented_avoid_enabled() else 9)
+            if crossed_ids:
+                records = [record for record in records if str(record.get("restriction_id")) in crossed_ids]
+            else:
+                records = [record for record in records if record.get("road_normalized") in crossed_roads]
             if segmented_avoid_enabled():
                 try:
                     alternative_ors_data, avoid_used, avoid_warnings, segmented_status = calculate_segmented_avoid_route(route_coordinates, req, ors_client, records, route_geometry)
                     if alternative_ors_data is None:
-                        alternative_error = "No hay polígonos válidos de confianza alta para enviar a ORS avoid_polygons"
+                        alternative_error = "No hay polígonos válidos de restricciones cruzadas para enviar a ORS avoid_polygons"
                 except Exception as exc:  # noqa: BLE001 - devolver motivo honesto al usuario/API
                     alternative_error = f"ORS no encontró o rechazó ruta alternativa segmentada con avoid_polygons: {exc}"
             else:
@@ -370,12 +384,11 @@ def calculate_alternative_route(req: RutaAlternativaRequest, ors_client: OrsClie
                     except Exception as exc:  # noqa: BLE001 - devolver motivo honesto al usuario/API
                         alternative_error = f"ORS no encontró o rechazó ruta alternativa con avoid_polygons: {exc}"
                 else:
-                    alternative_error = "No hay polígonos válidos de confianza alta para enviar a ORS avoid_polygons"
+                    alternative_error = "No hay polígonos válidos de restricciones cruzadas para enviar a ORS avoid_polygons"
         except Exception as exc:  # noqa: BLE001 - configuración/datos externos; no ocultar motivo
             alternative_error = f"No se pudieron leer restriction_geometries de Supabase: {exc}"
     else:
         alternative_error = "Supabase no configurado en este entorno; avoid_polygons no aplicado"
-    crossed, crossed_status = crossed_restrictions_for_route(route_geometry, req.fecha_salida, req.fecha_llegada)
     response = build_ruta_alternativa_response(req, ors_data, alternative_ors_data=alternative_ors_data, alternative_error=alternative_error, avoid_polygons_used=avoid_used, avoid_warnings=avoid_warnings, crossed_restrictions=crossed, crossed_status=crossed_status)
     if segmented_status:
         response["segmented_routing"] = segmented_status

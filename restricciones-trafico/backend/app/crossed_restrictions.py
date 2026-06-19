@@ -116,9 +116,27 @@ def crossed_restrictions_for_route(route_geometry: dict[str, Any] | None, fecha_
             if record.get("restriction_id"):
                 intersected_ids.add(str(record["restriction_id"]))
 
-    if not intersected_roads and not intersected_ids:
-        return [], {"checked": True, "geometry_count": geometry_count, "reason": f"Comprobado contra {geometry_count} geometrías cargadas de restriction_geometries; sin cruces geométricos en esa cobertura parcial"}
+    intersected_roads_unique = sorted(set(intersected_roads))
+    intersected_ids_list = sorted(intersected_ids)
+    if not intersected_roads_unique and not intersected_ids_list:
+        return [], {
+            "checked": True,
+            "geometry_count": geometry_count,
+            "intersected_roads": [],
+            "intersected_restriction_ids": [],
+            "reason": f"Comprobado contra {geometry_count} geometrías cargadas de restriction_geometries; sin cruces geométricos en esa cobertura parcial. No incluye todavía calendario general de pesados.",
+        }
 
-    candidates = consulta(fecha_salida, fecha_llegada, sorted(set(intersected_roads)))
+    candidates = consulta(fecha_salida, fecha_llegada, intersected_roads_unique)
     filtered = [item for item in candidates if not intersected_ids or str(item.get("id")) in intersected_ids or item.get("via") in intersected_roads]
-    return filtered, {"checked": True, "geometry_count": geometry_count, "reason": f"Comprobado contra {geometry_count} geometrías cargadas de Supabase y reglas temporales SQLite"}
+    if not filtered:
+        reason = "Hay geometrías de restricción que cruzan la ruta, pero ninguna regla temporal aplicable para la fecha consultada; se comunica como riesgo geométrico, no como alternativa automática."
+    else:
+        reason = f"Comprobado contra {geometry_count} geometrías cargadas de Supabase y reglas temporales SQLite"
+    return filtered, {
+        "checked": True,
+        "geometry_count": geometry_count,
+        "intersected_roads": intersected_roads_unique,
+        "intersected_restriction_ids": intersected_ids_list,
+        "reason": reason,
+    }
