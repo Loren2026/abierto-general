@@ -68,6 +68,8 @@ services:
       ORS_API_KEY: ${ORS_API_KEY}
       ORS_BASE_URL: ${ORS_BASE_URL:-https://api.openrouteservice.org}
       ROUTING_PROVIDER: ${ROUTING_PROVIDER:-ors}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
     build:
       context: ./restricciones-trafico
       dockerfile: Dockerfile

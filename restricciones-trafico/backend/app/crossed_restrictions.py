@@ -3,7 +3,7 @@ from math import cos, radians, sqrt
 from typing import Any
 
 from .query import consulta
-from .supabase_geometries import fetch_restriction_geometries, supabase_configured
+from .supabase_geometries import fetch_restriction_geometries_for_bbox, supabase_configured
 
 KM_PER_DEG_LAT = 110.57
 KM_PER_DEG_LON = 111.32
@@ -91,8 +91,14 @@ def _route_intersects_geometry(route_geometry: dict[str, Any] | None, restrictio
 def crossed_restrictions_for_route(route_geometry: dict[str, Any] | None, fecha_salida: str, fecha_llegada: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     if not supabase_configured():
         return [], {"checked": False, "geometry_count": 0, "reason": "Supabase no configurado; no se pudo comprobar cruce real con restriction_geometries"}
+    route_coords = list(_iter_positions((route_geometry or {}).get("coordinates") or []))
+    route_bbox = _bbox(route_coords)
+    if not route_bbox:
+        return [], {"checked": False, "geometry_count": 0, "reason": "Ruta sin geometría utilizable; no se pudo comprobar cruce real con restriction_geometries"}
+
+    corridor_km = 5.0
     try:
-        records = fetch_restriction_geometries(limit=12, confidence=None)
+        records, geometry_count_total = fetch_restriction_geometries_for_bbox(route_bbox, confidence=None, margin_km=corridor_km)
     except Exception as exc:  # noqa: BLE001 - estado honesto para PWA/API
         return [], {"checked": False, "geometry_count": 0, "reason": f"No se pudieron leer restriction_geometries de Supabase: {exc}"}
 
@@ -115,8 +121,8 @@ def crossed_restrictions_for_route(route_geometry: dict[str, Any] | None, fecha_
                 intersected_ids.add(str(record["restriction_id"]))
 
     if not intersected_roads and not intersected_ids:
-        return [], {"checked": True, "geometry_count": geometry_count, "reason": f"Comprobado contra {geometry_count} geometrías cargadas de restriction_geometries; sin cruces geométricos en esa cobertura parcial"}
+        return [], {"checked": True, "geometry_count": geometry_count, "geometry_count_total_cached": geometry_count_total, "geometry_count_corridor": geometry_count, "corridor_km": corridor_km, "reason": f"Comprobado contra {geometry_count} geometrías del corredor ±{corridor_km:g} km (total cacheado: {geometry_count_total}); sin cruces geométricos"}
 
     candidates = consulta(fecha_salida, fecha_llegada, sorted(set(intersected_roads)))
     filtered = [item for item in candidates if not intersected_ids or str(item.get("id")) in intersected_ids or item.get("via") in intersected_roads]
-    return filtered, {"checked": True, "geometry_count": geometry_count, "reason": f"Comprobado contra {geometry_count} geometrías cargadas de Supabase y reglas temporales SQLite"}
+    return filtered, {"checked": True, "geometry_count": geometry_count, "geometry_count_total_cached": geometry_count_total, "geometry_count_corridor": geometry_count, "corridor_km": corridor_km, "reason": f"Comprobado contra {geometry_count} geometrías del corredor ±{corridor_km:g} km (total cacheado: {geometry_count_total}) y reglas temporales SQLite"}
