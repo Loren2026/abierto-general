@@ -3,7 +3,7 @@ from math import cos, radians, sqrt
 from typing import Any
 
 from .query import consulta
-from .supabase_geometries import fetch_restriction_geometries, supabase_configured
+from .supabase_geometries import fetch_restriction_geometries_for_bbox, supabase_configured
 
 KM_PER_DEG_LAT = 110.57
 KM_PER_DEG_LON = 111.32
@@ -91,15 +91,20 @@ def _route_intersects_geometry(route_geometry: dict[str, Any] | None, restrictio
 def crossed_restrictions_for_route(route_geometry: dict[str, Any] | None, fecha_salida: str, fecha_llegada: str, hora_salida: str | None = None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     if not supabase_configured():
         return [], {"checked": False, "geometry_count": 0, "reason": "Supabase no configurado; no se pudo comprobar cruce real con restriction_geometries"}
+    route_coords = list(_iter_positions((route_geometry or {}).get("coordinates") or []))
+    route_bbox = _bbox(route_coords)
+    if not route_bbox:
+        return [], {"checked": False, "geometry_count": 0, "reason": "Ruta sin geometría utilizable; no se pudo comprobar cruce real con restriction_geometries"}
+
+    corridor_km = 5.0
     try:
-        records = fetch_restriction_geometries(limit=12, confidence=None)
+        records, geometry_count_total = fetch_restriction_geometries_for_bbox(route_bbox, confidence=None, margin_km=corridor_km)
     except Exception as exc:  # noqa: BLE001 - estado honesto para PWA/API
         return [], {"checked": False, "geometry_count": 0, "reason": f"No se pudieron leer restriction_geometries de Supabase: {exc}"}
 
     geometry_count = len(records)
     intersected_roads: list[str] = []
     intersected_ids: set[str] = set()
-    geometries_by_restriction_id: dict[str, dict[str, Any]] = {}
     for record in records:
         raw = record.get("buffer_geojson") or record.get("geometry_geojson")
         if not raw:
@@ -115,14 +120,7 @@ def crossed_restrictions_for_route(route_geometry: dict[str, Any] | None, fecha_
             if road:
                 intersected_roads.append(road)
             if record.get("restriction_id"):
-                restriction_id = str(record["restriction_id"])
-                intersected_ids.add(restriction_id)
-                geometries_by_restriction_id[restriction_id] = {
-                    "id": record.get("id"),
-                    "geometry": json.loads(record.get("geometry_geojson")) if isinstance(record.get("geometry_geojson"), str) else record.get("geometry_geojson"),
-                    "buffer": json.loads(record.get("buffer_geojson")) if isinstance(record.get("buffer_geojson"), str) else record.get("buffer_geojson"),
-                    "road_normalized": record.get("road_normalized"),
-                }
+                intersected_ids.add(str(record["restriction_id"]))
 
     intersected_roads_unique = sorted(set(intersected_roads))
     intersected_ids_list = sorted(intersected_ids)
@@ -130,25 +128,26 @@ def crossed_restrictions_for_route(route_geometry: dict[str, Any] | None, fecha_
         return [], {
             "checked": True,
             "geometry_count": geometry_count,
+            "geometry_count_total_cached": geometry_count_total,
+            "geometry_count_corridor": geometry_count,
+            "corridor_km": corridor_km,
             "intersected_roads": [],
             "intersected_restriction_ids": [],
-            "reason": f"Comprobado contra {geometry_count} geometrías cargadas de restriction_geometries; sin cruces geométricos en esa cobertura parcial. Solo marca restricciones activas si geometría y calendario coinciden.",
+            "reason": f"Comprobado contra {geometry_count} geometrías cargadas de restriction_geometries; sin cruces geométricos en ese corredor ±5 km. No incluye todavía calendario general de pesados.",
         }
 
     candidates = consulta(fecha_salida, fecha_llegada, intersected_roads_unique, hora_salida)
-    filtered = [item for item in candidates if (str(item.get("id")) in intersected_ids if intersected_ids else item.get("via") in intersected_roads)]
-    for item in filtered:
-        geom = geometries_by_restriction_id.get(str(item.get("id")))
-        if geom:
-            item["restriction_geometry"] = geom.get("geometry")
-            item["restriction_buffer"] = geom.get("buffer")
+    filtered = [item for item in candidates if not intersected_ids or str(item.get("id")) in intersected_ids or item.get("via") in intersected_roads]
     if not filtered:
-        reason = "Hay geometrías de restricción que cruzan la ruta, pero ninguna regla temporal aplicable para la fecha/hora consultada; se comunica como riesgo geométrico, no como alternativa automática."
+        reason = "Hay geometrías de restricción que cruzan la ruta, pero ninguna regla temporal aplicable para la fecha consultada; se comunica como riesgo geométrico, no como alternativa automática."
     else:
-        reason = f"Comprobado contra {geometry_count} geometrías cargadas de Supabase y reglas temporales SQLite"
+        reason = f"Comprobado contra {geometry_count} geometrías del corredor ±5 km y reglas temporales SQLite"
     return filtered, {
         "checked": True,
         "geometry_count": geometry_count,
+        "geometry_count_total_cached": geometry_count_total,
+        "geometry_count_corridor": geometry_count,
+        "corridor_km": corridor_km,
         "intersected_roads": intersected_roads_unique,
         "intersected_restriction_ids": intersected_ids_list,
         "reason": reason,

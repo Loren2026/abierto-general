@@ -99,8 +99,5 @@ def consulta(fecha_salida: str, fecha_llegada: str, vias: list[str], hora_salida
             "confidence": row["confidence"],
             "restriction_type": row["restriction_type"],
             "source_scope": row["source_scope"],
-            "source_annex": row["source_annex"],
-            "source_block": row["source_block"],
-            "date_rule": rule,
         })
     return out

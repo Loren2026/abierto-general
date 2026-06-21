@@ -17,31 +17,81 @@ def supabase_configured() -> bool:
     return bool(os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
 
 
+def _supabase_get(params: dict[str, str], *, timeout: int = 20) -> list[dict[str, Any]]:
+    url = os.getenv("SUPABASE_URL")
+    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    if not url or not key:
+        raise ValueError("SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY no configuradas")
+    query = urllib.parse.urlencode(params)
+    req = urllib.request.Request(
+        f"{url.rstrip('/')}/rest/v1/restriction_geometries?{query}",
+        headers={"apikey": key, "Authorization": f"Bearer {key}", "Accept": "application/json"},
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
 def fetch_restriction_geometries(limit: int = 12, confidence: str | None = None) -> list[dict[str, Any]]:
     cache_key = f"records:{confidence or 'all'}:{limit}"
     cached = _cache.get(cache_key)
     if cached is not None and time.time() < float(_cache.get("expires_at") or 0):
         return cached
-    url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    if not url or not key:
-        raise ValueError("SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY no configuradas")
     params = {
         "select": "id,restriction_id,road_normalized,buffer_geojson,geometry_geojson,confidence",
         "limit": str(limit),
     }
     if confidence:
         params["confidence"] = f"eq.{confidence}"
-    query = urllib.parse.urlencode(params)
-    req = urllib.request.Request(
-        f"{url.rstrip('/')}/rest/v1/restriction_geometries?{query}",
-        headers={"apikey": key, "Authorization": f"Bearer {key}", "Accept": "application/json"},
-    )
-    with urllib.request.urlopen(req, timeout=20) as response:
-        records = json.loads(response.read().decode("utf-8"))
+    records = _supabase_get(params)
     _cache[cache_key] = records
     _cache["expires_at"] = time.time() + CACHE_TTL_SECONDS
     return records
+
+
+def fetch_all_restriction_geometries(confidence: str | None = None, page_size: int = 1000) -> list[dict[str, Any]]:
+    cache_key = f"records:{confidence or 'all'}:all"
+    cached = _cache.get(cache_key)
+    if cached is not None and time.time() < float(_cache.get("expires_at") or 0):
+        return cached
+    records: list[dict[str, Any]] = []
+    offset = 0
+    while True:
+        params = {
+            "select": "id,restriction_id,road_normalized,buffer_geojson,geometry_geojson,confidence",
+            "limit": str(page_size),
+            "offset": str(offset),
+            "order": "id.asc",
+        }
+        if confidence:
+            params["confidence"] = f"eq.{confidence}"
+        batch = _supabase_get(params, timeout=30)
+        records.extend(batch)
+        if len(batch) < page_size:
+            break
+        offset += page_size
+    _cache[cache_key] = records
+    _cache["expires_at"] = time.time() + CACHE_TTL_SECONDS
+    return records
+
+
+def fetch_restriction_geometries_for_bbox(bbox: tuple[float, float, float, float], confidence: str | None = None, margin_km: float = 5.0) -> tuple[list[dict[str, Any]], int]:
+    records = fetch_all_restriction_geometries(confidence=confidence)
+    corridor_bbox = _expand_bbox_km(bbox, margin_km)
+    filtered: list[dict[str, Any]] = []
+    for record in records:
+        raw = record.get("buffer_geojson") or record.get("geometry_geojson")
+        if not raw:
+            continue
+        try:
+            geometry = json.loads(raw) if isinstance(raw, str) else raw
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(geometry, dict):
+            continue
+        geometry_bbox = _geometry_bbox(geometry)
+        if geometry_bbox and _bbox_intersects(corridor_bbox, geometry_bbox):
+            filtered.append(record)
+    return filtered, len(records)
 
 
 def fetch_high_confidence_geometries(limit: int = 9) -> list[dict[str, Any]]:
