@@ -4,7 +4,7 @@ from pathlib import Path
 from math import atan2, cos, radians, sin, sqrt
 from .alternative_routing import FIXED_SPEED_KMH, calculate_eta
 from .osm_enrichment import refs_from_geometry
-from .query import affected_days, expand_days
+from .query import affected_days, expand_days, time_window_matches
 from .routing import NominatimOsrmProvider, RoutingProvider, normalize_road_code
 
 DB = Path(__file__).resolve().parents[1] / "data/restricciones.sqlite"
@@ -63,7 +63,7 @@ def row_to_restriction(row, hits, confidence, match_type):
         "aplica_a_loren": bool(row["aplica_a_loren"]),
     }
 
-def find_route_restrictions(fecha_salida: str, fecha_llegada: str, roads: list[str], route_confidence: str):
+def find_route_restrictions(fecha_salida: str, fecha_llegada: str, roads: list[str], route_confidence: str, hora_salida: str | None = None):
     days = expand_days(fecha_salida, fecha_llegada)
     roads_norm = sorted({normalize_road_code(road) for road in roads if normalize_road_code(road)})
     if not roads_norm:
@@ -81,8 +81,9 @@ def find_route_restrictions(fecha_salida: str, fecha_llegada: str, roads: list[s
         if row["aplica_solo_transfronterizo"] == 1:
             continue
         rule = json.loads(row["date_rule"] or "{}")
+        time_windows = json.loads(row["time_windows"] or "[]")
         hits = affected_days(row["restriction_type"], rule, days)
-        if not hits:
+        if not hits or not time_window_matches(time_windows, hora_salida):
             continue
         road = (row["road_normalized"] or "").upper()
         match_type = "road_code" if road in roads_norm else "generic_scope"
@@ -136,10 +137,10 @@ def analyze_route(
     # Confianza basada en la detección final: OSRM + enriquecimiento Overpass.
     # Un aviso inicial de OSRM por pocos nombres no fuerza baja si Overpass recuperó refs principales.
     route_confidence = calculate_route_confidence(route.confidence, roads, enrichment)
-    restrictions = find_route_restrictions(fecha_salida, fecha_llegada, roads, route_confidence)
-    distance_km = round(geometry_distance_km(route.geometry), 3)
     # El flujo clásico no tiene hora propia; si el frontend la envía añadida al payload, main la pasa.
     hora_salida = getattr(provider, "hora_salida", None) or "08:00"
+    restrictions = find_route_restrictions(fecha_salida, fecha_llegada, roads, route_confidence, hora_salida)
+    distance_km = round(geometry_distance_km(route.geometry), 3)
     eta = calculate_eta(distance_km, fecha_salida, hora_salida)
     return {
         "provider": route.provider,
