@@ -334,7 +334,7 @@ function renderRoads(roads = [], data = {}) {
   roadsList.innerHTML = ''
   const originalSegments = (data.road_segments?.original || []).filter((segment) => Number(segment.distance_km || 0) >= 1)
   const alternativeSegments = (data.road_segments?.alternative || []).filter((segment) => Number(segment.distance_km || 0) >= 1)
-  const restrictedRoads = new Set((data.crossed_restrictions || data.restricciones || []).map((item) => item.via).filter(Boolean))
+  const restrictedRoads = new Set((data.restricciones || data.crossed_restrictions || []).map((item) => item.via).filter(Boolean))
   const freeSegments = originalSegments.filter((segment) => !segment.restricted)
   const restrictedSegments = originalSegments.filter((segment) => segment.restricted)
   const fallbackFreeRoads = originalSegments.length ? [] : roads.filter((road) => !restrictedRoads.has(road))
@@ -438,10 +438,18 @@ form.addEventListener('submit', async (event) => {
       data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.detail || data.error || `Error HTTP ${response.status}`)
     }
+    const analysisResponse = await fetch('/api/ruta/analizar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    const analysisData = await analysisResponse.json().catch(() => ({}))
+    if (!analysisResponse.ok) throw new Error(analysisData.detail || analysisData.error || `Error HTTP ${analysisResponse.status}`)
+    data.restricciones = analysisData.restricciones || []
     results.hidden = false
     renderConfidence(data)
     renderRoads(data.vias_detectadas, data)
-    renderRestrictions(data.restricciones || data.crossed_restrictions, data)
+    renderRestrictions(data.restricciones, data)
     renderRouteSummary(data)
     drawMap(data)
     refreshMapSize()
