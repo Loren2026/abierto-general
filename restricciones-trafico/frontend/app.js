@@ -182,6 +182,38 @@ function restrictionLatLngs(item, routeLatLngs) {
   return routeLatLngs.slice(from, to)
 }
 
+function squaredDistance(a, b) {
+  const dLat = Number(a?.[0]) - Number(b?.[0])
+  const dLng = Number(a?.[1]) - Number(b?.[1])
+  return dLat * dLat + dLng * dLng
+}
+
+function closestRouteIndex(point, routeLatLngs) {
+  let bestIndex = 0
+  let bestDistance = Infinity
+  routeLatLngs.forEach((candidate, index) => {
+    const distance = squaredDistance(point, candidate)
+    if (distance < bestDistance) {
+      bestDistance = distance
+      bestIndex = index
+    }
+  })
+  return bestIndex
+}
+
+function restrictionSegmentOnRoute(item, routeLatLngs) {
+  if (!routeLatLngs.length) return []
+  const restrictionCoords = item.restriction_geometry?.coordinates || []
+  if (restrictionCoords.length > 1) {
+    const restrictionLatLngs = restrictionCoords.map(([lon, lat]) => [lat, lon])
+    const indexes = restrictionLatLngs.map((point) => closestRouteIndex(point, routeLatLngs))
+    const from = Math.max(0, Math.min(...indexes) - 1)
+    const to = Math.min(routeLatLngs.length - 1, Math.max(...indexes) + 1)
+    if (to > from) return routeLatLngs.slice(from, to + 1)
+  }
+  return restrictionLatLngs(item, routeLatLngs)
+}
+
 function showMapDetail(html) {
   mapDetail.innerHTML = html
   mapDetail.hidden = false
@@ -243,10 +275,9 @@ function drawMap(data) {
   restrictionLayer = L.layerGroup().addTo(m)
   lowConfidenceLayer = L.layerGroup().addTo(m)
   for (const item of data.restricciones || data.crossed_restrictions || []) {
-    const restrictionCoords = item.restriction_geometry?.coordinates || []
-    const latlngs = restrictionCoords.length ? restrictionCoords.map(([lon, lat]) => [lat, lon]) : coords.map(([lon, lat]) => [lat, lon])
-    if (!latlngs.length) continue
-    const segment = restrictionCoords.length ? latlngs : restrictionLatLngs(item, latlngs)
+    const routeLatLngs = coords.map(([lon, lat]) => [lat, lon])
+    if (!routeLatLngs.length) continue
+    const segment = restrictionSegmentOnRoute(item, routeLatLngs)
     if (segment.length > 1) {
       bindDetail(L.polyline(segment, { color: item.confidence === 'baja' ? '#f59e0b' : '#ef4444', weight: 9, opacity: .95 }), `<strong>${item.via || 'Restricción'}</strong><br>${item.source_scope || ''}<br>${item.id}`).addTo(item.confidence === 'baja' ? lowConfidenceLayer : restrictionLayer)
     } else {
