@@ -245,6 +245,18 @@ function highlightRoadSegment(segment) {
   document.getElementById('map')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 
+function showCompleteRoute() {
+  if (highlightLayer) {
+    highlightLayer.remove()
+    highlightLayer = null
+  }
+  if (routeLayer) routeLayer.setStyle({ opacity: .95 })
+  if (alternativeLayer) alternativeLayer.setStyle({ opacity: .95 })
+  mapDetail.hidden = true
+  refreshMapSize(lastBounds)
+  document.getElementById('map')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
 function bindDetail(layer, html) {
   layer.on('click', () => showMapDetail(html))
   return layer.bindPopup(html)
@@ -435,7 +447,8 @@ function renderRestrictions(items = [], data = {}) {
 }
 
 cargoType.addEventListener('change', () => { adrWarning.hidden = cargoType.value !== 'adr' })
-centerMapButton.addEventListener('click', () => refreshMapSize(lastBounds))
+centerMapButton.textContent = 'Ver ruta completa'
+centerMapButton.addEventListener('click', () => showCompleteRoute())
 zoomInMapButton.addEventListener('click', () => { if (map) map.zoomIn() })
 zoomOutMapButton.addEventListener('click', () => { if (map) map.zoomOut() })
 
