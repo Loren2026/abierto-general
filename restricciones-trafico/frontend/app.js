@@ -182,6 +182,38 @@ function restrictionLatLngs(item, routeLatLngs) {
   return routeLatLngs.slice(from, to)
 }
 
+function squaredDistance(a, b) {
+  const dLat = Number(a?.[0]) - Number(b?.[0])
+  const dLng = Number(a?.[1]) - Number(b?.[1])
+  return dLat * dLat + dLng * dLng
+}
+
+function closestRouteIndex(point, routeLatLngs) {
+  let bestIndex = 0
+  let bestDistance = Infinity
+  routeLatLngs.forEach((candidate, index) => {
+    const distance = squaredDistance(point, candidate)
+    if (distance < bestDistance) {
+      bestDistance = distance
+      bestIndex = index
+    }
+  })
+  return bestIndex
+}
+
+function restrictionSegmentOnRoute(item, routeLatLngs) {
+  if (!routeLatLngs.length) return []
+  const restrictionCoords = item.restriction_geometry?.coordinates || []
+  if (restrictionCoords.length > 1) {
+    const restrictionLatLngs = restrictionCoords.map(([lon, lat]) => [lat, lon])
+    const indexes = restrictionLatLngs.map((point) => closestRouteIndex(point, routeLatLngs))
+    const from = Math.max(0, Math.min(...indexes) - 1)
+    const to = Math.min(routeLatLngs.length - 1, Math.max(...indexes) + 1)
+    if (to > from) return routeLatLngs.slice(from, to + 1)
+  }
+  return restrictionLatLngs(item, routeLatLngs)
+}
+
 function showMapDetail(html) {
   mapDetail.innerHTML = html
   mapDetail.hidden = false
@@ -210,6 +242,18 @@ function highlightRoadSegment(segment) {
   highlightLayer.bindPopup(html).openPopup()
   showMapDetail(html)
   refreshMapSize(highlightLayer.getBounds(), { maxZoom: 13 })
+  document.getElementById('map')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
+function showCompleteRoute() {
+  if (highlightLayer) {
+    highlightLayer.remove()
+    highlightLayer = null
+  }
+  if (routeLayer) routeLayer.setStyle({ opacity: .95 })
+  if (alternativeLayer) alternativeLayer.setStyle({ opacity: .95 })
+  mapDetail.hidden = true
+  refreshMapSize(lastBounds)
   document.getElementById('map')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 
@@ -243,10 +287,9 @@ function drawMap(data) {
   restrictionLayer = L.layerGroup().addTo(m)
   lowConfidenceLayer = L.layerGroup().addTo(m)
   for (const item of data.restricciones || data.crossed_restrictions || []) {
-    const restrictionCoords = item.restriction_geometry?.coordinates || []
-    const latlngs = restrictionCoords.length ? restrictionCoords.map(([lon, lat]) => [lat, lon]) : coords.map(([lon, lat]) => [lat, lon])
-    if (!latlngs.length) continue
-    const segment = restrictionCoords.length ? latlngs : restrictionLatLngs(item, latlngs)
+    const routeLatLngs = coords.map(([lon, lat]) => [lat, lon])
+    if (!routeLatLngs.length) continue
+    const segment = restrictionSegmentOnRoute(item, routeLatLngs)
     if (segment.length > 1) {
       bindDetail(L.polyline(segment, { color: item.confidence === 'baja' ? '#f59e0b' : '#ef4444', weight: 9, opacity: .95 }), `<strong>${item.via || 'Restricción'}</strong><br>${item.source_scope || ''}<br>${item.id}`).addTo(item.confidence === 'baja' ? lowConfidenceLayer : restrictionLayer)
     } else {
@@ -301,12 +344,12 @@ function roadSegmentButton(segment, fallbackRoad = '') {
   const button = document.createElement('button')
   button.type = 'button'
   const type = segment.type || roadType(segment.road || fallbackRoad)
-  button.className = `road-segment ${roadCardTypeClass(type)} ${segment.restricted ? 'road-segment-restricted' : ''}`
+  button.className = `road-segment ${segment.restricted ? 'road-segment-restricted-card' : roadCardTypeClass(type)}`
   const restriction = (segment.restrictions || [])[0]
   button.innerHTML = `
     <span class="road-segment-name">${escapeHtml(segment.road || fallbackRoad || 'Vía')}</span>
     <span class="road-segment-meta">${formatDistanceKm(segment.distance_km)} · ${escapeHtml(type)}</span>
-    ${restriction ? `<span class="road-segment-alert">Restricción: ${escapeHtml(restriction.id || restriction.via || 'afecta')}</span>` : ''}
+    ${restriction ? `<span class="road-segment-alert">TRAMO RESTRINGIDO · ${escapeHtml(restriction.id || restriction.via || 'afecta')}</span>` : ''}
   `
   if (segment.geometry?.coordinates?.length) button.addEventListener('click', () => highlightRoadSegment(segment))
   else button.disabled = true
@@ -335,8 +378,6 @@ function renderRoads(roads = [], data = {}) {
   const originalSegments = (data.road_segments?.original || []).filter((segment) => Number(segment.distance_km || 0) >= 1)
   const alternativeSegments = (data.road_segments?.alternative || []).filter((segment) => Number(segment.distance_km || 0) >= 1)
   const restrictedRoads = new Set((data.restricciones || data.crossed_restrictions || []).map((item) => item.via).filter(Boolean))
-  const freeSegments = originalSegments.filter((segment) => !segment.restricted)
-  const restrictedSegments = originalSegments.filter((segment) => segment.restricted)
   const fallbackFreeRoads = originalSegments.length ? [] : roads.filter((road) => !restrictedRoads.has(road))
   const fallbackRestrictedRoads = originalSegments.length ? [] : roads.filter((road) => restrictedRoads.has(road))
 
@@ -344,8 +385,12 @@ function renderRoads(roads = [], data = {}) {
     roadsList.innerHTML = '<p class="empty">No se detectaron vías suficientes. Puede deberse a que el proveedor no devolvió nombres de vía o a fallo de enriquecimiento Overpass.</p>'
     return
   }
-  roadsList.appendChild(renderRoadGroup('Vías detectadas libres', freeSegments, fallbackFreeRoads, 'No hay vías libres identificadas.'))
-  roadsList.appendChild(renderRoadGroup('Vías detectadas restringidas', restrictedSegments, fallbackRestrictedRoads, 'No hay vías restringidas confirmadas.'))
+  if (originalSegments.length) {
+    roadsList.appendChild(renderRoadGroup('Ruta original: origen → destino', originalSegments, [], 'No hay vías en la ruta original.'))
+  } else {
+    roadsList.appendChild(renderRoadGroup('Vías detectadas libres', [], fallbackFreeRoads, 'No hay vías libres identificadas.'))
+    roadsList.appendChild(renderRoadGroup('Vías detectadas restringidas', [], fallbackRestrictedRoads, 'No hay vías restringidas confirmadas.'))
+  }
   roadsList.appendChild(renderRoadGroup('Vías alternativas', alternativeSegments, data.alternative_route?.roads || [], 'No hay ruta alternativa calculada.'))
 }
 
@@ -402,7 +447,8 @@ function renderRestrictions(items = [], data = {}) {
 }
 
 cargoType.addEventListener('change', () => { adrWarning.hidden = cargoType.value !== 'adr' })
-centerMapButton.addEventListener('click', () => refreshMapSize(lastBounds))
+centerMapButton.textContent = 'Ver ruta completa'
+centerMapButton.addEventListener('click', () => showCompleteRoute())
 zoomInMapButton.addEventListener('click', () => { if (map) map.zoomIn() })
 zoomOutMapButton.addEventListener('click', () => { if (map) map.zoomOut() })
 

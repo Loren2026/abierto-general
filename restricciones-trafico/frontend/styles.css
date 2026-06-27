@@ -79,6 +79,9 @@ button:disabled { opacity: .65; cursor: wait; }
 .road-segment:disabled { cursor: default; opacity: .65; }
 .road-segment:not(:disabled):hover { border-color: #facc15; box-shadow: 0 0 0 2px rgba(250, 204, 21, .18); }
 .road-segment-restricted { border-color: #ef4444; color: #fecaca; }
+.road-segment-restricted-card { background: #ffffff; border-color: #dc2626; color: #b91c1c; box-shadow: 0 0 0 2px rgba(220, 38, 38, .16); }
+.road-segment-restricted-card .road-segment-meta { color: #7f1d1d; }
+.road-segment-restricted-card .road-segment-alert { color: #dc2626; font-weight: 900; }
 .road-segment-name { font-weight: 800; font-size: .86rem; line-height: 1.1; }
 .road-segment-meta, .road-segment-alert { font-size: .74rem; color: #94a3b8; }
 .road-segment-alert { color: #fca5a5; }
