@@ -332,12 +332,12 @@ function roadSegmentButton(segment, fallbackRoad = '') {
   const button = document.createElement('button')
   button.type = 'button'
   const type = segment.type || roadType(segment.road || fallbackRoad)
-  button.className = `road-segment ${roadCardTypeClass(type)} ${segment.restricted ? 'road-segment-restricted' : ''}`
+  button.className = `road-segment ${segment.restricted ? 'road-segment-restricted-card' : roadCardTypeClass(type)}`
   const restriction = (segment.restrictions || [])[0]
   button.innerHTML = `
     <span class="road-segment-name">${escapeHtml(segment.road || fallbackRoad || 'Vía')}</span>
     <span class="road-segment-meta">${formatDistanceKm(segment.distance_km)} · ${escapeHtml(type)}</span>
-    ${restriction ? `<span class="road-segment-alert">Restricción: ${escapeHtml(restriction.id || restriction.via || 'afecta')}</span>` : ''}
+    ${restriction ? `<span class="road-segment-alert">TRAMO RESTRINGIDO · ${escapeHtml(restriction.id || restriction.via || 'afecta')}</span>` : ''}
   `
   if (segment.geometry?.coordinates?.length) button.addEventListener('click', () => highlightRoadSegment(segment))
   else button.disabled = true
@@ -366,8 +366,6 @@ function renderRoads(roads = [], data = {}) {
   const originalSegments = (data.road_segments?.original || []).filter((segment) => Number(segment.distance_km || 0) >= 1)
   const alternativeSegments = (data.road_segments?.alternative || []).filter((segment) => Number(segment.distance_km || 0) >= 1)
   const restrictedRoads = new Set((data.restricciones || data.crossed_restrictions || []).map((item) => item.via).filter(Boolean))
-  const freeSegments = originalSegments.filter((segment) => !segment.restricted)
-  const restrictedSegments = originalSegments.filter((segment) => segment.restricted)
   const fallbackFreeRoads = originalSegments.length ? [] : roads.filter((road) => !restrictedRoads.has(road))
   const fallbackRestrictedRoads = originalSegments.length ? [] : roads.filter((road) => restrictedRoads.has(road))
 
@@ -375,8 +373,12 @@ function renderRoads(roads = [], data = {}) {
     roadsList.innerHTML = '<p class="empty">No se detectaron vías suficientes. Puede deberse a que el proveedor no devolvió nombres de vía o a fallo de enriquecimiento Overpass.</p>'
     return
   }
-  roadsList.appendChild(renderRoadGroup('Vías detectadas libres', freeSegments, fallbackFreeRoads, 'No hay vías libres identificadas.'))
-  roadsList.appendChild(renderRoadGroup('Vías detectadas restringidas', restrictedSegments, fallbackRestrictedRoads, 'No hay vías restringidas confirmadas.'))
+  if (originalSegments.length) {
+    roadsList.appendChild(renderRoadGroup('Ruta original: origen → destino', originalSegments, [], 'No hay vías en la ruta original.'))
+  } else {
+    roadsList.appendChild(renderRoadGroup('Vías detectadas libres', [], fallbackFreeRoads, 'No hay vías libres identificadas.'))
+    roadsList.appendChild(renderRoadGroup('Vías detectadas restringidas', [], fallbackRestrictedRoads, 'No hay vías restringidas confirmadas.'))
+  }
   roadsList.appendChild(renderRoadGroup('Vías alternativas', alternativeSegments, data.alternative_route?.roads || [], 'No hay ruta alternativa calculada.'))
 }
 
