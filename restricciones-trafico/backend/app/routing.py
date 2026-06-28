@@ -16,6 +16,7 @@ class RouteResult:
     roads: list[str]
     confidence: str
     warnings: list[str]
+    raw_route: dict | None = None
 
 class RoutingProvider(Protocol):
     def route(self, origin: str, destination: str) -> RouteResult: ...
@@ -77,4 +78,4 @@ class NominatimOsrmProvider:
         confidence = "alta" if roads else "baja"
         if not roads:
             warnings.append("OSRM devolvió geometría pero no nombres/códigos de vía suficientes; no declarar vía libre.")
-        return RouteResult("osrm-public", o, d, route.get("geometry") or {}, roads, confidence, warnings)
+        return RouteResult("osrm-public", o, d, route.get("geometry") or {}, roads, confidence, warnings, route)

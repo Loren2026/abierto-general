@@ -131,6 +131,74 @@ def geometry_distance_km(geometry: dict | None) -> float:
         total += 2 * radius_km * atan2(sqrt(a), sqrt(1 - a))
     return total
 
+
+def _point_segment_distance_km(point, a, b) -> float:
+    lon, lat = point
+    lon1, lat1 = a
+    lon2, lat2 = b
+    mid_lat = radians((lat + lat1 + lat2) / 3)
+    x = lon * 111.32 * cos(mid_lat)
+    y = lat * 110.57
+    x1 = lon1 * 111.32 * cos(mid_lat)
+    y1 = lat1 * 110.57
+    x2 = lon2 * 111.32 * cos(mid_lat)
+    y2 = lat2 * 110.57
+    dx, dy = x2 - x1, y2 - y1
+    if dx == 0 and dy == 0:
+        return sqrt((x - x1) ** 2 + (y - y1) ** 2)
+    t = max(0, min(1, ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy)))
+    return sqrt((x - (x1 + t * dx)) ** 2 + (y - (y1 + t * dy)) ** 2)
+
+
+def _linestring_distance_to_points_km(coords: list[list[float]], points: list[list[float]]) -> float:
+    if len(coords) < 2 or not points:
+        return float("inf")
+    return min(_point_segment_distance_km(point, a, b) for point in points for a, b in zip(coords, coords[1:]))
+
+
+def _restriction_points(restriction: dict) -> list[list[float]]:
+    coords = (restriction.get("restriction_geometry") or {}).get("coordinates") or []
+    return [point for point in coords if isinstance(point, list) and len(point) >= 2]
+
+
+def build_original_road_segments(route, restrictions: list[dict]) -> list[dict]:
+    route_raw = getattr(route, "raw_route", None) or {}
+    restrictions_by_road: dict[str, list[dict]] = {}
+    for restriction in restrictions:
+        road = normalize_road_code(restriction.get("via") or "")
+        if road:
+            restrictions_by_road.setdefault(road, []).append(restriction)
+
+    segments: list[dict] = []
+    for leg in route_raw.get("legs") or []:
+        for step in leg.get("steps") or []:
+            road = step.get("name") or ""
+            road_code = normalize_road_code(road)
+            geometry = step.get("geometry") or {}
+            coords = geometry.get("coordinates") or []
+            if not road_code or len(coords) < 2:
+                continue
+            distance_km = round(float(step.get("distance") or 0) / 1000, 3)
+            if distance_km < 1:
+                continue
+            candidates = list(restrictions_by_road.get(road_code, []))
+            with_geometry = [item for item in candidates if item.get("has_geometry")]
+            if with_geometry:
+                nearest = min(with_geometry, key=lambda item: _linestring_distance_to_points_km(coords, _restriction_points(item)))
+                segment_restrictions = [nearest]
+            else:
+                segment_restrictions = candidates
+            segments.append({
+                "road": road,
+                "road_code": road_code,
+                "type": "autopista" if road_code.startswith("AP-") else "autovia" if road_code.startswith("A-") else "nacional" if road_code.startswith("N-") else "resto",
+                "distance_km": distance_km,
+                "geometry": {"type": "LineString", "coordinates": coords},
+                "restricted": bool(segment_restrictions),
+                "restrictions": segment_restrictions,
+            })
+    return segments
+
 def analyze_route(
     origen: str,
     destino: str,
@@ -183,6 +251,7 @@ def analyze_route(
         "eta_at": eta["eta_at"],
         "enrichment": enrichment,
         "restricciones": restrictions,
+        "road_segments": {"original": build_original_road_segments(route, restrictions), "alternative": []},
         "summary": {
             "total_vias": len(roads),
             "total_restricciones": len(restrictions),
