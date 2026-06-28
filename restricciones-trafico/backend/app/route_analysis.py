@@ -5,7 +5,8 @@ from math import atan2, cos, radians, sin, sqrt
 from .alternative_routing import FIXED_SPEED_KMH, calculate_eta
 from .osm_enrichment import refs_from_geometry
 from .query import affected_days, expand_days, time_window_matches
-from .routing import NominatimOsrmProvider, RoutingProvider, normalize_road_code
+from .routing import NominatimOsrmProvider, RoutingProvider, extract_road_codes, normalize_road_code
+from .supabase_geometries import fetch_restriction_geometries_by_ids, supabase_configured
 
 DB = Path(__file__).resolve().parents[1] / "data/restricciones.sqlite"
 
@@ -92,6 +93,39 @@ def find_route_restrictions(fecha_salida: str, fecha_llegada: str, roads: list[s
     return out
 
 
+def attach_restriction_geometries(restrictions: list[dict]) -> list[dict]:
+    out = [dict(item) for item in restrictions]
+    if not out or not supabase_configured():
+        for item in out:
+            item["restriction_geometry"] = None
+            item["has_geometry"] = False
+            item["geometry_status"] = "missing"
+            item["geometry_warning"] = "Tramo sin geometría precisa: no se debe pintar un trazo estimado como si fuera real."
+        return out
+    try:
+        geometries = fetch_restriction_geometries_by_ids([str(item.get("id")) for item in out])
+    except Exception:  # noqa: BLE001 - no romper el aviso SQLite por fallo externo de Supabase
+        for item in out:
+            item["restriction_geometry"] = None
+            item["has_geometry"] = False
+            item["geometry_status"] = "missing"
+            item["geometry_warning"] = "Tramo sin geometría precisa: no se debe pintar un trazo estimado como si fuera real."
+        return out
+    for item in out:
+        geometry = (geometries.get(str(item.get("id"))) or {}).get("geometry")
+        coords = (geometry or {}).get("coordinates") or []
+        if isinstance(geometry, dict) and len(coords) > 1:
+            item["restriction_geometry"] = geometry
+            item["has_geometry"] = True
+            item["geometry_status"] = "available"
+        else:
+            item["restriction_geometry"] = None
+            item["has_geometry"] = False
+            item["geometry_status"] = "missing"
+            item["geometry_warning"] = "Tramo sin geometría precisa: no se debe pintar un trazo estimado como si fuera real."
+    return out
+
+
 def geometry_distance_km(geometry: dict | None) -> float:
     coords = (geometry or {}).get("coordinates") or []
     if len(coords) < 2:
@@ -105,6 +139,94 @@ def geometry_distance_km(geometry: dict | None) -> float:
         a = sin(dphi / 2) ** 2 + cos(phi1) * cos(phi2) * sin(dlambda / 2) ** 2
         total += 2 * radius_km * atan2(sqrt(a), sqrt(1 - a))
     return total
+
+
+def _point_segment_distance_km(point, a, b) -> float:
+    lon, lat = point
+    lon1, lat1 = a
+    lon2, lat2 = b
+    mid_lat = radians((lat + lat1 + lat2) / 3)
+    x = lon * 111.32 * cos(mid_lat)
+    y = lat * 110.57
+    x1 = lon1 * 111.32 * cos(mid_lat)
+    y1 = lat1 * 110.57
+    x2 = lon2 * 111.32 * cos(mid_lat)
+    y2 = lat2 * 110.57
+    dx, dy = x2 - x1, y2 - y1
+    if dx == 0 and dy == 0:
+        return sqrt((x - x1) ** 2 + (y - y1) ** 2)
+    t = max(0, min(1, ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy)))
+    return sqrt((x - (x1 + t * dx)) ** 2 + (y - (y1 + t * dy)) ** 2)
+
+
+def _linestring_distance_to_points_km(coords: list[list[float]], points: list[list[float]]) -> float:
+    if len(coords) < 2 or not points:
+        return float("inf")
+    return min(_point_segment_distance_km(point, a, b) for point in points for a, b in zip(coords, coords[1:]))
+
+
+def _restriction_points(restriction: dict) -> list[list[float]]:
+    coords = (restriction.get("restriction_geometry") or {}).get("coordinates") or []
+    return [point for point in coords if isinstance(point, list) and len(point) >= 2]
+
+
+def validate_restriction_geometries_on_route(restrictions: list[dict], route_geometry: dict | None, max_distance_km: float = 5.0) -> list[dict]:
+    route_coords = (route_geometry or {}).get("coordinates") or []
+    if len(route_coords) < 2:
+        return restrictions
+    out = []
+    for restriction in restrictions:
+        item = dict(restriction)
+        points = _restriction_points(item)
+        if item.get("has_geometry") and points:
+            distance = _linestring_distance_to_points_km(route_coords, points)
+            if distance > max_distance_km:
+                item["restriction_geometry"] = None
+                item["has_geometry"] = False
+                item["geometry_status"] = "missing"
+                item["geometry_warning"] = "Tramo sin geometría precisa: la geometría disponible no cae sobre la ruta consultada, así que no se pinta un trazo estimado."
+        out.append(item)
+    return out
+
+
+def build_original_road_segments(route, restrictions: list[dict]) -> list[dict]:
+    route_raw = getattr(route, "raw_route", None) or {}
+    restrictions_by_road: dict[str, list[dict]] = {}
+    for restriction in restrictions:
+        road = normalize_road_code(restriction.get("via") or "")
+        if road:
+            restrictions_by_road.setdefault(road, []).append(restriction)
+
+    segments: list[dict] = []
+    for leg in route_raw.get("legs") or []:
+        for step in leg.get("steps") or []:
+            road = step.get("name") or step.get("ref") or step.get("destinations") or ""
+            road_codes = extract_road_codes(" ".join(str(step.get(key) or "") for key in ("ref", "name", "destinations")))
+            road_code = road_codes[0] if road_codes else ""
+            geometry = step.get("geometry") or {}
+            coords = geometry.get("coordinates") or []
+            if not road_code or len(coords) < 2:
+                continue
+            distance_km = round(float(step.get("distance") or 0) / 1000, 3)
+            if distance_km < 1:
+                continue
+            candidates = list(restrictions_by_road.get(road_code, []))
+            with_geometry = [item for item in candidates if item.get("has_geometry")]
+            if with_geometry:
+                nearest = min(with_geometry, key=lambda item: _linestring_distance_to_points_km(coords, _restriction_points(item)))
+                segment_restrictions = [nearest]
+            else:
+                segment_restrictions = candidates
+            segments.append({
+                "road": road,
+                "road_code": road_code,
+                "type": "autopista" if road_code.startswith("AP-") else "autovia" if road_code.startswith("A-") else "nacional" if road_code.startswith("N-") else "resto",
+                "distance_km": distance_km,
+                "geometry": {"type": "LineString", "coordinates": coords},
+                "restricted": bool(segment_restrictions),
+                "restrictions": segment_restrictions,
+            })
+    return segments
 
 def analyze_route(
     origen: str,
@@ -139,7 +261,10 @@ def analyze_route(
     route_confidence = calculate_route_confidence(route.confidence, roads, enrichment)
     # El flujo clásico no tiene hora propia; si el frontend la envía añadida al payload, main la pasa.
     hora_salida = getattr(provider, "hora_salida", None) or "08:00"
-    restrictions = find_route_restrictions(fecha_salida, fecha_llegada, roads, route_confidence, hora_salida)
+    restrictions = validate_restriction_geometries_on_route(
+        attach_restriction_geometries(find_route_restrictions(fecha_salida, fecha_llegada, roads, route_confidence, hora_salida)),
+        route.geometry,
+    )
     distance_km = round(geometry_distance_km(route.geometry), 3)
     eta = calculate_eta(distance_km, fecha_salida, hora_salida)
     return {
@@ -158,6 +283,7 @@ def analyze_route(
         "eta_at": eta["eta_at"],
         "enrichment": enrichment,
         "restricciones": restrictions,
+        "road_segments": {"original": build_original_road_segments(route, restrictions), "alternative": []},
         "summary": {
             "total_vias": len(roads),
             "total_restricciones": len(restrictions),

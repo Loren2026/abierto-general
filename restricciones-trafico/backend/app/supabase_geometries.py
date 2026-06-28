@@ -98,6 +98,29 @@ def fetch_high_confidence_geometries(limit: int = 9) -> list[dict[str, Any]]:
     return fetch_restriction_geometries(limit=limit, confidence="alta")
 
 
+def fetch_restriction_geometries_by_ids(restriction_ids: list[str]) -> dict[str, dict[str, Any]]:
+    ids = sorted({str(item) for item in restriction_ids if item})
+    if not ids:
+        return {}
+    quoted = ",".join(f'"{item}"' for item in ids)
+    params = {
+        "select": "id,restriction_id,road_normalized,geometry_geojson,confidence",
+        "restriction_id": f"in.({quoted})",
+    }
+    records = _supabase_get(params, timeout=20)
+    out: dict[str, dict[str, Any]] = {}
+    for record in records:
+        raw = record.get("geometry_geojson")
+        geometry = None
+        if raw:
+            try:
+                geometry = json.loads(raw) if isinstance(raw, str) else raw
+            except json.JSONDecodeError:
+                geometry = None
+        out[str(record.get("restriction_id"))] = {**record, "geometry": geometry}
+    return out
+
+
 def _iter_positions(coords: Any):
     if isinstance(coords, list):
         if len(coords) >= 2 and all(isinstance(v, (int, float)) for v in coords[:2]):
