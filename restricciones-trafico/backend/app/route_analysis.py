@@ -189,7 +189,7 @@ def validate_restriction_geometries_on_route(restrictions: list[dict], route_geo
     return out
 
 
-def build_original_road_segments(route, restrictions: list[dict]) -> list[dict]:
+def build_original_road_segments(route, restrictions: list[dict], geometry_match_threshold_km: float = 0.5) -> list[dict]:
     route_raw = getattr(route, "raw_route", None) or {}
     restrictions_by_road: dict[str, list[dict]] = {}
     for restriction in restrictions:
@@ -211,12 +211,14 @@ def build_original_road_segments(route, restrictions: list[dict]) -> list[dict]:
             if distance_km < 1:
                 continue
             candidates = list(restrictions_by_road.get(road_code, []))
-            with_geometry = [item for item in candidates if item.get("has_geometry")]
-            if with_geometry:
-                nearest = min(with_geometry, key=lambda item: _linestring_distance_to_points_km(coords, _restriction_points(item)))
-                segment_restrictions = [nearest]
-            else:
-                segment_restrictions = candidates
+            geometry_matches = []
+            for item in candidates:
+                if not item.get("has_geometry"):
+                    continue
+                distance_to_restriction = _linestring_distance_to_points_km(coords, _restriction_points(item))
+                if distance_to_restriction <= geometry_match_threshold_km:
+                    geometry_matches.append((distance_to_restriction, item))
+            segment_restrictions = [item for _, item in sorted(geometry_matches, key=lambda match: match[0])]
             segments.append({
                 "road": road,
                 "road_code": road_code,
