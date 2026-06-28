@@ -97,13 +97,19 @@ def attach_restriction_geometries(restrictions: list[dict]) -> list[dict]:
     out = [dict(item) for item in restrictions]
     if not out or not supabase_configured():
         for item in out:
+            item["restriction_geometry"] = None
             item["has_geometry"] = False
+            item["geometry_status"] = "missing"
+            item["geometry_warning"] = "Tramo sin geometría precisa: no se debe pintar un trazo estimado como si fuera real."
         return out
     try:
         geometries = fetch_restriction_geometries_by_ids([str(item.get("id")) for item in out])
     except Exception:  # noqa: BLE001 - no romper el aviso SQLite por fallo externo de Supabase
         for item in out:
+            item["restriction_geometry"] = None
             item["has_geometry"] = False
+            item["geometry_status"] = "missing"
+            item["geometry_warning"] = "Tramo sin geometría precisa: no se debe pintar un trazo estimado como si fuera real."
         return out
     for item in out:
         geometry = (geometries.get(str(item.get("id"))) or {}).get("geometry")
@@ -111,9 +117,12 @@ def attach_restriction_geometries(restrictions: list[dict]) -> list[dict]:
         if isinstance(geometry, dict) and len(coords) > 1:
             item["restriction_geometry"] = geometry
             item["has_geometry"] = True
+            item["geometry_status"] = "available"
         else:
             item["restriction_geometry"] = None
             item["has_geometry"] = False
+            item["geometry_status"] = "missing"
+            item["geometry_warning"] = "Tramo sin geometría precisa: no se debe pintar un trazo estimado como si fuera real."
     return out
 
 
@@ -172,8 +181,8 @@ def build_original_road_segments(route, restrictions: list[dict]) -> list[dict]:
     segments: list[dict] = []
     for leg in route_raw.get("legs") or []:
         for step in leg.get("steps") or []:
-            road = step.get("name") or ""
-            road_code = normalize_road_code(road)
+            road = step.get("name") or step.get("ref") or step.get("destinations") or ""
+            road_code = normalize_road_code(" ".join(str(step.get(key) or "") for key in ("ref", "name", "destinations")))
             geometry = step.get("geometry") or {}
             coords = geometry.get("coordinates") or []
             if not road_code or len(coords) < 2:
