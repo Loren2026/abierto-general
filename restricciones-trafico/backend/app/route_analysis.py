@@ -5,7 +5,7 @@ from math import atan2, cos, radians, sin, sqrt
 from .alternative_routing import FIXED_SPEED_KMH, calculate_eta
 from .osm_enrichment import refs_from_geometry
 from .query import affected_days, expand_days, time_window_matches
-from .routing import NominatimOsrmProvider, RoutingProvider, normalize_road_code
+from .routing import NominatimOsrmProvider, RoutingProvider, extract_road_codes, normalize_road_code
 from .supabase_geometries import fetch_restriction_geometries_by_ids, supabase_configured
 
 DB = Path(__file__).resolve().parents[1] / "data/restricciones.sqlite"
@@ -182,7 +182,8 @@ def build_original_road_segments(route, restrictions: list[dict]) -> list[dict]:
     for leg in route_raw.get("legs") or []:
         for step in leg.get("steps") or []:
             road = step.get("name") or step.get("ref") or step.get("destinations") or ""
-            road_code = normalize_road_code(" ".join(str(step.get(key) or "") for key in ("ref", "name", "destinations")))
+            road_codes = extract_road_codes(" ".join(str(step.get(key) or "") for key in ("ref", "name", "destinations")))
+            road_code = road_codes[0] if road_codes else ""
             geometry = step.get("geometry") or {}
             coords = geometry.get("coordinates") or []
             if not road_code or len(coords) < 2:
