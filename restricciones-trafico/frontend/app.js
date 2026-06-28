@@ -171,17 +171,6 @@ function refreshMapSize(bounds, options = {}) {
   })
 }
 
-function restrictionLatLngs(item, routeLatLngs) {
-  const pk = item.pk || {}
-  const start = Number(pk.start ?? pk.min)
-  const end = Number(pk.end ?? pk.max)
-  if (!Number.isFinite(start) || !Number.isFinite(end) || !routeLatLngs.length) return []
-  const count = routeLatLngs.length
-  const from = Math.max(0, Math.min(count - 1, Math.floor(count * 0.45)))
-  const to = Math.max(from + 1, Math.min(count, Math.floor(count * 0.58)))
-  return routeLatLngs.slice(from, to)
-}
-
 function squaredDistance(a, b) {
   const dLat = Number(a?.[0]) - Number(b?.[0])
   const dLng = Number(a?.[1]) - Number(b?.[1])
@@ -201,17 +190,19 @@ function closestRouteIndex(point, routeLatLngs) {
   return bestIndex
 }
 
+function restrictionHasRealGeometry(item) {
+  return item?.has_geometry === true && (item.restriction_geometry?.coordinates || []).length > 1
+}
+
 function restrictionSegmentOnRoute(item, routeLatLngs) {
-  if (!routeLatLngs.length) return []
-  const restrictionCoords = item.restriction_geometry?.coordinates || []
-  if (restrictionCoords.length > 1) {
-    const restrictionLatLngs = restrictionCoords.map(([lon, lat]) => [lat, lon])
-    const indexes = restrictionLatLngs.map((point) => closestRouteIndex(point, routeLatLngs))
-    const from = Math.max(0, Math.min(...indexes) - 1)
-    const to = Math.min(routeLatLngs.length - 1, Math.max(...indexes) + 1)
-    if (to > from) return routeLatLngs.slice(from, to + 1)
-  }
-  return restrictionLatLngs(item, routeLatLngs)
+  if (!routeLatLngs.length || !restrictionHasRealGeometry(item)) return []
+  const restrictionCoords = item.restriction_geometry.coordinates
+  const restrictionLatLngs = restrictionCoords.map(([lon, lat]) => [lat, lon])
+  const indexes = restrictionLatLngs.map((point) => closestRouteIndex(point, routeLatLngs))
+  const from = Math.max(0, Math.min(...indexes) - 1)
+  const to = Math.min(routeLatLngs.length - 1, Math.max(...indexes) + 1)
+  if (to > from) return routeLatLngs.slice(from, to + 1)
+  return []
 }
 
 function showMapDetail(html) {
@@ -292,11 +283,6 @@ function drawMap(data) {
     const segment = restrictionSegmentOnRoute(item, routeLatLngs)
     if (segment.length > 1) {
       bindDetail(L.polyline(segment, { color: item.confidence === 'baja' ? '#f59e0b' : '#ef4444', weight: 9, opacity: .95 }), `<strong>${item.via || 'Restricción'}</strong><br>${item.source_scope || ''}<br>${item.id}`).addTo(item.confidence === 'baja' ? lowConfidenceLayer : restrictionLayer)
-    } else {
-      const idx = Math.floor(coords.length / 2)
-      const [lon, lat] = coords[idx]
-      bindDetail(L.circleMarker([lat, lon], { radius: 8, color: item.confidence === 'baja' ? '#f59e0b' : '#ef4444', fillColor: item.confidence === 'baja' ? '#f59e0b' : '#ef4444', fillOpacity: .85 }), `<strong>${item.via || 'Restricción'}</strong><br>${item.source_scope || ''}<br>${item.id}`)
-        .addTo(item.confidence === 'baja' ? lowConfidenceLayer : restrictionLayer)
     }
   }
   lastBounds = routeBounds
@@ -349,8 +335,9 @@ function roadSegmentButton(segment, fallbackRoad = '') {
   button.innerHTML = `
     <span class="road-segment-name">${escapeHtml(segment.road || fallbackRoad || 'Vía')}</span>
     <span class="road-segment-meta">${formatDistanceKm(segment.distance_km)} · ${escapeHtml(type)}</span>
-    ${restriction ? `<span class="road-segment-alert">TRAMO RESTRINGIDO · ${escapeHtml(restriction.id || restriction.via || 'afecta')}</span>` : ''}
+    ${segment.restricted && restriction ? `<span class="road-segment-alert">TRAMO RESTRINGIDO · ${escapeHtml(restriction.id || restriction.via || 'afecta')}</span>` : ''}
   `
+  if (segment.restricted) button.setAttribute('aria-label', `TRAMO RESTRINGIDO · ${restriction?.id || restriction?.via || segment.road || fallbackRoad || 'restricción'}`)
   if (segment.geometry?.coordinates?.length) button.addEventListener('click', () => highlightRoadSegment(segment))
   else button.disabled = true
   return button
@@ -441,6 +428,7 @@ function renderRestrictions(items = [], data = {}) {
       <div class="meta"><span class="meta-label">Días:</span> <span class="meta-value">${formatDateRule(item)} · ${formatDays(item.dias_afecta)}</span></div>
       <div class="meta"><span class="meta-label">Horario:</span> <span class="meta-value">${formatTimeWindows(item.franja_horaria)}</span></div>
       <div class="meta"><span class="meta-label">Fuente:</span> <span class="meta-value">${item.source_scope || '—'} · ${item.source_annex || '—'}</span></div>
+      ${item.has_geometry === false ? `<div class="meta geometry-warning"><span class="meta-label">Geometría:</span> <span class="meta-value">${escapeHtml(item.geometry_warning || 'Tramo sin geometría precisa: no se pinta trazo estimado.')}</span></div>` : ''}
     `
     restrictionsList.appendChild(div)
   }
@@ -492,6 +480,11 @@ form.addEventListener('submit', async (event) => {
     const analysisData = await analysisResponse.json().catch(() => ({}))
     if (!analysisResponse.ok) throw new Error(analysisData.detail || analysisData.error || `Error HTTP ${analysisResponse.status}`)
     data.restricciones = analysisData.restricciones || []
+    data.road_segments = analysisData.road_segments || data.road_segments
+    data.geometry = analysisData.geometry || data.geometry
+    data.vias_detectadas = analysisData.vias_detectadas || data.vias_detectadas
+    data.route_confidence = analysisData.route_confidence || data.route_confidence
+    data.summary = analysisData.summary || data.summary
     results.hidden = false
     renderConfidence(data)
     renderRoads(data.vias_detectadas, data)
