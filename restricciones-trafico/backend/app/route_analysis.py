@@ -170,6 +170,25 @@ def _restriction_points(restriction: dict) -> list[list[float]]:
     return [point for point in coords if isinstance(point, list) and len(point) >= 2]
 
 
+def validate_restriction_geometries_on_route(restrictions: list[dict], route_geometry: dict | None, max_distance_km: float = 5.0) -> list[dict]:
+    route_coords = (route_geometry or {}).get("coordinates") or []
+    if len(route_coords) < 2:
+        return restrictions
+    out = []
+    for restriction in restrictions:
+        item = dict(restriction)
+        points = _restriction_points(item)
+        if item.get("has_geometry") and points:
+            distance = _linestring_distance_to_points_km(route_coords, points)
+            if distance > max_distance_km:
+                item["restriction_geometry"] = None
+                item["has_geometry"] = False
+                item["geometry_status"] = "missing"
+                item["geometry_warning"] = "Tramo sin geometría precisa: la geometría disponible no cae sobre la ruta consultada, así que no se pinta un trazo estimado."
+        out.append(item)
+    return out
+
+
 def build_original_road_segments(route, restrictions: list[dict]) -> list[dict]:
     route_raw = getattr(route, "raw_route", None) or {}
     restrictions_by_road: dict[str, list[dict]] = {}
@@ -242,7 +261,10 @@ def analyze_route(
     route_confidence = calculate_route_confidence(route.confidence, roads, enrichment)
     # El flujo clásico no tiene hora propia; si el frontend la envía añadida al payload, main la pasa.
     hora_salida = getattr(provider, "hora_salida", None) or "08:00"
-    restrictions = attach_restriction_geometries(find_route_restrictions(fecha_salida, fecha_llegada, roads, route_confidence, hora_salida))
+    restrictions = validate_restriction_geometries_on_route(
+        attach_restriction_geometries(find_route_restrictions(fecha_salida, fecha_llegada, roads, route_confidence, hora_salida)),
+        route.geometry,
+    )
     distance_km = round(geometry_distance_km(route.geometry), 3)
     eta = calculate_eta(distance_km, fecha_salida, hora_salida)
     return {
