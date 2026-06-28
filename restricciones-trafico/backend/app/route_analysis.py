@@ -6,6 +6,7 @@ from .alternative_routing import FIXED_SPEED_KMH, calculate_eta
 from .osm_enrichment import refs_from_geometry
 from .query import affected_days, expand_days, time_window_matches
 from .routing import NominatimOsrmProvider, RoutingProvider, normalize_road_code
+from .supabase_geometries import fetch_restriction_geometries_by_ids, supabase_configured
 
 DB = Path(__file__).resolve().parents[1] / "data/restricciones.sqlite"
 
@@ -92,6 +93,30 @@ def find_route_restrictions(fecha_salida: str, fecha_llegada: str, roads: list[s
     return out
 
 
+def attach_restriction_geometries(restrictions: list[dict]) -> list[dict]:
+    out = [dict(item) for item in restrictions]
+    if not out or not supabase_configured():
+        for item in out:
+            item["has_geometry"] = False
+        return out
+    try:
+        geometries = fetch_restriction_geometries_by_ids([str(item.get("id")) for item in out])
+    except Exception:  # noqa: BLE001 - no romper el aviso SQLite por fallo externo de Supabase
+        for item in out:
+            item["has_geometry"] = False
+        return out
+    for item in out:
+        geometry = (geometries.get(str(item.get("id"))) or {}).get("geometry")
+        coords = (geometry or {}).get("coordinates") or []
+        if isinstance(geometry, dict) and len(coords) > 1:
+            item["restriction_geometry"] = geometry
+            item["has_geometry"] = True
+        else:
+            item["restriction_geometry"] = None
+            item["has_geometry"] = False
+    return out
+
+
 def geometry_distance_km(geometry: dict | None) -> float:
     coords = (geometry or {}).get("coordinates") or []
     if len(coords) < 2:
@@ -139,7 +164,7 @@ def analyze_route(
     route_confidence = calculate_route_confidence(route.confidence, roads, enrichment)
     # El flujo clásico no tiene hora propia; si el frontend la envía añadida al payload, main la pasa.
     hora_salida = getattr(provider, "hora_salida", None) or "08:00"
-    restrictions = find_route_restrictions(fecha_salida, fecha_llegada, roads, route_confidence, hora_salida)
+    restrictions = attach_restriction_geometries(find_route_restrictions(fecha_salida, fecha_llegada, roads, route_confidence, hora_salida))
     distance_km = round(geometry_distance_km(route.geometry), 3)
     eta = calculate_eta(distance_km, fecha_salida, hora_salida)
     return {
