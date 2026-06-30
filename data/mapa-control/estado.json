@@ -1,0 +1,895 @@
+{
+  "meta": {
+    "titulo": "Mapa de Control",
+    "version": "1.0",
+    "fecha": "2026-06-30",
+    "fuente": "historico 28-6-26 + planning v42"
+  },
+  "ecosistema": {
+    "id": "root",
+    "name": "Ecosistema",
+    "label": "Ecosistema Inteligencia Loren",
+    "children": [
+      {
+        "id": "equipo",
+        "name": "Equipo",
+        "tipo": "equipo",
+        "sub": "Quién interviene y su función (Procedimiento v3.0)",
+        "personas": [
+          {
+            "nombre": "Loren",
+            "rol": "Director",
+            "fn": "Autoridad final y propietario. Define prioridades y alcance, autoriza toda acción sensible o irreversible, decide qué se cierra o publica. Puede parar cualquier proceso."
+          },
+          {
+            "nombre": "Claude",
+            "rol": "Ingeniero Jefe",
+            "fn": "Analiza, propone y coordina. Detecta y declara riesgos. Contrasta con Turín antes de proponer. No decide ni ejecuta en producción. Audita el trabajo de Turín contra el remoto."
+          },
+          {
+            "nombre": "Turín",
+            "rol": "Programador / Operador",
+            "fn": "Implementa y, tras autorización, ejecuta (incluido el host del VPS). Prepara y verifica en remoto antes de confirmar. Declara bloqueos. No se autoautoriza nunca."
+          }
+        ]
+      },
+      {
+        "id": "landing",
+        "name": "Landing pública",
+        "tipo": "area",
+        "estado": "verde",
+        "sub": "inteligencialoren.com · cara pública del ecosistema",
+        "bloques": [
+          {
+            "nombre": "Qué es",
+            "items": [
+              {
+                "estado": "verde",
+                "t": "Web pública · dominio hasta 2029 · React + Vite"
+              },
+              {
+                "estado": "verde",
+                "t": "Jerarquía: web pública → Panel privado → Workspace Turín → proyectos"
+              }
+            ]
+          },
+          {
+            "nombre": "Diseño y estructura",
+            "items": [
+              {
+                "estado": "verde",
+                "t": "Rediseño en producción · cabecera limpia · botón \"Privado\" arriba dcha"
+              },
+              {
+                "estado": "verde",
+                "t": "Tarjetas de proyectos · modal de código · responsive"
+              },
+              {
+                "estado": "verde",
+                "t": "Bloque \"Así funciona el acceso\" (solicitas → entras → activas → usas)"
+              }
+            ]
+          },
+          {
+            "nombre": "Acceso a proyectos",
+            "items": [
+              {
+                "estado": "verde",
+                "t": "EmailJS para solicitar código (formulario → famipocoyo@gmail.com)"
+              },
+              {
+                "estado": "verde",
+                "t": "Restricciones activado (botón verde \"Acceder\" + naranja \"Solicitar\") · 30/06"
+              },
+              {
+                "estado": "gris",
+                "t": "GestActas y Fit Loren siguen con badge \"Próximamente\""
+              },
+              {
+                "estado": "gris",
+                "t": "Landing dinámica desde BD (badge/acceso por proyecto) · hoy es estático"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "panel",
+        "name": "Panel privado",
+        "tipo": "area",
+        "estado": "verde",
+        "sub": "panel.inteligencialoren.com · centro de todo (modelo Panel-céntrico)",
+        "bloques": [
+          {
+            "nombre": "Qué es",
+            "items": [
+              {
+                "estado": "verde",
+                "t": "Panel central que aloja todos los proyectos · React+Vite + API Node"
+              },
+              {
+                "estado": "verde",
+                "t": "Deploy permanente en /docker/panel-inteligencialoren"
+              }
+            ]
+          },
+          {
+            "nombre": "Acceso admin",
+            "items": [
+              {
+                "estado": "verde",
+                "t": "Login email+contraseña + WebAuthn (huella) en PC y móvil"
+              },
+              {
+                "estado": "verde",
+                "t": "/admin protegido · sesión de administrador"
+              }
+            ]
+          },
+          {
+            "nombre": "Gestión",
+            "items": [
+              {
+                "estado": "verde",
+                "t": "Dashboard con datos reales multi-proyecto"
+              },
+              {
+                "estado": "verde",
+                "t": "Códigos de invitación: generar y revocar"
+              },
+              {
+                "estado": "verde",
+                "t": "Dispositivos: indicador y revocación"
+              },
+              {
+                "estado": "verde",
+                "t": "Drilldown de 3 niveles + edición de código segura (lista blanca)"
+              }
+            ]
+          },
+          {
+            "nombre": "Sistema de acceso por código",
+            "items": [
+              {
+                "estado": "verde",
+                "t": "Sistema central único de códigos para todas las apps"
+              },
+              {
+                "estado": "verde",
+                "t": "Multi-dispositivo (max_devices) + códigos trial con días configurables"
+              },
+              {
+                "estado": "verde",
+                "t": "Bandeja de invitaciones (solicitada → generada → enviada → activa → revocada)"
+              },
+              {
+                "estado": "gris",
+                "t": "Integrar trial también en la bandeja · mover email al backend"
+              }
+            ]
+          },
+          {
+            "nombre": "Seguridad",
+            "items": [
+              {
+                "estado": "verde",
+                "t": "bcrypt · rate limit · Helmet · CSRF"
+              },
+              {
+                "estado": "ambar",
+                "t": "RLS Supabase: Grupo A protegible ya · Grupo B requiere reescritura frontend"
+              },
+              {
+                "estado": "gris",
+                "t": "Regularizar la publishable key del frontend a .env/repo"
+              }
+            ]
+          },
+          {
+            "nombre": "Coordinación de agentes",
+            "items": [
+              {
+                "estado": "verde",
+                "t": "Turín con acceso al canal vía API"
+              },
+              {
+                "estado": "ambar",
+                "t": "Turín ↔ Claude vía API Anthropic · pendiente"
+              },
+              {
+                "estado": "gris",
+                "t": "Fase 2 Coordinator · Fase 3 Multiagente"
+              }
+            ]
+          },
+          {
+            "nombre": "Pendientes de infraestructura",
+            "items": [
+              {
+                "estado": "gris",
+                "t": "Migrar proyectos de Vercel al Panel"
+              },
+              {
+                "estado": "gris",
+                "t": "Mantenimiento VPS (reinicio + updates)"
+              },
+              {
+                "estado": "gris",
+                "t": "Revocar tokens GitHub antiguos (v2/v3/v4)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "workspace",
+        "name": "Workspace Turín",
+        "tipo": "area",
+        "estado": "verde",
+        "sub": "Chat en tiempo real con Turín desde el Panel + material y documentos",
+        "bloques": [
+          {
+            "nombre": "Qué es",
+            "items": [
+              {
+                "estado": "verde",
+                "t": "Hub central: Chat + Documentos + Proyectos · backend Node+Supabase dentro del Panel"
+              },
+              {
+                "estado": "verde",
+                "t": "Mobile-first · criterio: \"abro el móvil y sigo con Turín donde lo dejé\""
+              }
+            ]
+          },
+          {
+            "nombre": "Material / documentos",
+            "items": [
+              {
+                "estado": "verde",
+                "t": "Lista y abre documentos del bucket privado vía backend puente seguro (URL firmada 10 min)"
+              },
+              {
+                "estado": "verde",
+                "t": "Renderizables en pestaña · Office descarga · bucket privado, solo Loren"
+              }
+            ]
+          },
+          {
+            "nombre": "Chat en tiempo real",
+            "items": [
+              {
+                "estado": "verde",
+                "t": "F1 completa: estructura, navegación, estilo WhatsApp, burbujas, copiar/eliminar"
+              },
+              {
+                "estado": "verde",
+                "t": "F2 desplegado: Turín responde en el Workspace sin Telegram (puente con el Gateway)"
+              },
+              {
+                "estado": "verde",
+                "t": "Proyectos sintéticos chatean (auto-crea thread real al primer envío)"
+              },
+              {
+                "estado": "gris",
+                "t": "F3: documentos en el chat ↔ Material (auto-sync) + enviar al proyecto"
+              }
+            ]
+          },
+          {
+            "nombre": "Bugs pendientes del chat",
+            "items": [
+              {
+                "estado": "ambar",
+                "t": "Envío lento (hay que salir/entrar para ver)"
+              },
+              {
+                "estado": "ambar",
+                "t": "Respuesta a veces se pinta un instante en el chat equivocado"
+              },
+              {
+                "estado": "ambar",
+                "t": "Globos con números irreales que no bajan al leer"
+              },
+              {
+                "estado": "ambar",
+                "t": "Respuestas cortadas · Intro debe ser salto de línea, no enviar"
+              }
+            ]
+          },
+          {
+            "nombre": "Pendiente",
+            "items": [
+              {
+                "estado": "gris",
+                "t": "Audio: Turín responde por voz solo si Loren lo pide (propuesta entregada, sin autorizar)"
+              },
+              {
+                "estado": "gris",
+                "t": "Acceso directo tipo app que abra en la pestaña Chat (PWA, aparcado)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "proyectos",
+        "name": "Proyectos",
+        "tipo": "grupo",
+        "sub": "Las herramientas del ecosistema",
+        "children": [
+          {
+            "id": "restricciones",
+            "name": "Restricciones Tráfico",
+            "tipo": "proyecto",
+            "estado": "verde",
+            "sub": "restricciones.inteligencialoren.com · avisos de restricción para mercancías >7.500 kg",
+            "bloques": [
+              {
+                "nombre": "Qué es",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "PWA: antes de un viaje dice si hay restricciones para >7.500 kg (tráiler 5 ejes) en trayecto y fechas"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Routing libre sin coste: OpenStreetMap + OSRM + Overpass · mapa Leaflet · nada de Google de pago"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Fiabilidad: patrón oro BOE · nunca \"vía libre\" si la confianza es baja"
+                  }
+                ]
+              },
+              {
+                "nombre": "Datos",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "DGT = 329 restricciones · BOE-A-2026-1255"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "País Vasco = 52 · BOE-A-2026-2625 · grupo transfronterizo marcado"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Total base de datos = 381 · verificado fichero a fichero"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Dos fuentes que NO se unifican: SQLite (381, avisos) vs RIMP/Supabase (328, routing)"
+                  },
+                  {
+                    "estado": "gris",
+                    "t": "Cataluña: pestaña aparte con enlace al buscador oficial gencat"
+                  }
+                ]
+              },
+              {
+                "nombre": "Motor de detección y horario",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "FastAPI + SQLite · /health = 381 · aborta si el conteo no cuadra"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Aviso por fecha + hora real (date_rule + time_windows) · verificado domingo 16-22h activo a las 20:00"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Confianza realista (alta/media/baja) · regla de oro intacta"
+                  }
+                ]
+              },
+              {
+                "nombre": "Cálculo de ruta y geometrías",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Flujo completo origen/destino → ruta → vías → cruce"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Routing alternativo con ORS (avoid_polygons) + troceo de rutas largas (límite 150 km)"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "263 geometrías reales limpias (método OSRM town a town) cargadas en Supabase"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Marcado por geometría + cercanía (0,5 km) · no sobre-marca toda la vía por el nombre"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "Overpass público a veces da 504 · mitigado con 2 servidores de respaldo"
+                  }
+                ]
+              },
+              {
+                "nombre": "Interfaz (mapa y avisos)",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Pantalla origen/destino/fechas + horarios + confianza por colores"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Mapa con ruta azul + tramo restringido proyectado exacto sobre la ruta"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Tarjeta blanca+roja \"TRAMO RESTRINGIDO\" en su posición real"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Botón \"Ver ruta completa\" para volver a la vista entera"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Fallback honesto: si no hay geometría, aviso ámbar y no se pinta trazo falso"
+                  }
+                ]
+              },
+              {
+                "nombre": "Acceso y despliegue",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "En producción en restricciones.inteligencialoren.com (código 93CNZLNN)"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Contenedor Docker + Traefik HTTPS · acceso por código integrado al sistema central"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Multi-dispositivo de Loren resuelto (max_devices)"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Acceso activado en la landing pública (botón verde + naranja) · 30/06"
+                  }
+                ]
+              },
+              {
+                "nombre": "Pendientes",
+                "items": [
+                  {
+                    "estado": "ambar",
+                    "t": "Geometría precisa País Vasco (pv-0004/0001, town=None) · aviso funciona, falta el trazo en mapa"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "Cache-busting del service worker · verificar siempre en incógnito tras desplegar"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "Commitear el .gitignore del repo · limpiar ramas Git antiguas"
+                  }
+                ]
+              },
+              {
+                "nombre": "Usuarios",
+                "tipo": "usuarios",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Loren · acceso propio (PC, móvil, tablet)"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "David Gijón · acceso activo · código trial 7 días (K42R057C)"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "gestactas",
+            "name": "GestActas",
+            "tipo": "proyecto",
+            "estado": "ambar",
+            "sub": "gestactas.vercel.app · gestión de actas de comunidades · cliente real Carlos",
+            "bloques": [
+              {
+                "nombre": "Qué es y estado",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "App de gestión de actas de comunidades y juntas · bloques 1-6 completados"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "En comprobación por Carlos (prueba real de usuario)"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "Bloque 7 · estabilización funcional en curso"
+                  }
+                ]
+              },
+              {
+                "nombre": "Despliegue",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "En producción · /opt/gestactas · Docker Compose unificado"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Repo Loren2026/gestactas (privado)"
+                  }
+                ]
+              },
+              {
+                "nombre": "Acceso por código",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Acceso por código verificado en móvil (F1 cerrada)"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Dispositivos autorizados: móvil Loren + ordenador"
+                  },
+                  {
+                    "estado": "rojo",
+                    "t": "Dispositivo desconocido E0BVLV0B · pendiente REVOCAR (incidencia de seguridad)"
+                  }
+                ]
+              },
+              {
+                "nombre": "Comunidades y propietarios",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Comunidades abren correctamente · botones editar/eliminar corregidos"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Duplicados corregidos · DNI obligatorio · doble clic mitigado"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Autorrelleno de dirección desde comunidad · planta admite negativos"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "Normalización del formulario en curso (tipo vía, tipo inmueble)"
+                  },
+                  {
+                    "estado": "rojo",
+                    "t": "5 archivos modificados en local sin commit · riesgo de pérdida · commitear tras revisión"
+                  }
+                ]
+              },
+              {
+                "nombre": "Juntas (F2)",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Pestaña Juntas visible · buscador de comunidad en móvil"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "Bloque Juntas en reparación (formulario inline, botón Nueva Junta)"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "Bug comunidad ID 1 · fix aplicado · verificar con Carlos"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "F2.1 cerrar Nueva Junta (convocatoria, guardado, listado)"
+                  },
+                  {
+                    "estado": "gris",
+                    "t": "F2.2 grabación / acta (flujo junta → acta)"
+                  }
+                ]
+              },
+              {
+                "nombre": "Pendientes (F3-F6)",
+                "items": [
+                  {
+                    "estado": "gris",
+                    "t": "F3 prueba real con Carlos"
+                  },
+                  {
+                    "estado": "gris",
+                    "t": "F4 multi-dispositivo estable"
+                  },
+                  {
+                    "estado": "gris",
+                    "t": "F5 limpieza legacy"
+                  },
+                  {
+                    "estado": "gris",
+                    "t": "F6 informe final + aprobación Loren"
+                  }
+                ]
+              },
+              {
+                "nombre": "Usuarios",
+                "tipo": "usuarios",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Loren · acceso propio"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "Carlos · cliente · administrador de fincas · en pruebas reales"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "analisis",
+            "name": "Análisis Mercado",
+            "tipo": "proyecto",
+            "estado": "ambar",
+            "sub": "analisis.inteligencialoren.com · análisis de mercado y recomendación sobre la cartera",
+            "bloques": [
+              {
+                "nombre": "Qué es",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "App de análisis de mercado con recomendación de opciones (comprar/vender/mantener) sobre la cartera"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Versión funcional verificada (2400+ líneas, FMP + Claude API reales, gráficos)"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Opción B decidida: backend propio con las claves en el servidor (nunca en el navegador)"
+                  }
+                ]
+              },
+              {
+                "nombre": "Construido (fases 1-3 y 5)",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Fases 1-3 de backend implementadas"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Fase 5: sección de recomendación de opciones integrada"
+                  }
+                ]
+              },
+              {
+                "nombre": "Cartera de referencia",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "ZEG · META · MSFT · CSU · AMZN · WKL · NAV 29.710 € (+40,4%)"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Cuenta IBKR U18746527 · PRO · CASH · EUR"
+                  }
+                ]
+              },
+              {
+                "nombre": "Seguridad de claves",
+                "items": [
+                  {
+                    "estado": "rojo",
+                    "t": "FMP API key expuesta (corría en navegador) · rotar al desplegar con proxy backend"
+                  },
+                  {
+                    "estado": "rojo",
+                    "t": "Claude API key también en navegador · proteger con el proxy backend"
+                  }
+                ]
+              },
+              {
+                "nombre": "Bloqueado / pendiente",
+                "items": [
+                  {
+                    "estado": "rojo",
+                    "t": "Fase 4 módulo de opciones · bloqueada: requiere activar permisos IBKR desde PC"
+                  },
+                  {
+                    "estado": "gris",
+                    "t": "Fase 6 despliegue en analisis.inteligencialoren.com (dominio no responde) · pendiente autorización con claves reales"
+                  }
+                ]
+              },
+              {
+                "nombre": "Usuarios",
+                "tipo": "usuarios",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Loren · uso propio (cartera personal)"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "fit",
+            "name": "Fit Loren",
+            "tipo": "proyecto",
+            "estado": "ambar",
+            "sub": "fit.inteligencialoren.com · fitness y seguimiento personal (Flutter)",
+            "bloques": [
+              {
+                "nombre": "Qué es",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "App pública por navegador con código de invitación (familia/amigos) · APK nativo como respaldo"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Repo Loren2026/abierto-fit-loren"
+                  }
+                ]
+              },
+              {
+                "nombre": "Entorno de build",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Contenedor flutter-build en el VPS (Flutter 3.44.0), aislado de producción"
+                  }
+                ]
+              },
+              {
+                "nombre": "Build web (PWA)",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Compila como web por primera vez · camino PWA viable"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "PWA recompilada y servida · onboarding (8 pasos) + dashboard navegan"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Responsive + objetivos múltiples + material por secciones"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "Legibilidad en PC: escala global aumentada · falta que Loren confirme el render"
+                  }
+                ]
+              },
+              {
+                "nombre": "Seguridad (antes de público)",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Consultas Supabase auditadas · session_summaries atado a user.id"
+                  },
+                  {
+                    "estado": "rojo",
+                    "t": "RLS preparado SIN aplicar · aplicar solo cuando la PWA vaya a ser pública"
+                  }
+                ]
+              },
+              {
+                "nombre": "APK nativo (respaldo)",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "APK válido recuperado · firmado"
+                  },
+                  {
+                    "estado": "rojo",
+                    "t": "Crash conocido en Android 16 · nunca probado en móvil real · probar en POCO F8"
+                  }
+                ]
+              },
+              {
+                "nombre": "IA propia (sin coste)",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Motor de rutinas propio (reglas + scoring) · coste cero por usuario"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Material por foto = clasificador ligero autoalojado (CLIP/MobileCLIP)"
+                  },
+                  {
+                    "estado": "gris",
+                    "t": "Arrancar Fase 1 del motor · instalar CLIP en el VPS (paso aparte, autorización)"
+                  }
+                ]
+              },
+              {
+                "nombre": "Usuarios",
+                "tipo": "usuarios",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Loren · uso propio"
+                  },
+                  {
+                    "estado": "gris",
+                    "t": "Familia / amigos · por invitación (cuando se abra)"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "grabador",
+            "name": "Grabador Llamadas",
+            "tipo": "proyecto",
+            "estado": "ambar",
+            "sub": "Grabar llamadas del móvil → VPS → transcripción Whisper → búsqueda",
+            "bloques": [
+              {
+                "nombre": "Qué es",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Grabar llamadas, subirlas al VPS, transcribir con Whisper y poder buscarlas"
+                  }
+                ]
+              },
+              {
+                "nombre": "Contexto técnico",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "POCO F8, HyperOS 3, Android 16 (ROM europea) · sin grabación nativa (bloqueo Google UE)"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Decidido el pipeline completo (Opción B): grabar → VPS → Whisper → interfaz de búsqueda"
+                  }
+                ]
+              },
+              {
+                "nombre": "Decisión pendiente (Grabador P3)",
+                "items": [
+                  {
+                    "estado": "ambar",
+                    "t": "Elegir vía A (APK tipo Cube ACR, coste 0, probar primero) o B (centralita VoIP, ~5-15 €/mes)"
+                  }
+                ]
+              },
+              {
+                "nombre": "Por construir",
+                "items": [
+                  {
+                    "estado": "gris",
+                    "t": "Pipeline de grabación y subida al VPS"
+                  },
+                  {
+                    "estado": "gris",
+                    "t": "Transcripción Whisper + interfaz de búsqueda"
+                  }
+                ]
+              },
+              {
+                "nombre": "Usuarios",
+                "tipo": "usuarios",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Loren · uso propio"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

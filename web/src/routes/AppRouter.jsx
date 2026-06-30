@@ -6,6 +6,7 @@ import AdminPage from '../admin/AdminPage'
 import AgentsPage from '../admin/AgentsPage'
 import WorkspacePage from '../admin/WorkspacePage'
 import InvitationInboxPage from '../admin/InvitationInboxPage'
+import ControlMapPage from '../admin/ControlMapPage'
 
 export default function AppRouter() {
   return (
@@ -42,6 +43,14 @@ export default function AppRouter() {
           element={
             <RequireAuth>
               <InvitationInboxPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/mapa-control"
+          element={
+            <RequireAuth>
+              <ControlMapPage />
             </RequireAuth>
           }
         />

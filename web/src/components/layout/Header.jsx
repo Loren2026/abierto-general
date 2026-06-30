@@ -22,6 +22,9 @@ export default function Header({ privateArea = false, title = 'Inteligencia Lore
               <Link to="/admin/agentes" className={`nav-chip nav-chip--orange ${location.pathname === '/admin/agentes' ? 'is-active' : ''}`}>
                 Agentes
               </Link>
+              <Link to="/admin/mapa-control" className={`nav-chip nav-chip--blue ${location.pathname === '/admin/mapa-control' ? 'is-active' : ''}`}>
+                Mapa
+              </Link>
               <button type="button" className="nav-chip nav-chip--red" onClick={onLogout}>
                 Salir
               </button>

@@ -25,6 +25,10 @@ services:
       dockerfile: Dockerfile
     env_file:
       - ./api/.env
+    environment:
+      CONTROL_MAP_STATE_PATH: /app/data/mapa-control/estado.json
+    volumes:
+      - ./data/mapa-control:/app/data/mapa-control:ro
     restart: unless-stopped
     networks:
       - openclaw-2ns9_default
