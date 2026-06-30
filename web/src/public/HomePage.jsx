@@ -28,8 +28,6 @@ const featuredProjects = [
     description:
       'Consulta privada de restricciones de tráfico, avisos y acceso autorizado a información útil del proyecto.',
     image: restriccionesHero,
-    badge: 'Próximamente',
-    accessLabel: 'Próximamente',
     visibleUrl: 'restricciones.inteligencialoren.com',
   },
   {
@@ -465,12 +463,24 @@ export default function HomePage() {
                   <img src={project.image} alt={project.name} />
                 </div>
                 <div className="project-card__body">
-                  <div className="project-card__topline" style={{ justifyContent: 'center' }}>
-                    <span className="project-card__badge">{project.badge}</span>
-                  </div>
+                  {project.slug === 'restricciones-trafico' ? null : (
+                    <div className="project-card__topline" style={{ justifyContent: 'center' }}>
+                      <span className="project-card__badge">{project.badge}</span>
+                    </div>
+                  )}
                   <h3>{project.name}</h3>
                   <p>{project.description}</p>
                   <div className="project-card__url">{project.visibleUrl}</div>
+                  {project.slug === 'restricciones-trafico' ? (
+                    <div className="project-card__actions">
+                      <button className="cta-button cta-button--primary" type="button" onClick={() => openAccessModal(project)}>
+                        Acceder con código
+                      </button>
+                      <button className="cta-button cta-button--invite" type="button" onClick={() => openInvite(project)}>
+                        Solicitar código
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               </article>
             ))}
