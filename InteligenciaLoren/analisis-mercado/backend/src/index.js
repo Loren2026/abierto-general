@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const { config, validateConfig } = require('./config/env');
 const fmpRoutes = require('./routes/fmp');
 const analysisRoutes = require('./routes/analysis');
@@ -9,11 +10,33 @@ validateConfig();
 
 const app = express();
 
-// Local development is permissive for now. In production, restrict CORS to the real allowed domain.
-app.use(cors());
+const allowedOrigins = ['https://analisis.inteligencialoren.com'];
+
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error('Not allowed by CORS'));
+  }
+}));
 app.use(express.json({ limit: '2mb' }));
 
-// Rate limiting hook: add express-rate-limit or gateway-level limiting before public exposure.
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    status: 'error',
+    message: 'Too many requests, please try again later.'
+  }
+});
+
+app.use('/api', apiLimiter);
+
 app.get('/api/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
