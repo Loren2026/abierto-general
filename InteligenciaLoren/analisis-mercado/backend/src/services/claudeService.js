@@ -35,6 +35,9 @@ async function analyzeWithClaude({ prompt, context, maxTokens = 1200 }) {
   if (!response.ok) {
     const error = new Error(`Claude request failed with status ${response.status}`);
     error.status = response.status;
+    error.provider = 'claude';
+    error.providerStatus = response.status;
+    error.providerBody = payload;
     throw error;
   }
 

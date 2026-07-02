@@ -45,9 +45,23 @@ app.use('/api/fmp', fmpRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 
-app.use((err, _req, res, _next) => {
-  console.error('[server] controlled error:', err.message);
-  res.status(500).json({ status: 'error', message: 'Internal server error' });
+app.use((err, req, res, _next) => {
+  console.error('[server] controlled error', {
+    message: err.message,
+    stack: err.stack,
+    status: err.status,
+    statusCode: err.statusCode,
+    code: err.code,
+    type: err.type,
+    limit: err.limit,
+    length: err.length,
+    expected: err.expected,
+    received: err.received,
+    method: req.method,
+    path: req.originalUrl,
+    contentLength: req.get('content-length')
+  });
+  res.status(err.status || err.statusCode || 500).json({ status: 'error', message: 'Internal server error' });
 });
 
 const server = app.listen(config.port, () => {
