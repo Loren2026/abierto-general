@@ -380,7 +380,7 @@ const IP=[
    BACKEND API — Motor de valoración IDC
    ════════════════════════════════════════════════ */
 // Local por defecto. En producción se configurará con la URL real del backend/subdominio autorizado.
-window.BACKEND_URL = window.BACKEND_URL || '/api';
+window.BACKEND_URL = window.BACKEND_URL || '';
 
 function backendUrl(path){ return window.BACKEND_URL.replace(/\/$/, '') + path; }
 
