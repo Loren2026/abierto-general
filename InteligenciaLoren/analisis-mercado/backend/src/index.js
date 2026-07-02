@@ -10,6 +10,8 @@ validateConfig();
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 const allowedOrigins = ['https://analisis.inteligencialoren.com'];
 
 app.use(cors({
