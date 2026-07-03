@@ -397,6 +397,21 @@ async function backendFetch(path, options={}){
   return data;
 }
 
+async function backendFormFetch(path, formData, options={}){
+  const r = await fetch(backendUrl(path), {
+    ...options,
+    method: options.method || 'POST',
+    body: formData,
+    headers: options.headers || {}
+  });
+  const data = await r.json().catch(()=>null);
+  if(!r.ok){
+    const msg = data?.message || `Backend ${r.status}`;
+    throw new Error(msg);
+  }
+  return data;
+}
+
 async function fmpFetch(endpoint, tk){
   const endpointMap = {
     'quote': 'quote',
@@ -1282,7 +1297,7 @@ function rConfig(){
     <div class="upload-zone" id="ibkr-upload-zone">
       📊 Subir informe IBKR
       <div style="font-size:11px;color:var(--ink4);margin-top:4px">PDF · Imagen · Captura de pantalla</div>
-      <input type="file" accept=".pdf,image/*,.jpg,.jpeg,.png" id="ibkr-file-input" onchange="handleIbkrReport(event)">
+      <input type="file" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" id="ibkr-file-input" onchange="handleIbkrReport(event)">
     </div>
     <div id="ibkr-status"></div>
   </div>
@@ -2416,70 +2431,14 @@ async function handleIbkrReport(event){
   zone.classList.add('processing');
   status.innerHTML = '<div style="padding:14px;text-align:center;color:var(--acc);font-weight:700;font-size:14px">⏳ Analizando informe... puede tardar unos segundos</div>';
 
-  const IBKR_PROMPT = `Analiza este informe/extracto de Interactive Brokers (IBKR).
-Extrae los datos de TODAS las posiciones abiertas que encuentres.
-Para cada posición necesito: ticker, nombre empresa, divisa, número de acciones, precio medio de compra, precio actual/último, valor de mercado en la divisa original, coste total, P&L no realizado, dividendos cobrados si aparecen, comisiones acumuladas si aparecen, tipo de cambio si aparece.
-
-Responde SOLO con un JSON válido (sin markdown, sin backticks, sin explicaciones):
-{
-  "fecha_informe": "2026-04-14",
-  "divisa_cuenta": "EUR",
-  "valor_total_eur": 28102,
-  "posiciones": [
-    {
-      "ticker": "META",
-      "nombre": "Meta Platforms Inc",
-      "divisa": "USD",
-      "num_acciones": 10,
-      "precio_medio": 517.68,
-      "precio_actual": 575.05,
-      "coste_total_divisa": 5176.80,
-      "valor_mercado_divisa": 5750.50,
-      "coste_total_eur": 5176.80,
-      "valor_mercado_eur": 4959.00,
-      "pnl_eur": -217.80,
-      "rentabilidad_pct": -4.21,
-      "dividendos_netos_eur": 8.00,
-      "comisiones_eur": 5.20,
-      "tipo_cambio": 1.08,
-      "peso_pct": 17.7,
-      "exchange": "NASDAQ",
-      "sector": "Technology"
-    }
-  ],
-  "totales": {
-    "invertido_eur": 23786,
-    "valor_mercado_eur": 28102,
-    "pnl_total_eur": 4316,
-    "dividendos_total_eur": 1136
-  }
-}
-Incluye TODAS las posiciones que veas. Si algún dato no aparece, pon null. Mantén los tickers exactos como aparecen (ZEG, META, MSFT, CSU, AMZN, WKL, etc).
-
-IMPORTANTE - ERRORES COMUNES A EVITAR:
-- En IBKR, "PyG" o "P&G" significa "Pérdidas y Ganancias" (P&L por acción), NO es el precio medio de compra. NO lo pongas como precio_medio.
-- Si no ves el precio medio de compra explícitamente, pon precio_medio: null.
-- ZEG en LSE cotiza en PENIQUES (GBX). Si ves precio 1771 es 1771 peniques = £17.71. Convierte siempre a libras (dividir entre 100).
-- La divisa de ZEG es GBP (libras), NO EUR.
-- La divisa de WKL es EUR, NO AUD.
-- Solo incluye precio_medio si estás SEGURO de que es el coste promedio de adquisición por acción.`;
-
   try {
-    let response;
-    if(file.type.startsWith('image/')){
-      const b64 = await fileToBase64(file);
-      response = await callClaudeVision(b64, file.type, IBKR_PROMPT);
-    } else if(file.type === 'application/pdf'){
-      const b64 = await fileToBase64(file);
-      response = await callClaudeVision(b64, 'application/pdf', IBKR_PROMPT);
-    } else {
-      const text = await file.text();
-      response = await callClaudeText(text, IBKR_PROMPT);
-    }
+    const formData = new FormData();
+    formData.append('file', file);
 
-  const report = parseClaudeJsonResponse(response);
+    const report = await backendFormFetch('/api/ibkr/import', formData);
+    const posiciones = normalizeIbkrImportPositions(report);
 
-    if(!report.posiciones || !report.posiciones.length){
+    if(!posiciones.length){
       status.innerHTML = '<div style="padding:14px;text-align:center;color:var(--red);font-weight:700">⚠️ No se detectaron posiciones en el informe</div>';
       zone.classList.remove('processing');
       return;
@@ -2487,7 +2446,7 @@ IMPORTANTE - ERRORES COMUNES A EVITAR:
 
     // Actualizar posiciones en cartera
     let updated = 0, added = 0;
-    report.posiciones.forEach(pos => {
+    posiciones.forEach(pos => {
       if(!pos.ticker) return;
       const tk = pos.ticker.toUpperCase();
       const item = D.c.find(e => e.tk === tk);
@@ -2548,13 +2507,12 @@ IMPORTANTE - ERRORES COMUNES A EVITAR:
     let html = `<div style="padding:14px;border-radius:12px;background:var(--green-light);border:1px solid rgba(13,148,72,.2);margin-top:12px">
       <div style="font-weight:800;color:var(--green);font-size:15px;margin-bottom:8px">✅ Informe procesado</div>
       <div style="font-size:13px;color:var(--ink2);line-height:1.6">`;
-    if(report.fecha_informe) html += `Fecha: <b>${report.fecha_informe}</b><br>`;
+    if(report.reportDate) html += `Fecha: <b>${report.reportDate}</b><br>`;
     html += `Posiciones actualizadas: <b>${updated}</b><br>`;
     if(added > 0) html += `Posiciones nuevas añadidas: <b>${added}</b><br>`;
-    if(report.totales){
-      if(report.totales.valor_mercado_eur) html += `Valor total: <b>€${report.totales.valor_mercado_eur.toLocaleString('es-ES')}</b><br>`;
-      if(report.totales.pnl_total_eur) html += `P&L total: <b>${report.totales.pnl_total_eur>=0?'+':''}€${report.totales.pnl_total_eur.toLocaleString('es-ES')}</b>`;
-    }
+    if(report.cash && report.cash.length) html += `Saldos cash detectados: <b>${report.cash.length}</b><br>`;
+    if(report.fees != null) html += `Fees detectadas: <b>${report.fees.toLocaleString('es-ES')}</b><br>`;
+    if(report.dividends != null) html += `Dividendos detectados: <b>${report.dividends.toLocaleString('es-ES')}</b>`;
     html += `</div></div>`;
     status.innerHTML = html;
     zone.classList.remove('processing');
@@ -2566,12 +2524,33 @@ IMPORTANTE - ERRORES COMUNES A EVITAR:
   } catch(err){
     console.error('IBKR report error:', err);
     zone.classList.remove('processing');
-    let msg = 'Error procesando informe';
-    if(err.message.includes('401')) msg = 'Backend Claude sin permisos';
+    const msg = err.message || 'Error procesando informe';
     status.innerHTML = `<div style="padding:14px;text-align:center;color:var(--red);font-weight:700">❌ ${msg}</div>`;
     toast('❌ '+msg);
   }
   event.target.value = '';
+}
+
+function normalizeIbkrImportPositions(report){
+  const positions = Array.isArray(report?.positions) ? report.positions : [];
+  return positions.map((pos) => ({
+    ticker: pos.symbol,
+    nombre: pos.symbol,
+    divisa: pos.currency,
+    num_acciones: pos.quantity,
+    precio_medio: pos.avgPrice,
+    precio_actual: null,
+    coste_total_eur: null,
+    valor_mercado_eur: pos.marketValue,
+    pnl_eur: pos.unrealizedPnL,
+    rentabilidad_pct: null,
+    dividendos_netos_eur: null,
+    comisiones_eur: report.fees,
+    tipo_cambio: null,
+    peso_pct: null,
+    exchange: '—',
+    sector: '—'
+  }));
 }
 
 /* ════════════════════════════════════════════════
