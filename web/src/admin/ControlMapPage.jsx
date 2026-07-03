@@ -290,6 +290,50 @@ export default function ControlMapPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    const previousManifest = document.querySelector('link[rel="manifest"]')
+    const previousThemeColor = document.querySelector('meta[name="theme-color"]')
+    const previousAppleIcon = document.querySelector('link[rel="apple-touch-icon"]')
+    const previousManifestHref = previousManifest?.getAttribute('href')
+    const previousThemeColorContent = previousThemeColor?.getAttribute('content')
+    const previousAppleIconHref = previousAppleIcon?.getAttribute('href')
+
+    const manifest = previousManifest || document.createElement('link')
+    manifest.setAttribute('rel', 'manifest')
+    manifest.setAttribute('href', '/mapa-control/manifest.webmanifest')
+    if (!previousManifest) document.head.appendChild(manifest)
+
+    const themeColor = previousThemeColor || document.createElement('meta')
+    themeColor.setAttribute('name', 'theme-color')
+    themeColor.setAttribute('content', '#d8d2c6')
+    if (!previousThemeColor) document.head.appendChild(themeColor)
+
+    const appleIcon = previousAppleIcon || document.createElement('link')
+    appleIcon.setAttribute('rel', 'apple-touch-icon')
+    appleIcon.setAttribute('href', '/mapa-control/icon-192.png')
+    if (!previousAppleIcon) document.head.appendChild(appleIcon)
+
+    return () => {
+      if (previousManifest) {
+        previousManifest.setAttribute('href', previousManifestHref)
+      } else {
+        manifest.remove()
+      }
+
+      if (previousThemeColor) {
+        previousThemeColor.setAttribute('content', previousThemeColorContent)
+      } else {
+        themeColor.remove()
+      }
+
+      if (previousAppleIcon) {
+        previousAppleIcon.setAttribute('href', previousAppleIconHref)
+      } else {
+        appleIcon.remove()
+      }
+    }
+  }, [])
+
+  useEffect(() => {
     let isMounted = true
 
     async function loadState() {

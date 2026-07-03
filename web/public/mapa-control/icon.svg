@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Mapa de Control</title>
+  <desc id="desc">Red de nodos conectados con semáforo rojo, ámbar y verde sobre fondo ceniza claro.</desc>
+  <rect width="512" height="512" rx="112" fill="#f4f1ea"/>
+  <circle cx="256" cy="256" r="196" fill="#ebe5da"/>
+  <g fill="none" stroke="#9c9284" stroke-width="18" stroke-linecap="round">
+    <path d="M256 166 150 278"/>
+    <path d="M256 166 362 278"/>
+    <path d="M150 278h212"/>
+    <path d="M150 278l58 94"/>
+    <path d="M362 278l-58 94"/>
+  </g>
+  <g stroke="#ffffff" stroke-width="18">
+    <circle cx="256" cy="166" r="52" fill="#2faa55"/>
+    <circle cx="150" cy="278" r="50" fill="#d33f3f"/>
+    <circle cx="362" cy="278" r="50" fill="#e8c233"/>
+    <circle cx="208" cy="372" r="42" fill="#7cb342"/>
+    <circle cx="304" cy="372" r="42" fill="#e08b2e"/>
+  </g>
+  <g fill="#3f3a33" opacity="0.82">
+    <circle cx="256" cy="166" r="10"/>
+    <circle cx="150" cy="278" r="10"/>
+    <circle cx="362" cy="278" r="10"/>
+    <circle cx="208" cy="372" r="8"/>
+    <circle cx="304" cy="372" r="8"/>
+  </g>
+</svg>
