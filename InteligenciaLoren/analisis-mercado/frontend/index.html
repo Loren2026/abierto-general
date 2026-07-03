@@ -2419,6 +2419,72 @@ function showReport(tk){
   }, 150);
 }
 
+
+function valueToEur(amount, currency){ return roundMoney(toEur(Number(amount)||0, currency||'EUR')); }
+function normalizeTickerSymbol(value){ return String(value||'').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/L$/,''); }
+const TICKER_ALIASES = { ZEGL:'ZEG', ZEG:'ZEG', WKLDRRTS:'WKL.DRRTS' };
+function canonicalTicker(value){ const raw=String(value||'').toUpperCase().trim(); const compact=raw.replace(/[^A-Z0-9]/g,''); return TICKER_ALIASES[compact] || raw; }
+function findTickerMatch(symbol){
+  const raw=String(symbol||'').toUpperCase().trim();
+  const exact=D.c.find(e=>String(e.tk).toUpperCase()===raw);
+  if(exact) return {type:'update', item:exact, reason:'exacto'};
+  const canonical=canonicalTicker(raw);
+  const byAlias=D.c.find(e=>String(e.tk).toUpperCase()===canonical);
+  if(byAlias && canonical!==raw) return {type:'possible', item:byAlias, reason:`${byAlias.tk}≈${raw}`};
+  const norm=normalizeTickerSymbol(raw);
+  const fuzzy=D.c.find(e=>normalizeTickerSymbol(e.tk)===norm);
+  if(fuzzy) return {type:'possible', item:fuzzy, reason:`${fuzzy.tk}≈${raw}`};
+  return {type:'new', item:null, reason:'nuevo'};
+}
+function isIgnorableImportedPosition(pos){ return Number(pos.valor_mercado_origen||0)===0 || /DRRTS|RIGHTS|DERECH/i.test(pos.ticker||''); }
+function buildIbkrReview(report){
+  const positions=normalizeIbkrImportPositions(report);
+  return {report, positions:positions.map((pos,idx)=>({id:`ibkr-${idx}`, pos, match:findTickerMatch(pos.ticker), include:!isIgnorableImportedPosition(pos)}))};
+}
+function renderIbkrReview(review){
+  const status=document.getElementById('ibkr-status');
+  window.pendingIbkrReview=review;
+  let html='<div style="margin-top:12px;padding:14px;border-radius:14px;background:#fff;border:1.5px solid var(--border)"><div style="font-weight:900;color:var(--blue);font-size:16px;margin-bottom:10px">Revisión previa IBKR</div>';
+  for(const row of review.positions){
+    const p=row.pos, m=row.match, before=m.item?`€${f(m.item.val,2)}`:'—', after=`€${f(p.valor_mercado_eur,2)}`;
+    const badge=m.type==='update'?'ACTUALIZAR':m.type==='possible'?'POSIBLE COINCIDENCIA':'NUEVA';
+    html+=`<div style="padding:10px;border:1px solid var(--border);border-radius:12px;margin-bottom:8px;background:${row.include?'#fff':'#f4f7fa'}"><div style="display:flex;justify-content:space-between;gap:8px"><b>${p.ticker}</b><span style="font-size:11px;font-weight:900;color:var(--acc)">${badge}</span></div><div style="font-size:12px;color:var(--ink3);line-height:1.5">${m.item?m.item.tk+' · ':''}${m.reason}<br>Valor: ${before} → ${after} (${p.divisa} ${f(p.valor_mercado_origen,2)})</div>`;
+    if(m.type==='possible') html+=`<label style="font-size:12px;margin-right:10px"><input type="radio" name="match-${row.id}" value="same" checked> es la misma</label><label style="font-size:12px"><input type="radio" name="match-${row.id}" value="new"> es nueva</label>`;
+    if(isIgnorableImportedPosition(p)) html+=`<label style="display:block;font-size:12px;margin-top:6px;color:var(--ink3)"><input type="checkbox" id="include-${row.id}"> incluir derecho/valor cero</label>`;
+    html+='</div>';
+  }
+  const r=review.report;
+  html+=`<div style="font-size:12px;color:var(--ink3);line-height:1.5;margin-top:8px">Cash: <b>${(r.cash||[]).length}</b> · Fees: <b>${r.fees??'—'}</b> · Dividendos: <b>${r.dividends??'—'}</b></div><div style="display:flex;gap:8px;margin-top:12px"><button onclick="applyIbkrReview()" style="flex:1;padding:12px;border:none;border-radius:12px;background:var(--green);color:#fff;font-weight:900">Aplicar cambios</button><button onclick="cancelIbkrReview()" style="flex:1;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:var(--ink3);font-weight:900">Cancelar</button></div></div>`;
+  status.innerHTML=html;
+}
+function cancelIbkrReview(){ window.pendingIbkrReview=null; document.getElementById('ibkr-status').innerHTML='<div style="padding:14px;text-align:center;color:var(--ink3);font-weight:700">Importación cancelada</div>'; }
+function applyIbkrReview(){
+  const review=window.pendingIbkrReview; if(!review) return;
+  let updated=0, added=0, ignored=0;
+  for(const row of review.positions){
+    const p=row.pos; let include=row.include;
+    const inc=document.getElementById(`include-${row.id}`); if(inc) include=inc.checked;
+    if(!include){ ignored++; continue; }
+    let target=row.match.item;
+    if(row.match.type==='possible'){
+      const same=document.querySelector(`input[name="match-${row.id}"]:checked`)?.value==='same';
+      if(!same) target=null;
+    }
+    if(target){ applyImportedPosition(target,p); updated++; }
+    else { D.c.push(newImportedPosition(p)); added++; }
+  }
+  save(); updC(); window.pendingIbkrReview=null; rConfig(); if(cur==='resumen') rResumen(); toast(`✅ ${updated} actualizadas · ${added} nuevas · ${ignored} ignoradas`);
+}
+function applyImportedPosition(item,pos){
+  item.sourceCurrency=pos.divisa; item.valOriginal=pos.valor_mercado_origen; item.pnlOriginal=pos.pnl_origen;
+  if(pos.num_acciones!=null) item.qty=pos.num_acciones;
+  if(pos.valor_mercado_eur!=null) item.val=roundMoney(pos.valor_mercado_eur);
+  if(pos.pnl_eur!=null) item.pnl=roundMoney(pos.pnl_eur);
+  if(pos.precio_medio!=null) item.avg=pos.precio_medio;
+  item.cur=pos.divisa||item.cur||'USD';
+}
+function newImportedPosition(pos){ return {tk:canonicalTicker(pos.ticker), nm:pos.nombre||canonicalTicker(pos.ticker), ex:pos.exchange||'—', cur:pos.divisa||'USD', sourceCurrency:pos.divisa||'USD', valOriginal:pos.valor_mercado_origen, pnlOriginal:pos.pnl_origen, sec:pos.sector||'—', qty:pos.num_acciones||0, avg:pos.precio_medio||0, pr:pos.precio_actual||0, cost:0, val:roundMoney(pos.valor_mercado_eur||0), pnl:roundMoney(pos.pnl_eur||0), w:0, divs:0, sig:null}; }
+
 /* ════════════════════════════════════════════════
    SUBIR INFORME IBKR — Actualizar posiciones
    ════════════════════════════════════════════════ */
@@ -2434,93 +2500,14 @@ async function handleIbkrReport(event){
   try {
     const formData = new FormData();
     formData.append('file', file);
-
     const report = await backendFormFetch('/api/ibkr/import', formData);
-    const posiciones = normalizeIbkrImportPositions(report);
-
-    if(!posiciones.length){
+    const review = buildIbkrReview(report);
+    zone.classList.remove('processing');
+    if(!review.positions.length){
       status.innerHTML = '<div style="padding:14px;text-align:center;color:var(--red);font-weight:700">⚠️ No se detectaron posiciones en el informe</div>';
-      zone.classList.remove('processing');
       return;
     }
-
-    // Actualizar posiciones en cartera
-    let updated = 0, added = 0;
-    posiciones.forEach(pos => {
-      if(!pos.ticker) return;
-      const tk = pos.ticker.toUpperCase();
-      const item = D.c.find(e => e.tk === tk);
-
-      if(item){
-        // Actualizar posición existente
-        if(pos.num_acciones != null) item.qty = pos.num_acciones;
-        if(pos.valor_mercado_eur != null) item.val = roundMoney(pos.valor_mercado_eur);
-        if(pos.coste_total_eur != null) item.cost = roundMoney(pos.coste_total_eur);
-        if(pos.pnl_eur != null) item.pnl = roundMoney(pos.pnl_eur);
-        if(pos.peso_pct != null) item.w = pos.peso_pct;
-        if(pos.dividendos_netos_eur != null) item.divs = pos.dividendos_netos_eur;
-        // Solo actualizar precio medio si viene del informe Y es razonable (no confundir con PyG)
-        if(pos.precio_medio != null && pos.precio_medio > 1 && item.avg && Math.abs(pos.precio_medio - item.avg) / item.avg < 0.5) {
-          item.avg = pos.precio_medio;
-        }
-        if(pos.precio_actual != null) item.pr = pos.precio_actual;
-        if(pos.divisa) item.cur = pos.divisa;
-
-        // Actualizar METRICS
-        const curSym = (pos.divisa||'USD')==='GBP'?'£':(pos.divisa||'USD')==='CAD'?'C$':(pos.divisa||'USD')==='EUR'?'€':'$';
-        METRICS[tk] = {
-          costTotal: pos.coste_total_eur || item.cost,
-          valMerc: pos.valor_mercado_eur || item.val,
-          plNR: pos.pnl_eur || item.pnl,
-          rent: pos.rentabilidad_pct || (item.cost ? (item.pnl/item.cost)*100 : 0),
-          pMedio: pos.precio_medio != null ? curSym+pos.precio_medio.toLocaleString('es-ES',{minimumFractionDigits:2}) : (METRICS[tk]?METRICS[tk].pMedio:'—'),
-          pActual: pos.precio_actual != null ? curSym+pos.precio_actual.toLocaleString('es-ES',{minimumFractionDigits:2}) : (METRICS[tk]?METRICS[tk].pActual:'—'),
-          varP: pos.precio_medio && pos.precio_actual ? ((pos.precio_actual-pos.precio_medio)/pos.precio_medio)*100 : 0,
-          nAcc: pos.num_acciones || item.qty,
-          sector: pos.sector || (METRICS[tk]?METRICS[tk].sector:'—'),
-          divisa: pos.divisa || item.cur || 'USD',
-          tcambio: pos.tipo_cambio ? pos.tipo_cambio.toLocaleString('es-ES',{minimumFractionDigits:2}) : '1,00',
-          curSym: curSym
-        };
-        updated++;
-      } else {
-        // Posición nueva — añadir a cartera
-        D.c.push({
-          tk, nm: pos.nombre || tk, ex: pos.exchange || '—',
-          cur: pos.divisa || 'USD', sec: pos.sector || '—',
-          qty: pos.num_acciones || 0, avg: pos.precio_medio || 0,
-          pr: pos.precio_actual || 0,
-          cost: roundMoney(pos.coste_total_eur || 0),
-          val: roundMoney(pos.valor_mercado_eur || 0),
-          pnl: roundMoney(pos.pnl_eur || 0),
-          w: pos.peso_pct || 0, divs: pos.dividendos_netos_eur || 0,
-          sig: null
-        });
-        added++;
-      }
-    });
-
-    save();
-    updC();
-
-    // Mostrar resumen
-    let html = `<div style="padding:14px;border-radius:12px;background:var(--green-light);border:1px solid rgba(13,148,72,.2);margin-top:12px">
-      <div style="font-weight:800;color:var(--green);font-size:15px;margin-bottom:8px">✅ Informe procesado</div>
-      <div style="font-size:13px;color:var(--ink2);line-height:1.6">`;
-    if(report.reportDate) html += `Fecha: <b>${report.reportDate}</b><br>`;
-    html += `Posiciones actualizadas: <b>${updated}</b><br>`;
-    if(added > 0) html += `Posiciones nuevas añadidas: <b>${added}</b><br>`;
-    if(report.cash && report.cash.length) html += `Saldos cash detectados: <b>${report.cash.length}</b><br>`;
-    if(report.fees != null) html += `Fees detectadas: <b>${report.fees.toLocaleString('es-ES')}</b><br>`;
-    if(report.dividends != null) html += `Dividendos detectados: <b>${report.dividends.toLocaleString('es-ES')}</b>`;
-    html += `</div></div>`;
-    status.innerHTML = html;
-    zone.classList.remove('processing');
-
-    toast(`✅ ${updated} posiciones actualizadas`);
-    // Refrescar cartera
-    if(cur === 'resumen') rResumen();
-
+    renderIbkrReview(review);
   } catch(err){
     console.error('IBKR report error:', err);
     zone.classList.remove('processing');
@@ -2533,24 +2520,31 @@ async function handleIbkrReport(event){
 
 function normalizeIbkrImportPositions(report){
   const positions = Array.isArray(report?.positions) ? report.positions : [];
-  return positions.map((pos) => ({
-    ticker: pos.symbol,
-    nombre: pos.symbol,
-    divisa: pos.currency,
-    num_acciones: pos.quantity,
-    precio_medio: pos.avgPrice,
-    precio_actual: null,
-    coste_total_eur: null,
-    valor_mercado_eur: pos.marketValue,
-    pnl_eur: pos.unrealizedPnL,
-    rentabilidad_pct: null,
-    dividendos_netos_eur: null,
-    comisiones_eur: report.fees,
-    tipo_cambio: null,
-    peso_pct: null,
-    exchange: '—',
-    sector: '—'
-  }));
+  return positions.map((pos) => {
+    const divisa = String(pos.currency || 'EUR').toUpperCase();
+    const marketValue = Number(pos.marketValue || 0);
+    const pnl = Number(pos.unrealizedPnL || 0);
+    return {
+      ticker: pos.symbol,
+      nombre: pos.symbol,
+      divisa,
+      num_acciones: pos.quantity,
+      precio_medio: pos.avgPrice,
+      precio_actual: null,
+      coste_total_eur: null,
+      valor_mercado_origen: marketValue,
+      valor_mercado_eur: valueToEur(marketValue, divisa),
+      pnl_origen: pnl,
+      pnl_eur: valueToEur(pnl, divisa),
+      rentabilidad_pct: null,
+      dividendos_netos_eur: null,
+      comisiones_eur: report.fees,
+      tipo_cambio: getFx(divisa),
+      peso_pct: null,
+      exchange: '—',
+      sector: '—'
+    };
+  });
 }
 
 /* ════════════════════════════════════════════════
