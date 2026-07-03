@@ -2418,7 +2418,7 @@ function showReport(tk){
 
 function valueToEur(amount, currency){ return roundMoney(toEur(Number(amount)||0, currency||'EUR')); }
 function normalizeTickerSymbol(value){ return String(value||'').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/L$/,''); }
-const TICKER_ALIASES = { ZEGL:'ZEG', ZEG:'ZEG', WKLDRRTS:'WKL.DRRTS' }; function aliasFor(ticker){ const raw=String(ticker||'').toUpperCase().replace(/[^A-Z0-9]/g,''); return TICKER_ALIASES[raw] || TICKER_ALIASES[raw.replace(/L$/,'')] || raw; }
+const TICKER_ALIASES = { ZEGL:'ZEG', ZEG:'ZEG', ZEGI:'ZEG', WKLDRRTS:'WKL.DRRTS' }; function aliasFor(ticker){ const raw=String(ticker||'').toUpperCase().replace(/[^A-Z0-9]/g,''); if(TICKER_ALIASES[raw]) return TICKER_ALIASES[raw]; const withoutL=raw.replace(/L$/,''); if(TICKER_ALIASES[withoutL]) return TICKER_ALIASES[withoutL]; const withoutI=raw.replace(/I$/,''); if(TICKER_ALIASES[withoutI]) return TICKER_ALIASES[withoutI]; return raw; }
 function canonicalTicker(value){ return aliasFor(value); }
 function findTickerMatch(symbol){
   const raw=String(symbol||'').toUpperCase().trim();
