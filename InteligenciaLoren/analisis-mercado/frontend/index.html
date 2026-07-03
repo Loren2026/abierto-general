@@ -2418,8 +2418,8 @@ function showReport(tk){
 
 function valueToEur(amount, currency){ return roundMoney(toEur(Number(amount)||0, currency||'EUR')); }
 function normalizeTickerSymbol(value){ return String(value||'').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/L$/,''); }
-const TICKER_ALIASES = { ZEGL:'ZEG', ZEG:'ZEG', WKLDRRTS:'WKL.DRRTS' };
-function canonicalTicker(value){ const raw=String(value||'').toUpperCase().trim(); const compact=raw.replace(/[^A-Z0-9]/g,''); return TICKER_ALIASES[compact] || raw; }
+const TICKER_ALIASES = { ZEGL:'ZEG', ZEG:'ZEG', WKLDRRTS:'WKL.DRRTS' }; function aliasFor(ticker){ const raw=String(ticker||'').toUpperCase().replace(/[^A-Z0-9]/g,''); return TICKER_ALIASES[raw] || TICKER_ALIASES[raw.replace(/L$/,'')] || raw; }
+function canonicalTicker(value){ return aliasFor(value); }
 function findTickerMatch(symbol){
   const raw=String(symbol||'').toUpperCase().trim();
   const exact=D.c.find(e=>String(e.tk).toUpperCase()===raw);
@@ -2444,7 +2444,8 @@ function renderIbkrReview(review){
   for(const row of review.positions){
     const p=row.pos, m=row.match, before=m.item?`€${f(m.item.val,2)}`:'—', after=`€${f(p.valor_mercado_eur,2)}`;
     const badge=m.type==='update'?'ACTUALIZAR':m.type==='possible'?'POSIBLE COINCIDENCIA':'NUEVA';
-    html+=`<div style="padding:10px;border:1px solid var(--border);border-radius:12px;margin-bottom:8px;background:${row.include?'#fff':'#f4f7fa'}"><div style="display:flex;justify-content:space-between;gap:8px"><b>${p.ticker}</b><span style="font-size:11px;font-weight:900;color:var(--acc)">${badge}</span></div><div style="font-size:12px;color:var(--ink3);line-height:1.5">${m.item?m.item.tk+' · ':''}${m.reason}<br>Valor: ${before} → ${after} (${p.divisa} ${f(p.valor_mercado_origen,2)})</div>`;
+    const originTxt=p.valor_mercado_origen!=null?`${p.divisa} ${f(p.valor_mercado_origen,2)}`:'—';
+    html+=`<div style="padding:10px;border:1px solid var(--border);border-radius:12px;margin-bottom:8px;background:${row.include?'#fff':'#f4f7fa'}"><div style="display:flex;justify-content:space-between;gap:8px"><b>${p.ticker}</b><span style="font-size:11px;font-weight:900;color:var(--acc)">${badge}</span></div><div style="font-size:12px;color:var(--ink3);line-height:1.5">${m.item?m.item.tk+' · ':''}${m.reason}<br>Valor: ${after} (${originTxt})</div>`;
     if(m.type==='possible') html+=`<label style="font-size:12px;margin-right:10px"><input type="radio" name="match-${row.id}" value="same" checked> es la misma</label><label style="font-size:12px"><input type="radio" name="match-${row.id}" value="new"> es nueva</label>`;
     if(isIgnorableImportedPosition(p)) html+=`<label style="display:block;font-size:12px;margin-top:6px;color:var(--ink3)"><input type="checkbox" id="include-${row.id}"> incluir derecho/valor cero</label>`;
     html+='</div>';
@@ -2518,8 +2519,10 @@ function normalizeIbkrImportPositions(report){
   const positions = Array.isArray(report?.positions) ? report.positions : [];
   return positions.map((pos) => {
     const divisa = String(pos.currency || 'EUR').toUpperCase();
-    const marketValue = Number(pos.marketValue || 0);
-    const pnl = Number(pos.unrealizedPnL || 0);
+    const mvOrigin = Number(pos.marketValueOrigin || pos.marketValue || 0);
+    const mvEur = Number(pos.marketValueEur || 0);
+    const pnlOrigin = Number(pos.unrealizedPnLOrigin || pos.unrealizedPnL || 0);
+    const pnlEur = Number(pos.unrealizedPnLEur || 0);
     return {
       ticker: pos.symbol,
       nombre: pos.symbol,
@@ -2528,10 +2531,10 @@ function normalizeIbkrImportPositions(report){
       precio_medio: pos.avgPrice,
       precio_actual: null,
       coste_total_eur: null,
-      valor_mercado_origen: marketValue,
-      valor_mercado_eur: valueToEur(marketValue, divisa),
-      pnl_origen: pnl,
-      pnl_eur: valueToEur(pnl, divisa),
+      valor_mercado_origen: mvOrigin,
+      valor_mercado_eur: mvEur || valueToEur(mvOrigin, divisa),
+      pnl_origen: pnlOrigin,
+      pnl_eur: pnlEur || valueToEur(pnlOrigin, divisa),
       rentabilidad_pct: null,
       dividendos_netos_eur: null,
       comisiones_eur: report.fees,

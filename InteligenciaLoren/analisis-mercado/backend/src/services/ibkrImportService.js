@@ -1,7 +1,7 @@
 const { config } = require('../config/env');
 
 const CLAUDE_MESSAGES_URL = 'https://api.anthropic.com/v1/messages';
-const IBKR_IMPORT_PROMPT = 'Extrae posiciones del informe IBKR y devuelve SOLO JSON válido con este esquema fijo: { "positions": [{ "symbol": "string", "quantity": number, "avgPrice": number|null, "currency": "string", "marketValue": number|null, "unrealizedPnL": number|null }], "cash": [{ "currency": "string", "amount": number }], "fees": number|null, "dividends": number|null, "reportDate": "YYYY-MM-DD|null" }. No incluyas markdown, explicaciones, comentarios ni texto fuera del JSON. Si un dato no aparece, usa null o array vacío.';
+const IBKR_IMPORT_PROMPT = `Extrae posiciones del informe IBKR y devuelve SOLO JSON válido con este esquema fijo: { "positions": [{ "symbol": "string", "quantity": number, "avgPrice": number|null, "currency": "string", "marketValueOrigin": number, "marketValueEur": number, "unrealizedPnLOrigin": number, "unrealizedPnLEur": number }], "cash": [{ "currency": "string", "amount": number }], "fees": number|null, "dividends": number|null, "reportDate": "YYYY-MM-DD|null" }. IMPORTANTE: Lee las columnas del Open Position Summary: "Value" es el importe en la divisa original de la posición (USD/GBP/CAD), "Base Value" o "Total in EUR" es el valor en euros. NO las confundas. Usa marketValueOrigin para el valor en divisa original y marketValueEur para el valor en EUR (columna Base Value). Lo mismo para PnL: unrealizedPnLOrigin (divisa original) y unrealizedPnLEur (EUR). No incluyas markdown, explicaciones, comentarios ni texto fuera del JSON. Si un dato no aparece, usa null o array vacío.`;
 
 async function importIbkrReport(file) {
   if (!config.claudeApiKey) {
