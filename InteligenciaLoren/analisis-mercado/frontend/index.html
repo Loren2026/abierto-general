@@ -1287,7 +1287,7 @@ function rConfig(){
     <div class="upload-zone" id="broker-upload-zone">
       📄 Subir contrato de tarifas
       <div style="font-size:11px;color:var(--ink4);margin-top:4px">PDF · Foto · Captura de pantalla</div>
-      <input type="file" accept=".pdf,image/*,.txt,.jpg,.jpeg,.png" id="broker-file-input" onchange="handleBrokerUpload(event)">
+      <input type="file" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" id="broker-file-input" multiple onchange="handleBrokerUpload(event)">
     </div>
     ${brokerHtml}
   </div>
@@ -1489,62 +1489,58 @@ function fileToBase64(file){
    SUBIR DOCUMENTACIÓN BROKER (Config)
    ════════════════════════════════════════════════ */
 async function handleBrokerUpload(event){
-  const file = event.target.files[0];
-  if(!file) return;
+  const files = Array.from(event.target.files || []);
+  if(!files.length) return;
 
   const zone = document.getElementById('broker-upload-zone');
   zone.classList.add('processing');
   zone.querySelector('input').disabled = true;
   const origText = zone.childNodes[0].textContent;
-  zone.childNodes[0].textContent = '⏳ Analizando documento...';
+  const results = [];
+  let mergedTariffs = { ...(getBrokerTariffs() || {}) };
 
-  const BROKER_PROMPT = `Analiza este documento de un broker de inversión (Interactive Brokers u otro).
-Extrae TODAS las tarifas y comisiones que encuentres. Responde SOLO con un JSON válido (sin markdown, sin backticks) con esta estructura exacta:
-{
-  "Comisión compra/venta acciones US": "valor",
-  "Comisión compra/venta acciones EU": "valor",
-  "Comisión compra/venta acciones UK": "valor",
-  "Comisión cambio divisa": "valor",
-  "Custodia mensual": "valor",
-  "Comisión inactividad": "valor",
-  "Comisión retiro": "valor",
-  "Otros gastos": "valor"
-}
-Si un campo no aparece en el documento, pon "No especificado". Si encuentras tarifas adicionales no listadas, añádelas como nuevas claves. Valores siempre con moneda (€, $, %, etc).`;
+  for(let index = 0; index < files.length; index++){
+    const file = files[index];
+    zone.childNodes[0].textContent = `⏳ Analizando documento ${index + 1} de ${files.length}...`;
 
-  try {
-    let response;
-    if(file.type.startsWith('image/')){
-      const b64 = await fileToBase64(file);
-      response = await callClaudeVision(b64, file.type, BROKER_PROMPT);
-    } else if(file.type === 'application/pdf'){
-      // Para PDF convertimos la primera página a imagen via canvas
-      // Alternativa: leer como texto si es PDF con texto
-      const b64 = await fileToBase64(file);
-      response = await callClaudeVision(b64, 'application/pdf', BROKER_PROMPT);
-    } else {
-      // TXT
-      const text = await file.text();
-      response = await callClaudeText(text, BROKER_PROMPT);
+    try {
+      validateBrokerTariffFile(file);
+      const formData = new FormData();
+      formData.append('file', file);
+      const result = await backendFormFetch('/api/broker/tariffs', formData);
+      mergedTariffs = { ...mergedTariffs, ...(result.tariffs || {}) };
+      results.push({ file: file.name, ok: true, message: 'OK' });
+    } catch(err){
+      console.error('Broker upload error:', file.name, err);
+      results.push({ file: file.name, ok: false, message: err.message || 'Error analizando documento' });
     }
-
-    // Parsear JSON de la respuesta
-    const tariffs = parseClaudeJsonResponse(response);
-    setBrokerTariffs(tariffs);
-    toast('✅ Tarifas del broker extraídas correctamente');
-    rConfig(); // re-renderizar config
-  } catch(err){
-    console.error('Broker upload error:', err);
-    if(err.message.includes('401')){
-      toast('❌ Backend Claude sin permisos');
-    } else {
-      toast('❌ Error analizando documento: ' + err.message.slice(0,80));
-    }
-    zone.classList.remove('processing');
-    zone.childNodes[0].textContent = origText;
-    zone.querySelector('input').disabled = false;
   }
+
+  if(Object.keys(mergedTariffs).length) setBrokerTariffs(mergedTariffs);
+  renderBrokerUploadResults(results);
+  zone.classList.remove('processing');
+  zone.childNodes[0].textContent = origText;
+  zone.querySelector('input').disabled = false;
   event.target.value = '';
+
+  const okCount = results.filter(r => r.ok).length;
+  if(okCount) toast(`✅ ${okCount} documento(s) de tarifas procesados`);
+  if(okCount !== results.length) toast(`⚠️ ${results.length - okCount} documento(s) con error`);
+  rConfig();
+  renderBrokerUploadResults(results);
+}
+
+function validateBrokerTariffFile(file){
+  const allowed = ['application/pdf', 'image/jpeg', 'image/png'];
+  if(!allowed.includes(file.type)) throw new Error('Tipo no permitido. Sube PDF, JPG o PNG.');
+  if(file.size > 20 * 1024 * 1024) throw new Error('El archivo supera el límite de 20 MB.');
+}
+
+function renderBrokerUploadResults(results){
+  const zone = document.getElementById('broker-upload-zone');
+  if(!zone || !results.length) return;
+  const html = results.map((r, index) => `<div style="font-size:12px;margin-top:6px;color:${r.ok?'var(--green)':'var(--red)'}"><b>${index + 1}. ${r.file}</b>: ${r.ok?'procesado':r.message}</div>`).join('');
+  zone.insertAdjacentHTML('afterend', `<div class="broker-status ${results.every(r=>r.ok)?'ok':'empty'}" style="display:block">${html}</div>`);
 }
 
 /* ════════════════════════════════════════════════

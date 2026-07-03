@@ -6,6 +6,7 @@ const fmpRoutes = require('./routes/fmp');
 const analysisRoutes = require('./routes/analysis');
 const recommendationRoutes = require('./routes/recommendations');
 const ibkrImportRoutes = require('./routes/ibkrImport');
+const brokerTariffRoutes = require('./routes/brokerTariffs');
 
 validateConfig();
 
@@ -48,6 +49,7 @@ app.use('/api/fmp', fmpRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/ibkr', ibkrImportRoutes);
+app.use('/api/broker', brokerTariffRoutes);
 
 app.use((err, req, res, _next) => {
   console.error('[server] controlled error', {
