@@ -97,6 +97,10 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 .dtab{padding:10px 18px;border-radius:12px;font-family:var(--sans);font-size:14px;font-weight:800;color:var(--ink4);background:var(--white);border:1.5px solid var(--border);cursor:pointer;transition:all .15s}
 .dtab.on{color:var(--blue);border-color:var(--acc);background:rgba(196,90,28,.06)}
 .dpanel{display:none;animation:dfade .2s ease}.dpanel.on{display:block}
+.val-sticky-actions{position:sticky;top:8px;z-index:30;display:grid;grid-template-columns:1fr;gap:8px;margin:12px 0 14px;padding:10px;background:rgba(246,242,234,.94);backdrop-filter:blur(8px);border:1.5px solid var(--border);border-radius:16px;box-shadow:0 8px 24px rgba(31,45,61,.10)}
+@media(min-width:560px){.val-sticky-actions{grid-template-columns:1fr 1fr}}
+.recalc-btn,.idc-upload-btn{width:100%;padding:13px 14px;border-radius:13px;font-family:var(--sans);font-size:14px;font-weight:900;cursor:pointer;border:1.5px solid var(--border);background:var(--white);color:var(--blue)}
+.recalc-btn.pending{border-color:var(--acc);background:rgba(196,90,28,.12);color:var(--acc);box-shadow:0 0 0 3px rgba(196,90,28,.10)}
 @keyframes dfade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 .mrow{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--border)}.mrow:last-child{border-bottom:none}
 .mrow-l{font-size:14px;font-weight:700;color:var(--ink2)}.mrow-v{font-family:var(--mono);font-size:14px;font-weight:700;text-align:right}
@@ -722,6 +726,14 @@ function renderValoracionIDC(v, el, backTo){
     <div class="stat ${v.difVsActual>=0?'glow-up':'glow-dn'}"><div class="stat-v">${fp(v.difVsActual)}</div><div class="stat-l">Dif. vs actual</div></div>
   </div>`;
 
+  // ═══ ACCIONES STICKY ═══
+  h += `<div class="val-sticky-actions">
+    <input type="file" id="xlUpload" accept=".xlsx,.xls" style="display:none" onchange="handleExcelUpload(event)">
+    <button id="valRecalcBtn" class="recalc-btn" onclick="recalcObj()">🔄 Recalcular</button>
+    <button class="idc-upload-btn" onclick="document.getElementById('xlUpload').click()">📁 Subir Excel de valoración de ${v.ticker}</button>
+  </div>`;
+  setTimeout(updateRecalcButtonState,0);
+
   // ═══ TABS DE DETALLE ═══
   h += `<div class="dtabs">
     <div class="dtab on" onclick="valTab('base')">Base</div>
@@ -778,10 +790,6 @@ function renderValoracionIDC(v, el, backTo){
 
   // ═══ TAB MÚLTIPLOS ═══
   h += `<div class="dpanel" id="vp-mult">`;
-
-  // Botón subir Excel
-  h += `<input type="file" id="xlUpload" accept=".xlsx,.xls" style="display:none" onchange="handleExcelUpload(event)">`;
-  h += `<button class="idc-upload-btn" onclick="document.getElementById('xlUpload').click()">📁 Subir Excel de valoración de ${v.ticker}</button>`;
 
   // Flujo explicativo
   h += `<div class="idc-flow">
@@ -950,6 +958,7 @@ function valTab(tab){
 function recalcObj(){
   if(!window._valData) return;
   const v = window._valData;
+  v.pendingRecalc = false;
   const stored = JSON.parse(localStorage.getItem('idc_inputs_'+v.ticker)||'{}');
   const adj = stored.adjust || {};
 
@@ -1025,11 +1034,23 @@ function recalcObj(){
   if(item){item.sig=v.signal;save();}
 
   renderValoracionIDC(v, window._valEl, window._valBackTo);
-  setTimeout(()=>valTab('obj'),50);
+  setTimeout(()=>{ valTab('obj'); updateRecalcButtonState(); },50);
   toast('Recalculado');
 }
 
 // ═══ GUARDAR VALOR EN COLUMNA D ═══
+function setValuationPending(isPending=true){
+  if(window._valData) window._valData.pendingRecalc = isPending;
+  updateRecalcButtonState();
+}
+function updateRecalcButtonState(){
+  const btn = document.getElementById('valRecalcBtn');
+  if(!btn) return;
+  const pending = !!(window._valData && window._valData.pendingRecalc);
+  btn.classList.toggle('pending', pending);
+  btn.textContent = pending ? 'Cambios pendientes de recalcular' : '🔄 Recalcular';
+}
+
 function updateD(ticker, key, val, fmt){
   const stored = JSON.parse(localStorage.getItem('idc_inputs_'+ticker)||'{}');
   if(!stored.adjust) stored.adjust={};
@@ -1042,7 +1063,7 @@ function updateD(ticker, key, val, fmt){
     stored.adjust[key] = num;
   }
   localStorage.setItem('idc_inputs_'+ticker, JSON.stringify(stored));
-  recalcObj();
+  setValuationPending(true);
 }
 
 // ═══ CARGAR EXCEL IDC ═══
