@@ -510,14 +510,15 @@ function createManualValuation(tk, err){
   const manualCurrency = candidate?.ex === 'BME' ? 'EUR' : (candidate?.cur || 'USD');
   const pick = (k,d=0) => Number(adj[k] ?? exd[k] ?? d) || 0;
   const years = [new Date().getFullYear()-1];
+  const prevShares = pick('lastShares', 1);
   const v = {
     ticker: tk, name: candidate?.nm || tk, price: pick('price',fallbackPrice), currency:manualCurrency, manualMode:true, fmpError:err,
     years, estYears:[1,2,3,4,5].map(i=>(years[0]+i)+'e'), n:1,
-    sales:[pick('lastSales',0)], ebitda:[0], ebitdaMargin:[0], ebit:[pick('lastEbit',0)], ebitMargin:[pick('ebitMgn0',0)], da:[0], netIncome:[0], eps:[0], shares:[1], taxRate:[pick('taxRate',0)],
+    sales:[pick('lastSales',0)], ebitda:[0], ebitdaMargin:[0], ebit:[pick('lastEbit',0)], ebitMargin:[pick('ebitMgn0',0)], da:[0], netIncome:[0], eps:[0], shares:[prevShares], taxRate:[pick('taxRate',0)],
     intExp:[0], intInc:[0], totalInt:[0], ebt:[0], fcf:[0], fcfMargin:[0], cash:[pick('lastCash',0)], mktSec:[pick('lastMktSec',0)], stDebt:[0], ltDebt:[pick('lastLtDebt',0)], equity:[0], deudaNeta:[0], dnEbitda:[pick('dnEbitda',0)],
     mcap:[0], evArr:[0], roic:[0], roe:[0], per:[0], evFcf:[0], evEbitda:[0], evEbit:[0], medPer:pick('objPer',0), medEvFcf:pick('objEvFcf',0), medEvEbitda:pick('objEvEbitda',0), medEvEbit:pick('objEvEbit',0),
     wc:[0], cwc:[0], capexMant:[0], investedCapital:[0], nopat:[0],
-    estSales:Array(5).fill(0), estEbitda:Array(5).fill(0), estEbit:Array(5).fill(0), estDa:Array(5).fill(0), estNi:Array(5).fill(0), estFcf:Array(5).fill(0), estShares:Array(5).fill(1), estEps:Array(5).fill(0), estDn:Array(5).fill(0), estMcap:Array(5).fill(0), estEv:Array(5).fill(0),
+    estSales:Array(5).fill(0), estEbitda:Array(5).fill(0), estEbit:Array(5).fill(0), estDa:Array(5).fill(0), estNi:Array(5).fill(0), estFcf:Array(5).fill(0), estShares:Array(5).fill(prevShares), estEps:Array(5).fill(0), estDn:Array(5).fill(0), estMcap:Array(5).fill(0), estEv:Array(5).fill(0),
     objPer:pick('objPer',0), objEvFcf:pick('objEvFcf',0), objEvEbitda:pick('objEvEbitda',0), objEvEbit:pick('objEvEbit',0), calcObjPer:pick('objPer',0), calcObjEvFcf:pick('objEvFcf',0), calcObjEvEbitda:pick('objEvEbitda',0), calcObjEvEbit:pick('objEvEbit',0), valuationCfg:getValuationConfig(),
     precioObj:{perExCash:Array(5).fill(0),evFcf:Array(5).fill(0),evEbitda:Array(5).fill(0),evEbit:Array(5).fill(0),prom:Array(5).fill(0)}, cagr5:{per:0,fcf:0,ebitda:0,ebit:0,prom:0}, margenSeg:Array(5).fill(0), signal:'na', signalText:'MODO MANUAL', precioCompra15:0, retObj:pick('retObj',0.15), difVsActual:0,
     medSalesGr:0, lastEbitMargin:pick('ebitMgn0',0), lastTaxRate:pick('taxRate',0), lastDnEbitda:pick('dnEbitda',0), lastCapexPct:0, lastWcPct:0, lastSharesGr:0,
@@ -861,12 +862,16 @@ function renderValoracionIDC(v, el, backTo){
     if(val==null || val==='') return '—';
     const n = Number(val);
     if(isNaN(n)) return '—';
-    if(fmt==='pct') return (n < 1 && n > -1 ? n*100 : n).toLocaleString('es-ES',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+    if(fmt==='pct') return (n < 1 && n > -1 ? n*100 : n).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
     if(fmt==='x') return n.toLocaleString('es-ES',{minimumFractionDigits:1,maximumFractionDigits:1})+'x';
     if(fmt==='int') return Math.round(n).toLocaleString('es-ES');
     if(fmt==='price') return n.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2});
-    if(fmt==='millions') return n.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2});
-    return n.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2});
+    if(fmt==='millions') {
+      const display = n.toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:4});
+      return display.replace(/\.?0+$/, '');
+    }
+    const display = n.toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:4});
+    return display.replace(/\.?0+$/, '');
   };
 
   // Helper: generar fila
@@ -938,6 +943,7 @@ function renderValoracionIDC(v, el, backTo){
   h += idcRow('lastCash','Cash & equivalents (M)','3.ROIC K4', v.cash[v.n-1], true, 'millions');
   h += idcRow('lastMktSec','Marketable Securities (M)','3.ROIC K5', v.mktSec[v.n-1], true, 'millions');
   h += idcRow('lastLtDebt','Long-Term Debt (M)','3.ROIC K7', v.ltDebt[v.n-1], true, 'millions');
+  h += idcRow('lastShares','Nº acciones (M)','1.IS K25', v.shares[v.n-1], true, 'millions');
 
   h += `</tbody></table></div>`;
   h += `</div>`; // fin tab mult
@@ -1174,6 +1180,7 @@ async function handleExcelUpload(event){
     lastCash: {sheet:'3.ROIC', cell:'K4'},
     lastMktSec: {sheet:'3.ROIC', cell:'K5'},
     lastLtDebt: {sheet:'3.ROIC', cell:'K7'},
+    lastShares: {sheet:'1.IS', cell:'K25'},
   };
 
   const cleanExcelVal = val => Math.round(Number(val) * 10000) / 10000;
