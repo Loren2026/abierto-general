@@ -31,11 +31,19 @@ async function fetchFmp(endpointKey, symbol, extraParams = {}) {
 
   const response = await fetch(`${FMP_BASE_URL}/${endpoint}?${params.toString()}`);
   const contentType = response.headers.get('content-type') || '';
-  const payload = contentType.includes('application/json') ? await response.json() : await response.text();
+  const rawPayload = contentType.includes('application/json') ? await response.json() : await response.text();
+  const payload = rawPayload;
 
-  if (!response.ok) {
-    const error = new Error(`FMP request failed with status ${response.status}`);
-    error.status = response.status;
+  if (!contentType.includes('application/json')) {
+    const error = new Error('Símbolo no disponible en tu plan de FMP');
+    error.status = response.ok ? 422 : response.status;
+    error.providerPayload = sanitizeProviderPayload(payload);
+    throw error;
+  }
+
+  if (!response.ok || (payload && payload.Error)) {
+    const error = new Error(payload && payload.Error ? 'Símbolo no disponible en tu plan de FMP' : `FMP request failed with status ${response.status}`);
+    error.status = payload && payload.Error && response.ok ? 422 : response.status;
     error.providerPayload = sanitizeProviderPayload(payload);
     throw error;
   }

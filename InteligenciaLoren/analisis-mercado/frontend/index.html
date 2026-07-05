@@ -440,7 +440,8 @@ async function fetchBackendRecommendation(tk){
 function getValuationConfig(){
   const defaults = { capInicial: 0.30, tasaTerminal: 0.12, descuentoMultiplo: 0.10 };
   try {
-    const saved = JSON.parse(localStorage.getItem('idc_valuation_config')||'{}');
+    const tickerCfg = window._valData && window._valData.ticker ? (readValStore(window._valData.ticker).config||{}) : {};
+    const saved = Object.assign({}, JSON.parse(localStorage.getItem('idc_valuation_config')||'{}'), tickerCfg);
     return {
       capInicial: saved.capInicial!=null ? Number(saved.capInicial) : defaults.capInicial,
       tasaTerminal: saved.tasaTerminal!=null ? Number(saved.tasaTerminal) : defaults.tasaTerminal,
@@ -455,6 +456,7 @@ function setValuationConfig(key, val){
   if(Math.abs(num)>=1) num = num/100;
   cfg[key] = num;
   localStorage.setItem('idc_valuation_config', JSON.stringify(cfg));
+  if(window._valData && window._valData.ticker){ const stored = readValStore(window._valData.ticker); stored.config = cfg; writeValStore(window._valData.ticker, stored); }
   rConfig();
   toast('Config valoración guardada');
 }
@@ -474,6 +476,44 @@ async function fetchAllFmpData(tk){
   // quote puede ser array o objeto según endpoint
   const q = Array.isArray(quote) ? quote[0] : quote;
   return { quote: q, is: is.reverse(), bs: bs.reverse(), cf: cf.reverse() };
+}
+
+function valStoreKey(ticker){ return 'val_data_'+String(ticker||'').toUpperCase(); }
+function readValStore(ticker){
+  const key = valStoreKey(ticker);
+  try {
+    const stored = JSON.parse(localStorage.getItem(key)||'null');
+    if(stored) return stored;
+    const legacy = JSON.parse(localStorage.getItem('idc_inputs_'+ticker)||'null');
+    if(legacy){ localStorage.setItem(key, JSON.stringify(legacy)); return legacy; }
+  } catch(e){}
+  return {};
+}
+function writeValStore(ticker, data){ localStorage.setItem(valStoreKey(ticker), JSON.stringify(data||{})); }
+function clearValStore(ticker){
+  localStorage.removeItem(valStoreKey(ticker));
+  localStorage.removeItem('idc_inputs_'+ticker);
+  toast('Datos borrados de '+ticker);
+  startValoracion(ticker, window._valBackTo||'valoracion');
+}
+function createManualValuation(tk, err){
+  const stored = readValStore(tk), adj = stored.adjust||{}, exd = stored.excel||{};
+  const pick = (k,d=0) => Number(adj[k] ?? exd[k] ?? d) || 0;
+  const years = [new Date().getFullYear()-1];
+  const v = {
+    ticker: tk, name: tk, price: pick('price',0), currency:'USD', manualMode:true, fmpError:err,
+    years, estYears:[1,2,3,4,5].map(i=>(years[0]+i)+'e'), n:1,
+    sales:[pick('lastSales',0)], ebitda:[0], ebitdaMargin:[0], ebit:[pick('lastEbit',0)], ebitMargin:[pick('ebitMgn0',0)], da:[0], netIncome:[0], eps:[0], shares:[1], taxRate:[pick('taxRate',0)],
+    intExp:[0], intInc:[0], totalInt:[0], ebt:[0], fcf:[0], fcfMargin:[0], cash:[pick('lastCash',0)], mktSec:[pick('lastMktSec',0)], stDebt:[0], ltDebt:[pick('lastLtDebt',0)], equity:[0], deudaNeta:[0], dnEbitda:[pick('dnEbitda',0)],
+    mcap:[0], evArr:[0], roic:[0], roe:[0], per:[0], evFcf:[0], evEbitda:[0], evEbit:[0], medPer:pick('objPer',0), medEvFcf:pick('objEvFcf',0), medEvEbitda:pick('objEvEbitda',0), medEvEbit:pick('objEvEbit',0),
+    wc:[0], cwc:[0], capexMant:[0], investedCapital:[0], nopat:[0],
+    estSales:Array(5).fill(0), estEbitda:Array(5).fill(0), estEbit:Array(5).fill(0), estDa:Array(5).fill(0), estNi:Array(5).fill(0), estFcf:Array(5).fill(0), estShares:Array(5).fill(1), estEps:Array(5).fill(0), estDn:Array(5).fill(0), estMcap:Array(5).fill(0), estEv:Array(5).fill(0),
+    objPer:pick('objPer',0), objEvFcf:pick('objEvFcf',0), objEvEbitda:pick('objEvEbitda',0), objEvEbit:pick('objEvEbit',0), calcObjPer:pick('objPer',0), calcObjEvFcf:pick('objEvFcf',0), calcObjEvEbitda:pick('objEvEbitda',0), calcObjEvEbit:pick('objEvEbit',0), valuationCfg:getValuationConfig(),
+    precioObj:{perExCash:Array(5).fill(0),evFcf:Array(5).fill(0),evEbitda:Array(5).fill(0),evEbit:Array(5).fill(0),prom:Array(5).fill(0)}, cagr5:{per:0,fcf:0,ebitda:0,ebit:0,prom:0}, margenSeg:Array(5).fill(0), signal:'na', signalText:'MODO MANUAL', precioCompra15:0, retObj:pick('retObj',0.15), difVsActual:0,
+    medSalesGr:0, lastEbitMargin:pick('ebitMgn0',0), lastTaxRate:pick('taxRate',0), lastDnEbitda:pick('dnEbitda',0), lastCapexPct:0, lastWcPct:0, lastSharesGr:0,
+    estSalesGr:[0,0,0,0,0], estEbitMgn:[0,0,0,0,0]
+  };
+  return v;
 }
 
 // ═══ MOTOR DE CÁLCULO IDC ═══
@@ -727,10 +767,12 @@ function renderValoracionIDC(v, el, backTo){
   </div>`;
 
   // ═══ ACCIONES STICKY ═══
+  if(v.manualMode) h += `<div class="card" style="border-color:var(--yellow-bg);background:var(--yellow-bg);color:var(--yellow);font-weight:800">Símbolo no disponible en tu plan de FMP — modo manual</div>`;
   h += `<div class="val-sticky-actions">
     <input type="file" id="xlUpload" accept=".xlsx,.xls" style="display:none" onchange="handleExcelUpload(event)">
     <button id="valRecalcBtn" class="recalc-btn" onclick="recalcObj()">🔄 Recalcular</button>
     <button class="idc-upload-btn" onclick="document.getElementById('xlUpload').click()">📁 Subir Excel de valoración de ${v.ticker}</button>
+    <button class="act-btn rd" style="grid-column:1/-1" onclick="clearValStore('${v.ticker}')">Borrar datos de ${v.ticker}</button>
   </div>`;
   setTimeout(updateRecalcButtonState,0);
 
@@ -800,7 +842,7 @@ function renderValoracionIDC(v, el, backTo){
   </div>`;
 
   // Datos guardados por empresa (localStorage)
-  const stored = JSON.parse(localStorage.getItem('idc_inputs_'+v.ticker)||'{}');
+  const stored = readValStore(v.ticker);
   const exd = stored.excel || {}; // columna E
   const adj = stored.adjust || {}; // columna D
 
@@ -959,7 +1001,7 @@ function recalcObj(){
   if(!window._valData) return;
   const v = window._valData;
   v.pendingRecalc = false;
-  const stored = JSON.parse(localStorage.getItem('idc_inputs_'+v.ticker)||'{}');
+  const stored = readValStore(v.ticker);
   const adj = stored.adjust || {};
 
   // Leer múltiplos de D si existen, si no del cálculo FMP
@@ -1052,7 +1094,7 @@ function updateRecalcButtonState(){
 }
 
 function updateD(ticker, key, val, fmt){
-  const stored = JSON.parse(localStorage.getItem('idc_inputs_'+ticker)||'{}');
+  const stored = readValStore(ticker);
   if(!stored.adjust) stored.adjust={};
   if(val===''||val==null){
     delete stored.adjust[key];
@@ -1062,7 +1104,7 @@ function updateD(ticker, key, val, fmt){
     if(fmt==='pct' && Math.abs(num)>=1) num = num/100;
     stored.adjust[key] = num;
   }
-  localStorage.setItem('idc_inputs_'+ticker, JSON.stringify(stored));
+  writeValStore(ticker, stored);
   setValuationPending(true);
 }
 
@@ -1127,7 +1169,7 @@ async function handleExcelUpload(event){
     'taxRate']; // tax rate como estable pero editable
   // +2 para llegar a 16: taxRate cuenta como 1, retObj ya está
 
-  const stored = JSON.parse(localStorage.getItem('idc_inputs_'+tk)||'{}');
+  const stored = readValStore(tk);
   stored.excel = {};
   if(!stored.adjust) stored.adjust = {};
 
@@ -1149,7 +1191,7 @@ async function handleExcelUpload(event){
     }
   }
 
-  localStorage.setItem('idc_inputs_'+tk, JSON.stringify(stored));
+  writeValStore(tk, stored);
   toast(`✅ Excel leído: ${count} datos extraídos`);
 
   // Recalcular y re-renderizar
@@ -1300,17 +1342,16 @@ async function startValoracion(tk, backTo){
       console.warn('Recomendación backend no disponible:', recErr.message);
     }
 
-    // Guardar señal en la empresa
     const item = [...D.c,...D.p].find(e=>e.tk===tk);
     if(item){ item.sig = v.signal; save(); }
 
     renderValoracionIDC(v, el, backTo);
+    recalcObj();
   } catch(err) {
-    let msg = 'Error al obtener datos';
-    if(err.message.includes('403') || err.message.includes('401')) msg='Backend sin permisos o clave inválida';
-    else if(err.message.includes('429')) msg='Límite de peticiones alcanzado';
-    else if(err.message.includes('Sin datos')) msg=`${tk}: sin datos financieros en FMP (¿empresa no-US?)`;
-    el.innerHTML=`<button class="det-back" onclick="go('${backTo}')">← Volver</button><div class="card" style="text-align:center;padding:40px 20px"><div style="font-size:40px;margin-bottom:12px">⚠️</div><div style="font-size:17px;font-weight:800;color:var(--red);margin-bottom:8px">${msg}</div><div style="font-size:13px;color:var(--ink3)">${err.message}</div></div>`;
+    console.warn('FMP no disponible, modo manual:', err.message);
+    const v = createManualValuation(tk, err.message);
+    renderValoracionIDC(v, el, backTo);
+    recalcObj();
   }
 }
 
