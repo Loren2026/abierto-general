@@ -505,10 +505,13 @@ function clearValStore(ticker){
 }
 function createManualValuation(tk, err){
   const stored = readValStore(tk), adj = stored.adjust||{}, exd = stored.excel||{};
+  const candidate = [...D.c,...D.p].find(e=>e.tk===tk);
+  const fallbackPrice = Number(candidate?.pr || 0);
+  const manualCurrency = candidate?.ex === 'BME' ? 'EUR' : (candidate?.cur || 'USD');
   const pick = (k,d=0) => Number(adj[k] ?? exd[k] ?? d) || 0;
   const years = [new Date().getFullYear()-1];
   const v = {
-    ticker: tk, name: tk, price: pick('price',0), currency:'USD', manualMode:true, fmpError:err,
+    ticker: tk, name: candidate?.nm || tk, price: pick('price',fallbackPrice), currency:manualCurrency, manualMode:true, fmpError:err,
     years, estYears:[1,2,3,4,5].map(i=>(years[0]+i)+'e'), n:1,
     sales:[pick('lastSales',0)], ebitda:[0], ebitdaMargin:[0], ebit:[pick('lastEbit',0)], ebitMargin:[pick('ebitMgn0',0)], da:[0], netIncome:[0], eps:[0], shares:[1], taxRate:[pick('taxRate',0)],
     intExp:[0], intInc:[0], totalInt:[0], ebt:[0], fcf:[0], fcfMargin:[0], cash:[pick('lastCash',0)], mktSec:[pick('lastMktSec',0)], stDebt:[0], ltDebt:[pick('lastLtDebt',0)], equity:[0], deudaNeta:[0], dnEbitda:[pick('dnEbitda',0)],
@@ -842,10 +845,10 @@ function renderValoracionIDC(v, el, backTo){
 
   // Flujo explicativo
   h += `<div class="idc-flow">
-    <div class="idc-flow-step"><div class="idc-flow-n">1</div><div><b>C</b> se rellena sola (FMP)</div></div>
-    <div class="idc-flow-step"><div class="idc-flow-n">2</div><div>Subes Excel → <b>E</b> se rellena</div></div>
-    <div class="idc-flow-step"><div class="idc-flow-n">3</div><div>16 datos ⚡ pasan E→D→C auto · 11 datos ✋ esperan tu decisión</div></div>
-    <div style="text-align:center;font-weight:800;color:var(--blue);margin-top:4px">C = D si existe · Si D vacío → C = FMP</div>
+    <div class="idc-flow-step"><div class="idc-flow-n">1</div><div><b>C</b> se rellena sola con FMP o modo manual</div></div>
+    <div class="idc-flow-step"><div class="idc-flow-n">2</div><div>Subes Excel → <b>E</b> se rellena y se copia completa a <b>D</b></div></div>
+    <div class="idc-flow-step"><div class="idc-flow-n">3</div><div>Loren ajusta en <b>D</b> lo que quiera y pulsa Recalcular</div></div>
+    <div style="text-align:center;font-weight:800;color:var(--blue);margin-top:4px">Prioridad: D → E → FMP / manual</div>
   </div>`;
 
   // Datos guardados por empresa (localStorage)
@@ -1006,6 +1009,9 @@ function valTab(tab){
 
 function recalcObj(){
   if(!window._valData) return;
+  if(window._valData.manualMode){
+    window._valData = createManualValuation(window._valData.ticker, window._valData.fmpError);
+  }
   const v = window._valData;
   v.pendingRecalc = false;
   const stored = readValStore(v.ticker);
@@ -1170,12 +1176,7 @@ async function handleExcelUpload(event){
     lastLtDebt: {sheet:'3.ROIC', cell:'K7'},
   };
 
-  // Claves auto (16 datos estables)
-  const autoKeys = ['price','dnEbitda','retObj','objPer','objEvFcf','objEvEbitda','objEvEbit',
-    'lastSales','lastEbit','lastAR','lastAP','lastCash','lastMktSec','lastLtDebt',
-    'taxRate']; // tax rate como estable pero editable
-  // +2 para llegar a 16: taxRate cuenta como 1, retObj ya está
-
+  const cleanExcelVal = val => Math.round(Number(val) * 10000) / 10000;
   const stored = readValStore(tk);
   stored.excel = {};
   if(!stored.adjust) stored.adjust = {};
@@ -1188,12 +1189,10 @@ async function handleExcelUpload(event){
     if(cellObj && cellObj.v!=null){
       const val = Number(cellObj.v);
       if(!isNaN(val)){
-        stored.excel[key] = val;
+        const cleanVal = cleanExcelVal(val);
+        stored.excel[key] = cleanVal;
+        stored.adjust[key] = cleanVal;
         count++;
-        // Si es auto → copiar a D automáticamente
-        if(autoKeys.includes(key)){
-          stored.adjust[key] = val;
-        }
       }
     }
   }
@@ -1202,6 +1201,10 @@ async function handleExcelUpload(event){
   toast(`✅ Excel leído: ${count} datos extraídos`);
 
   // Recalcular y re-renderizar
+  if(window._valData && window._valData.manualMode){
+    window._valData = createManualValuation(tk, window._valData.fmpError);
+    renderValoracionIDC(window._valData, window._valEl, window._valBackTo);
+  }
   recalcObj();
   setTimeout(()=>valTab('mult'),100);
   } catch(err) {
