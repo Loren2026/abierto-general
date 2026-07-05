@@ -433,6 +433,33 @@ async function fetchBackendRecommendation(tk){
   });
 }
 
+function getValuationConfig(){
+  const defaults = { capInicial: 0.30, tasaTerminal: 0.12, descuentoMultiplo: 0.10 };
+  try {
+    const saved = JSON.parse(localStorage.getItem('idc_valuation_config')||'{}');
+    return {
+      capInicial: saved.capInicial!=null ? Number(saved.capInicial) : defaults.capInicial,
+      tasaTerminal: saved.tasaTerminal!=null ? Number(saved.tasaTerminal) : defaults.tasaTerminal,
+      descuentoMultiplo: saved.descuentoMultiplo!=null ? Number(saved.descuentoMultiplo) : defaults.descuentoMultiplo,
+    };
+  } catch(e){ return defaults; }
+}
+function setValuationConfig(key, val){
+  const cfg = getValuationConfig();
+  let num = parseFloat(val);
+  if(!isFinite(num)) return;
+  if(Math.abs(num)>=1) num = num/100;
+  cfg[key] = num;
+  localStorage.setItem('idc_valuation_config', JSON.stringify(cfg));
+  rConfig();
+  toast('Config valoración guardada');
+}
+function buildSalesGrowthPath(medSalesGr, cfg=getValuationConfig()){
+  if(medSalesGr < cfg.tasaTerminal) return Array(5).fill(medSalesGr);
+  const start = Math.min(medSalesGr, cfg.capInicial);
+  return Array(5).fill(0).map((_,i)=> start + (cfg.tasaTerminal - start) * (i/4));
+}
+
 async function fetchAllFmpData(tk){
   const [quote, is, bs, cf] = await Promise.all([
     fmpFetch('quote', tk),
@@ -449,6 +476,7 @@ async function fetchAllFmpData(tk){
 // Replica exacta de las fórmulas del Excel "Invertir Desde Cero"
 function calcIDC(data){
   const {quote, is, bs, cf} = data;
+  const valuationCfg = getValuationConfig();
   const n = is.length; // años disponibles (hasta 5 en plan gratuito)
   const price = quote.price;
   const years = is.map(x => new Date(x.date).getFullYear());
@@ -547,7 +575,7 @@ function calcIDC(data){
   for(let y=1; y<=5; y++){
     const yr = lastYear + y;
     estYears.push(yr+'e');
-    const gr = Math.max(medSalesGr - (y-1)*0.005, 0.02); // degradación suave
+    const gr = buildSalesGrowthPath(medSalesGr, valuationCfg)[y-1]; // convergencia lineal configurable
     const s = prevSales * (1 + gr);
     const eb = s * lastEbitMargin;
     const d = da[n-1] * (1 + gr); // D&A crece con ventas
@@ -573,13 +601,16 @@ function calcIDC(data){
     prevSales = s; prevShares = shrE; prevWc = wcE;
   }
 
-  // ═══ 8. MÚLTIPLOS OBJETIVO (conservador: mediana -10/15%) ═══
-  // Múltiplos objetivo = mediana histórica (sin descuento, igual que en el Excel IDC)
-  // Loren ya es conservador en sus estimaciones de crecimiento
-  const objPer = Math.round(medPer);
-  const objEvFcf = Math.round(medEvFcf);
-  const objEvEbitda = Math.round(medEvEbitda);
-  const objEvEbit = Math.round(medEvEbit);
+  // ═══ 8. MÚLTIPLOS OBJETIVO (conservador: mediana - descuento configurable) ═══
+  const discountFactor = 1 - valuationCfg.descuentoMultiplo;
+  const calcObjPer = Math.round(medPer * discountFactor);
+  const calcObjEvFcf = Math.round(medEvFcf * discountFactor);
+  const calcObjEvEbitda = Math.round(medEvEbitda * discountFactor);
+  const calcObjEvEbit = Math.round(medEvEbit * discountFactor);
+  const objPer = calcObjPer;
+  const objEvFcf = calcObjEvFcf;
+  const objEvEbitda = calcObjEvEbitda;
+  const objEvEbit = calcObjEvEbit;
 
   // ═══ 9. PRECIO OBJETIVO (fórmulas exactas del Excel) ═══
   const lastSharesEst = estShares; // shares por año estimado
@@ -641,13 +672,13 @@ function calcIDC(data){
     // Estimaciones
     estSales, estEbitda, estEbit, estDa, estNi, estFcf, estShares, estEps, estDn, estMcap, estEv,
     // Objetivo
-    objPer, objEvFcf, objEvEbitda, objEvEbit,
+    objPer, objEvFcf, objEvEbitda, objEvEbit, calcObjPer, calcObjEvFcf, calcObjEvEbitda, calcObjEvEbit, valuationCfg,
     precioObj, cagr5, margenSeg, signal, signalText,
     precioCompra15, retObj, difVsActual,
     // Ratios estimaciones
     medSalesGr, lastEbitMargin, lastTaxRate, lastDnEbitda, lastCapexPct, lastWcPct, lastSharesGr,
     // Arrays de crecimiento por año (para edición individual)
-    estSalesGr: Array(5).fill(0).map((_,i) => Math.max(medSalesGr - i*0.005, 0.02)),
+    estSalesGr: buildSalesGrowthPath(medSalesGr, valuationCfg),
     estEbitMgn: Array(5).fill(lastEbitMargin),
   };
 }
@@ -923,10 +954,10 @@ function recalcObj(){
   const adj = stored.adjust || {};
 
   // Leer múltiplos de D si existen, si no del cálculo FMP
-  v.objPer = adj.objPer!=null ? Number(adj.objPer) : v.objPer;
-  v.objEvFcf = adj.objEvFcf!=null ? Number(adj.objEvFcf) : v.objEvFcf;
-  v.objEvEbitda = adj.objEvEbitda!=null ? Number(adj.objEvEbitda) : v.objEvEbitda;
-  v.objEvEbit = adj.objEvEbit!=null ? Number(adj.objEvEbit) : v.objEvEbit;
+  v.objPer = adj.objPer!=null ? Number(adj.objPer) : (v.calcObjPer!=null ? v.calcObjPer : v.objPer);
+  v.objEvFcf = adj.objEvFcf!=null ? Number(adj.objEvFcf) : (v.calcObjEvFcf!=null ? v.calcObjEvFcf : v.objEvFcf);
+  v.objEvEbitda = adj.objEvEbitda!=null ? Number(adj.objEvEbitda) : (v.calcObjEvEbitda!=null ? v.calcObjEvEbitda : v.objEvEbitda);
+  v.objEvEbit = adj.objEvEbit!=null ? Number(adj.objEvEbit) : (v.calcObjEvEbit!=null ? v.calcObjEvEbit : v.objEvEbit);
   v.retObj = adj.retObj!=null ? Number(adj.retObj) : v.retObj;
 
   // Leer estimaciones de D si existen
@@ -975,7 +1006,7 @@ function recalcObj(){
     v.precioObj.evEbit[i] = (v.estEbit[i]*v.objEvEbit-dn)/shr;
     v.precioObj.prom[i] = (v.precioObj.perExCash[i]+v.precioObj.evFcf[i]+v.precioObj.evEbitda[i]+v.precioObj.evEbit[i])/4;
   }
-  const p = adj.price!=null ? Number(adj.price) : v.price;
+  const p = v.price; // siempre cotización actual FMP; B19 importado no recalcula valoración
   v.cagr5.per = p>0?Math.pow(v.precioObj.perExCash[4]/p,1/5)-1:0;
   v.cagr5.fcf = p>0?Math.pow(v.precioObj.evFcf[4]/p,1/5)-1:0;
   v.cagr5.ebitda = p>0?Math.pow(v.precioObj.evEbitda[4]/p,1/5)-1:0;
@@ -1280,6 +1311,13 @@ function rConfig(){
   document.getElementById('v-config').innerHTML=`<h2 style="font-size:22px;font-weight:900;color:var(--blue);margin-bottom:14px">Configuración</h2>
   <div class="card"><div class="card-t">🔌 Conexiones backend</div>
     <div style="font-size:13px;color:var(--ink3);line-height:1.5">Las claves de FMP y Claude ya no se introducen en el navegador. Viven en el backend seguro. Backend actual: <b>${window.BACKEND_URL}</b></div>
+  </div>
+
+  <div class="card"><div class="card-t">🎯 Motor de valoración</div>
+    <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;line-height:1.5">Parámetros conservadores globales. Se aplican al cálculo FMP; los ajustes manuales de columna D siguen teniendo prioridad.</div>
+    <div class="mrow"><span class="mrow-l">Cap crecimiento inicial</span><input class="dinput" value="${(getValuationConfig().capInicial*100).toFixed(1)}" onchange="setValuationConfig('capInicial',this.value)">%</div>
+    <div class="mrow"><span class="mrow-l">Tasa terminal año 5</span><input class="dinput" value="${(getValuationConfig().tasaTerminal*100).toFixed(1)}" onchange="setValuationConfig('tasaTerminal',this.value)">%</div>
+    <div class="mrow"><span class="mrow-l">Descuento múltiplos objetivo</span><input class="dinput" value="${(getValuationConfig().descuentoMultiplo*100).toFixed(1)}" onchange="setValuationConfig('descuentoMultiplo',this.value)">%</div>
   </div>
 
   <div class="card"><div class="card-t">📋 Tarifas del broker</div>
