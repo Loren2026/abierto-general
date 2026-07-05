@@ -396,7 +396,10 @@ async function backendFetch(path, options={}){
   const data = await r.json().catch(()=>null);
   if(!r.ok){
     const msg = data?.message || `Backend ${r.status}`;
-    throw new Error(msg);
+    const error = new Error(msg);
+    error.status = r.status;
+    error.data = data;
+    throw error;
   }
   return data;
 }
@@ -1348,10 +1351,20 @@ async function startValoracion(tk, backTo){
     renderValoracionIDC(v, el, backTo);
     recalcObj();
   } catch(err) {
-    console.warn('FMP no disponible, modo manual:', err.message);
-    const v = createManualValuation(tk, err.message);
-    renderValoracionIDC(v, el, backTo);
-    recalcObj();
+    const isFmpPlanUnavailable = err.status === 422 || String(err.message||'').toLowerCase().includes('no disponible en tu plan');
+    if(isFmpPlanUnavailable){
+      console.warn('FMP no disponible, modo manual:', err.message);
+      const v = createManualValuation(tk, err.message);
+      renderValoracionIDC(v, el, backTo);
+      recalcObj();
+      return;
+    }
+    let msg = 'Error al obtener datos';
+    if(String(err.message||'').includes('403') || String(err.message||'').includes('401') || err.status===401 || err.status===403) msg='Backend sin permisos o clave inválida';
+    else if(String(err.message||'').includes('429') || err.status===429) msg='Límite de peticiones alcanzado';
+    else if(String(err.message||'').includes('Sin datos')) msg=`${tk}: sin datos financieros en FMP (¿empresa no-US?)`;
+    else if(String(err.message||'').includes('Failed to fetch') || String(err.message||'').includes('NetworkError')) msg='Backend no disponible o error de red';
+    el.innerHTML=`<button class="det-back" onclick="go('${backTo}')">← Volver</button><div class="card" style="text-align:center;padding:40px 20px"><div style="font-size:40px;margin-bottom:12px">⚠️</div><div style="font-size:17px;font-weight:800;color:var(--red);margin-bottom:8px">${msg}</div><div style="font-size:13px;color:var(--ink3)">${err.message}</div></div>`;
   }
 }
 
@@ -2822,7 +2835,7 @@ function exportData(){
   // También exportar datos de valoración IDC por empresa
   for(let i=0; i<localStorage.length; i++){
     const k = localStorage.key(i);
-    if(k.startsWith('idc_inputs_')) backup[k] = localStorage.getItem(k);
+    if(k.startsWith('idc_inputs_') || k.startsWith('val_data_')) backup[k] = localStorage.getItem(k);
   }
   const json = JSON.stringify(backup, null, 2);
   const blob = new Blob([json], {type:'application/json'});
