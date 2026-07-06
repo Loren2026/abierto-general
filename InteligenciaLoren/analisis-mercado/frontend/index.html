@@ -105,6 +105,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 @media(min-width:560px){.val-sticky-actions{grid-template-columns:1fr 1fr}}
 .recalc-btn,.idc-upload-btn{width:100%;min-height:106px;padding:16px 10px;border-radius:16px;font-family:var(--sans);font-size:14px;font-weight:900;cursor:pointer;border:1.5px solid var(--border);background:var(--card);color:var(--blue);box-shadow:0 2px 8px rgba(0,0,0,.05)}
 .recalc-btn.pending{border-color:var(--acc);background:rgba(196,90,28,.12);color:var(--acc);box-shadow:0 0 0 3px rgba(196,90,28,.10)}
+.compact-label{display:none}
+@media(max-width:559px){.val-sticky-actions{grid-template-columns:1fr 1fr 1fr;gap:6px;margin:8px 0 10px;padding:6px;border-radius:12px;align-items:center;min-height:44px}.val-sticky-actions .recalc-btn,.val-sticky-actions .idc-upload-btn,.val-sticky-actions .act-btn{min-height:34px;height:34px;padding:4px 5px;border-radius:10px;font-size:11px;line-height:1.05;box-shadow:none}.val-sticky-actions .act-btn{grid-column:auto!important;width:100%}.val-sticky-actions .wide-label{display:none}.val-sticky-actions .compact-label{display:inline}}
 @keyframes dfade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 .mrow{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--border)}.mrow:last-child{border-bottom:none}
 .mrow-l{font-size:14px;font-weight:700;color:var(--ink2)}.mrow-v{font-family:var(--mono);font-size:14px;font-weight:700;text-align:right}
@@ -220,6 +222,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 .idc-tbl .ico{font-size:10px;margin-left:3px}
 .d-inp{width:100%;text-align:center;font-family:var(--mono);font-size:13px;font-weight:700;color:#7a6c00;background:transparent;border:none;outline:none;padding:2px}
 .d-inp::placeholder{color:#c0392b;font-style:italic;font-weight:600;font-size:11px}
+.d-pct-wrap{display:flex;align-items:center;justify-content:center;gap:2px}.d-pct-wrap .d-inp{width:calc(100% - 12px);min-width:42px}.d-pct-suf{font-family:var(--mono);font-size:11px;font-weight:800;color:#7a6c00;line-height:1}
 .idc-upload-btn{transition:all .15s}
 .idc-upload-btn:active{transform:scale(.97);background:#ffecd2}
 .idc-flow{padding:12px 14px;background:var(--white);border-radius:14px;border:1.5px solid var(--border);margin-bottom:14px;font-size:11px;line-height:1.6;color:var(--ink3)}
@@ -782,8 +785,8 @@ function renderValoracionIDC(v, el, backTo){
   h += `<div class="val-sticky-actions">
     <input type="file" id="xlUpload" accept=".xlsx,.xls" style="display:none" onchange="handleExcelUpload(event)">
     <button id="valRecalcBtn" class="recalc-btn" onclick="recalcObj()">🔄 Recalcular</button>
-    <button class="idc-upload-btn" onclick="document.getElementById('xlUpload').click()">📁 Subir Excel de ${v.ticker}</button>
-    <button class="act-btn rd" style="grid-column:1/-1" onclick="clearValStore('${v.ticker}')">Borrar datos de ${v.ticker}</button>
+    <button class="idc-upload-btn" onclick="document.getElementById('xlUpload').click()">📁 <span class="wide-label">Subir Excel de ${v.ticker}</span><span class="compact-label">Excel</span></button>
+    <button class="act-btn rd" style="grid-column:1/-1" onclick="clearValStore('${v.ticker}')">🗑 <span class="wide-label">Borrar datos de ${v.ticker}</span><span class="compact-label">Borrar</span></button>
   </div>`;
   setTimeout(updateRecalcButtonState,0);
 
@@ -889,10 +892,10 @@ function renderValoracionIDC(v, el, backTo){
 
     // Input editable en D para los manuales
     // Para inputs: mostrar el valor en formato legible (ej: 13 para 13%, no 0.13)
-    const dInputVal = dVal!=null ? (fmt==='pct' && Math.abs(dVal)<1 ? (dVal*100) : dVal) : '';
+    const dInputVal = dVal!=null ? (fmt==='pct' ? (dVal*100).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2}) : dVal) : '';
     const dHtml = isAuto
       ? `<td class="${dClass}">${dVal!=null ? dDisplay : 'pendiente'}</td>`
-      : `<td class="${dClass}"><input class="d-inp" data-key="${key}" data-fmt="${fmt}" value="${dInputVal}" placeholder="pendiente" onchange="updateD('${v.ticker}','${key}',this.value,'${fmt}')"></td>`;
+      : `<td class="${dClass}">${fmt==='pct'?`<span class="d-pct-wrap"><input class="d-inp" data-key="${key}" data-fmt="${fmt}" value="${dInputVal}" placeholder="pendiente" onchange="updateD('${v.ticker}','${key}',this.value,'${fmt}')"><span class="d-pct-suf">%</span></span>`:`<input class="d-inp" data-key="${key}" data-fmt="${fmt}" value="${dInputVal}" placeholder="pendiente" onchange="updateD('${v.ticker}','${key}',this.value,'${fmt}')">`}</td>`;
 
     return `<tr><td>${label}<span class="ico">${ico}</span><span class="ref">${ref}</span></td><td class="c-app">${cDisplay}</td>${dHtml}<td class="${eVal!=null?'e-data':'e-empty'}">${eDisplay}</td></tr>`;
   };
@@ -1128,8 +1131,9 @@ function updateD(ticker, key, val, fmt){
   if(val===''||val==null){
     delete stored.adjust[key];
   } else {
-    let num = parseFloat(val);
-    // Si es porcentaje y el usuario escribe 13 (no 0.13), convertir
+    let raw = String(val).trim().replace('%','').replace(/\s/g,'').replace(',', '.');
+    let num = parseFloat(raw);
+    // Si es porcentaje y el usuario escribe/renderiza 13 o 13,00 (no 0.13), convertir
     if(fmt==='pct' && Math.abs(num)>=1) num = num/100;
     stored.adjust[key] = num;
   }
