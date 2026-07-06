@@ -514,14 +514,14 @@ function createManualValuation(tk, err){
   const v = {
     ticker: tk, name: candidate?.nm || tk, price: pick('price',fallbackPrice), currency:manualCurrency, manualMode:true, fmpError:err,
     years, estYears:[1,2,3,4,5].map(i=>(years[0]+i)+'e'), n:1,
-    sales:[pick('lastSales',0)], ebitda:[0], ebitdaMargin:[0], ebit:[pick('lastEbit',0)], ebitMargin:[pick('ebitMgn0',0)], da:[0], netIncome:[0], eps:[0], shares:[prevShares], taxRate:[pick('taxRate',0)],
+    sales:[pick('lastSales',0)], ebitda:[pick('lastSales',0) * pick('ebitdaMgn0',0)], ebitdaMargin:[pick('ebitdaMgn0',0)], ebit:[pick('lastEbit',0)], ebitMargin:[pick('ebitMgn0',0)], da:[0], netIncome:[0], eps:[0], shares:[prevShares], taxRate:[pick('taxRate',0)],
     intExp:[0], intInc:[0], totalInt:[0], ebt:[0], fcf:[0], fcfMargin:[0], cash:[pick('lastCash',0)], mktSec:[pick('lastMktSec',0)], stDebt:[0], ltDebt:[pick('lastLtDebt',0)], equity:[0], deudaNeta:[0], dnEbitda:[pick('dnEbitda',0)],
     mcap:[0], evArr:[0], roic:[0], roe:[0], per:[0], evFcf:[0], evEbitda:[0], evEbit:[0], medPer:pick('objPer',0), medEvFcf:pick('objEvFcf',0), medEvEbitda:pick('objEvEbitda',0), medEvEbit:pick('objEvEbit',0),
-    wc:[0], cwc:[0], capexMant:[0], investedCapital:[0], nopat:[0],
+    wc:[pick('lastWc',0)], cwc:[0], capexMant:[pick('lastSales',0) * pick('lastCapexPct',0)], investedCapital:[0], nopat:[0],
     estSales:Array(5).fill(0), estEbitda:Array(5).fill(0), estEbit:Array(5).fill(0), estDa:Array(5).fill(0), estNi:Array(5).fill(0), estFcf:Array(5).fill(0), estShares:Array(5).fill(prevShares), estEps:Array(5).fill(0), estDn:Array(5).fill(0), estMcap:Array(5).fill(0), estEv:Array(5).fill(0),
     objPer:pick('objPer',0), objEvFcf:pick('objEvFcf',0), objEvEbitda:pick('objEvEbitda',0), objEvEbit:pick('objEvEbit',0), calcObjPer:pick('objPer',0), calcObjEvFcf:pick('objEvFcf',0), calcObjEvEbitda:pick('objEvEbitda',0), calcObjEvEbit:pick('objEvEbit',0), valuationCfg:getValuationConfig(),
     precioObj:{perExCash:Array(5).fill(0),evFcf:Array(5).fill(0),evEbitda:Array(5).fill(0),evEbit:Array(5).fill(0),prom:Array(5).fill(0)}, cagr5:{per:0,fcf:0,ebitda:0,ebit:0,prom:0}, margenSeg:Array(5).fill(0), signal:'na', signalText:'MODO MANUAL', precioCompra15:0, retObj:pick('retObj',0.15), difVsActual:0,
-    medSalesGr:0, lastEbitMargin:pick('ebitMgn0',0), lastTaxRate:pick('taxRate',0), lastDnEbitda:pick('dnEbitda',0), lastCapexPct:0, lastWcPct:0, lastSharesGr:0,
+    medSalesGr:0, lastEbitMargin:pick('ebitMgn0',0), lastTaxRate:pick('taxRate',0), lastDnEbitda:pick('dnEbitda',0), lastCapexPct:pick('lastCapexPct',0), lastWcPct:pick('lastWcPct',0), lastSharesGr:0,
     estSalesGr:[0,0,0,0,0], estEbitMgn:[0,0,0,0,0]
   };
   return v;
@@ -867,11 +867,9 @@ function renderValoracionIDC(v, el, backTo){
     if(fmt==='int') return Math.round(n).toLocaleString('es-ES');
     if(fmt==='price') return n.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2});
     if(fmt==='millions') {
-      const display = n.toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:4});
-      return display.replace(/\.?0+$/, '');
+      return n.toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:4});
     }
-    const display = n.toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:4});
-    return display.replace(/\.?0+$/, '');
+    return n.toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:4});
   };
 
   // Helper: generar fila
@@ -933,11 +931,15 @@ function renderValoracionIDC(v, el, backTo){
   // ═══ TAX RATE ═══
   h += secRow('ESTIMACIÓN — TAX RATE');
   h += idcRow('taxRate','Tax rate (%)','1.IS L17', v.lastTaxRate, false, 'pct');
+  h += idcRow('ebitdaMgn0','Margen EBITDA último año','1.IS K6', v.ebitdaMargin[v.n-1], false, 'pct');
+  h += idcRow('lastCapexPct','CapEx mant. / Ventas','2.FCF K22', v.lastCapexPct, false, 'pct');
+  h += idcRow('lastWcPct','Working Capital / Ventas','2.FCF K23', v.lastWcPct, false, 'pct');
 
   // ═══ ÚLTIMO AÑO REAL ═══
   h += secRow('ÚLTIMO AÑO REAL');
   h += idcRow('lastSales','Sales (M)','1.IS K3', v.sales[v.n-1], true, 'millions');
   h += idcRow('lastEbit','EBIT (M)','1.IS K9', v.ebit[v.n-1], true, 'millions');
+  h += idcRow('lastWc','Working Capital (M)','2.FCF K11', v.wc.length?v.wc[v.n-1]:0, true, 'millions');
   h += idcRow('lastAR','Accounts Receivable (M)','2.FCF K8', v.wc.length?v.wc[v.n-1]:0, true, 'millions');
   h += idcRow('lastAP','Accounts Payable (M)','2.FCF K9', 0, true, 'millions');
   h += idcRow('lastCash','Cash & equivalents (M)','3.ROIC K4', v.cash[v.n-1], true, 'millions');
@@ -1036,6 +1038,13 @@ function recalcObj(){
     if(adj['ebitMgn'+i]!=null) v.estEbitMgn[i] = Number(adj['ebitMgn'+i]);
   }
   if(adj.taxRate!=null) v.lastTaxRate = Number(adj.taxRate);
+  if(adj.ebitdaMgn0!=null){
+    v.ebitdaMargin[v.n-1] = Number(adj.ebitdaMgn0);
+    v.ebitda[v.n-1] = (v.sales[v.n-1]||0) * v.ebitdaMargin[v.n-1];
+  }
+  if(adj.lastCapexPct!=null) v.lastCapexPct = Number(adj.lastCapexPct);
+  if(adj.lastWcPct!=null) v.lastWcPct = Number(adj.lastWcPct);
+  if(adj.lastWc!=null) v.wc[v.n-1] = Number(adj.lastWc);
 
   // Recalcular estimaciones con los valores actualizados
   let prevSales = v.sales[v.n-1];
@@ -1046,7 +1055,8 @@ function recalcObj(){
     const mgn = v.estEbitMgn?v.estEbitMgn[i]:v.lastEbitMargin;
     const s = prevSales*(1+gr);
     const eb = s * (mgn + v.lastEbitMargin - v.lastEbitMargin); // usa margen
-    const ebitda_e = s * (v.ebitdaMargin[v.n-1]||0.4);
+    const ebitdaMarginBase = v.ebitdaMargin[v.n-1] || (v.manualMode ? 0 : 0.4);
+    const ebitda_e = s * ebitdaMarginBase;
     const ebit_e = s * mgn;
     const tax = v.lastTaxRate;
     const intE = v.totalInt[v.n-1]||0;
@@ -1172,6 +1182,11 @@ async function handleExcelUpload(event){
     ebitMgn4: {sheet:'1.IS', cell:'P10'},
     // 1.IS - Tax rate
     taxRate: {sheet:'1.IS', cell:'L17'},
+    // Datos reales para modo manual
+    ebitdaMgn0: {sheet:'1.IS', cell:'K6'},
+    lastCapexPct: {sheet:'2.FCF', cell:'K22'},
+    lastWcPct: {sheet:'2.FCF', cell:'K23'},
+    lastWc: {sheet:'2.FCF', cell:'K11'},
     // Último año real
     lastSales: {sheet:'1.IS', cell:'K3'},
     lastEbit: {sheet:'1.IS', cell:'K9'},
