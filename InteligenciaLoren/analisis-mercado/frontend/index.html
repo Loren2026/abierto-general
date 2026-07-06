@@ -99,6 +99,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 /* ══ DETAIL TABS ══ */
 .dtabs{display:flex;gap:6px;margin:18px 0 14px;flex-wrap:wrap}
 .dtab{padding:10px 18px;border-radius:12px;font-family:var(--sans);font-size:14px;font-weight:800;color:var(--ink4);background:var(--white);border:1.5px solid var(--border);cursor:pointer;transition:all .15s}
+@media(max-width:559px){.dtabs{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;flex-wrap:nowrap;margin:12px 0 10px}.dtab{padding:8px 4px;border-radius:10px;font-size:12px;line-height:1;white-space:nowrap;text-align:center}}
 .dtab.on{color:var(--blue);border-color:var(--acc);background:rgba(196,90,28,.06)}
 .dpanel{display:none;animation:dfade .2s ease}.dpanel.on{display:block}
 .val-sticky-actions{position:sticky;top:8px;z-index:30;display:grid;grid-template-columns:1fr;gap:8px;margin:12px 0 14px;padding:10px;background:rgba(246,242,234,.94);backdrop-filter:blur(8px);border:1.5px solid var(--border);border-radius:16px;box-shadow:0 8px 24px rgba(31,45,61,.10)}
@@ -685,7 +686,8 @@ function calcIDC(data){
     const pEbitda = (estEbitda[i]*objEvEbitda - dn)/shr;
     // EV/EBIT: (EBIT*Mult - DN) / Shares
     const pEbit = (estEbit[i]*objEvEbit - dn)/shr;
-    const avg = (pPer + pFcf + pEbitda + pEbit) / 4;
+    const validMethods = [pPer, pFcf, pEbitda, pEbit].filter(x => x > 0 && isFinite(x));
+    const avg = validMethods.length ? validMethods.reduce((a,b)=>a+b,0) / validMethods.length : 0;
 
     precioObj.perExCash.push(pPer);
     precioObj.evFcf.push(pFcf);
@@ -1087,7 +1089,8 @@ function recalcObj(){
     v.precioObj.evFcf[i] = (v.estFcf[i]*v.objEvFcf-dn)/shr;
     v.precioObj.evEbitda[i] = (v.estEbitda[i]*v.objEvEbitda-dn)/shr;
     v.precioObj.evEbit[i] = (v.estEbit[i]*v.objEvEbit-dn)/shr;
-    v.precioObj.prom[i] = (v.precioObj.perExCash[i]+v.precioObj.evFcf[i]+v.precioObj.evEbitda[i]+v.precioObj.evEbit[i])/4;
+    const validMethods = [v.precioObj.perExCash[i], v.precioObj.evFcf[i], v.precioObj.evEbitda[i], v.precioObj.evEbit[i]].filter(x => x > 0 && isFinite(x));
+    v.precioObj.prom[i] = validMethods.length ? validMethods.reduce((a,b)=>a+b,0) / validMethods.length : 0;
   }
   const p = v.price; // siempre cotización actual FMP; B19 importado no recalcula valoración
   v.cagr5.per = p>0?Math.pow(v.precioObj.perExCash[4]/p,1/5)-1:0;
