@@ -12,7 +12,10 @@ const config = {
   port: readPort(process.env.PORT),
   fmpApiKey: process.env.FMP_API_KEY || '',
   claudeApiKey: process.env.CLAUDE_API_KEY || '',
-  claudeModel: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514'
+  claudeModel: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
+  sqlitePath: process.env.ANALISIS_SQLITE_PATH || path.resolve(__dirname, '../../data/analisis-mercado.sqlite'),
+  persistenceAuthToken: process.env.ANALISIS_PERSISTENCE_TOKEN || '',
+  persistenceProfileId: process.env.ANALISIS_PROFILE_ID || 'loren'
 };
 
 function validateConfig() {
@@ -20,6 +23,7 @@ function validateConfig() {
   if (!config.fmpApiKey) missing.push('FMP_API_KEY');
   if (!config.claudeApiKey) missing.push('CLAUDE_API_KEY');
   if (!process.env.PORT) missing.push('PORT (using default 3001)');
+  if (!config.persistenceAuthToken) missing.push('ANALISIS_PERSISTENCE_TOKEN (persistence endpoints disabled)');
 
   if (missing.length > 0) {
     console.warn(`[config] Missing backend environment variables: ${missing.join(', ')}. Related proxy routes may return controlled errors.`);
