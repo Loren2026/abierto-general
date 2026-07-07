@@ -11,6 +11,8 @@ services:
     restart: unless-stopped
     expose:
       - "3001"
+    volumes:
+      - ${ANALISIS_DATA_DIR:-/data/analisis-mercado}:/app/data
     networks:
       - analisis-internal
 
