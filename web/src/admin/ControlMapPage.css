@@ -621,3 +621,142 @@
   line-height: 1.45;
   padding: 10px 12px;
 }
+
+.control-map-modal-backdrop-full {
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+}
+
+.control-map-modal-full {
+  width: 100%;
+  max-height: none;
+  height: 100vh;
+  border-radius: 0;
+}
+
+.control-map-credentials-fullscreen {
+  display: grid;
+  gap: 14px;
+}
+
+.control-map-credentials-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.control-map-credentials-toolbar input {
+  border: 1px solid var(--control-map-line);
+  border-radius: 10px;
+  color: var(--control-map-ink);
+  font: inherit;
+  padding: 10px 11px;
+}
+
+.control-map-credentials-toolbar button,
+.control-map-credential-actions button,
+.control-map-credentials-table button {
+  border: 1px solid var(--control-map-line);
+  background: var(--control-map-panel-2);
+  border-radius: 10px;
+  color: var(--control-map-ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 8px 10px;
+}
+
+.control-map-danger-button {
+  border-color: #d33f3f !important;
+  color: #8a2424 !important;
+}
+
+.control-map-credential-editor {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+}
+
+.control-map-credential-editor label {
+  color: var(--control-map-ink-soft);
+  display: grid;
+  font-size: 11px;
+  font-weight: 800;
+  gap: 5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.control-map-credential-editor input,
+.control-map-credential-editor textarea {
+  border: 1px solid var(--control-map-line);
+  border-radius: 10px;
+  color: var(--control-map-ink);
+  font: inherit;
+  letter-spacing: 0;
+  padding: 9px 10px;
+  text-transform: none;
+}
+
+.control-map-credential-editor-wide {
+  grid-column: 1 / -1;
+}
+
+.control-map-credential-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.control-map-credentials-table-wrap {
+  border: 1px solid var(--control-map-line);
+  border-radius: 14px;
+  max-height: 48vh;
+  overflow: auto;
+}
+
+.control-map-credentials-table {
+  border-collapse: collapse;
+  min-width: 1280px;
+  width: 100%;
+}
+
+.control-map-credentials-table th,
+.control-map-credentials-table td {
+  border-bottom: 1px solid var(--control-map-line-soft);
+  color: var(--control-map-ink);
+  font-size: 12px;
+  padding: 9px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.control-map-credentials-table th {
+  background: var(--control-map-panel-2);
+  color: var(--control-map-ink-soft);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  position: sticky;
+  text-transform: uppercase;
+  top: 0;
+  z-index: 1;
+}
+
+.control-map-credentials-table td:last-child {
+  display: flex;
+  gap: 6px;
+}
+
+.control-map-expired-row td {
+  background: color-mix(in srgb, #d33f3f 12%, var(--control-map-panel));
+}
+
+@media (max-width: 900px) {
+  .control-map-credentials-toolbar,
+  .control-map-credential-editor {
+    grid-template-columns: 1fr;
+  }
+}
