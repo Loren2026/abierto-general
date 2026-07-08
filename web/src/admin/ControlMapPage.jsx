@@ -222,16 +222,78 @@ function Hero({ node }) {
 }
 
 
+
+const EMPTY_CREDENTIAL = {
+  service: '',
+  type: 'contraseña',
+  username: '',
+  secret: '',
+  notes: '',
+  url: '',
+  expires: '',
+  label: '',
+}
+
+function normalizeCredential(row = {}) {
+  const now = new Date().toISOString()
+  return {
+    id: row.id || window.crypto.randomUUID(),
+    service: row.service || row.servicio || '',
+    type: row.type || row.tipo || 'contraseña',
+    username: row.username || row.usuario || '',
+    secret: row.secret || row.password || row.value || row.valor || '',
+    notes: row.notes || row.notas || '',
+    url: row.url || row.enlace || '',
+    created: row.created || row.fechaCreacion || now,
+    expires: row.expires || row.caducidad || '',
+    label: row.label || row.category || row.etiqueta || '',
+    modified: row.modified || row.fechaModificacion || now,
+  }
+}
+
+function normalizeCredentialsPayload(payload) {
+  if (Array.isArray(payload?.credentials)) return payload.credentials.map(normalizeCredential)
+  if (Array.isArray(payload)) return payload.map(normalizeCredential)
+  if (typeof payload?.text === 'string' && payload.text.trim()) {
+    const now = new Date().toISOString()
+    return [normalizeCredential({
+      service: 'Importado formato anterior',
+      type: 'texto',
+      secret: payload.text,
+      notes: 'Migrado automáticamente desde el textarea antiguo.',
+      created: now,
+      modified: now,
+    })]
+  }
+  return []
+}
+
+function isExpired(value) {
+  if (!value) return false
+  const today = new Date().toISOString().slice(0, 10)
+  return value < today
+}
+
+function credentialMatches(row, query) {
+  if (!query) return true
+  const haystack = Object.values(row).join(' ').toLowerCase()
+  return haystack.includes(query.toLowerCase())
+}
+
 function CredentialsModal({ session, onClose }) {
   const [mode, setMode] = useState('loading')
   const [pin, setPin] = useState('')
   const [newPin, setNewPin] = useState('')
   const [confirmPin, setConfirmPin] = useState('')
-  const [credentialsText, setCredentialsText] = useState('')
   const [hintText, setHintText] = useState('')
-  const [decryptedText, setDecryptedText] = useState('')
   const [showHint, setShowHint] = useState(false)
   const [blob, setBlob] = useState(null)
+  const [credentials, setCredentials] = useState([])
+  const [draft, setDraft] = useState(EMPTY_CREDENTIAL)
+  const [editingId, setEditingId] = useState(null)
+  const [query, setQuery] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
+  const [showSecrets, setShowSecrets] = useState(false)
   const [error, setError] = useState('')
   const [isBusy, setIsBusy] = useState(false)
 
@@ -241,9 +303,8 @@ function CredentialsModal({ session, onClose }) {
       try {
         const data = await adminApiFetch(session, '/api/admin/mapa-control/credentials')
         if (!isMounted) return
-        if (data?.empty || !data?.cipher?.ciphertext) {
-          setMode('setup')
-        } else {
+        if (data?.empty || !data?.cipher?.ciphertext) setMode('setup')
+        else {
           setBlob(data)
           setHintText(data.hint || '')
           setMode('unlock')
@@ -258,37 +319,45 @@ function CredentialsModal({ session, onClose }) {
     return () => { isMounted = false }
   }, [session])
 
-  async function saveEncryptedCredentials() {
-    setError('')
-    if (newPin.length < 8) {
-      setError('El PIN debe tener al menos 8 caracteres.')
-      return
-    }
-    if (newPin !== confirmPin) {
-      setError('Los PIN no coinciden.')
-      return
-    }
-    if (!credentialsText.trim()) {
-      setError('Introduce las credenciales antes de guardar.')
-      return
-    }
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQuery(query), 300)
+    return () => window.clearTimeout(timer)
+  }, [query])
 
+  const filteredCredentials = useMemo(
+    () => credentials.filter((row) => credentialMatches(row, debouncedQuery)),
+    [credentials, debouncedQuery],
+  )
+
+  async function persistCredentials(nextCredentials, pinToUse = pin) {
+    const encryptedBlob = {
+      ...(await encryptCredentialsPayload(pinToUse, { credentials: nextCredentials })),
+      hint: hintText.trim(),
+    }
+    await adminApiFetch(session, '/api/admin/mapa-control/credentials', {
+      method: 'PUT',
+      body: JSON.stringify(encryptedBlob),
+    })
+    setBlob(encryptedBlob)
+    return encryptedBlob
+  }
+
+  async function saveInitialCredentials() {
+    setError('')
+    if (newPin.length < 8) return setError('El PIN debe tener al menos 8 caracteres.')
+    if (newPin !== confirmPin) return setError('Los PIN no coinciden.')
     setIsBusy(true)
     try {
-      const encryptedBlob = {
-        ...(await encryptCredentialsPayload(newPin, { text: credentialsText })),
-        hint: hintText.trim(),
-      }
-      await adminApiFetch(session, '/api/admin/mapa-control/credentials', {
-        method: 'PUT',
-        body: JSON.stringify(encryptedBlob),
-      })
-      setBlob(encryptedBlob)
-      setCredentialsText('')
-      setHintText(encryptedBlob.hint || '')
+      const now = new Date().toISOString()
+      const firstRow = normalizeCredential({ ...draft, created: now, modified: now })
+      const nextCredentials = firstRow.service || firstRow.username || firstRow.secret || firstRow.notes || firstRow.url ? [firstRow] : []
+      await persistCredentials(nextCredentials, newPin)
+      setCredentials(nextCredentials)
+      setPin(newPin)
       setNewPin('')
       setConfirmPin('')
-      setMode('unlock')
+      setDraft(EMPTY_CREDENTIAL)
+      setMode('view')
     } catch (saveError) {
       setError(saveError.message || 'No se pudieron cifrar/guardar las credenciales')
     } finally {
@@ -300,14 +369,88 @@ function CredentialsModal({ session, onClose }) {
     setError('')
     setIsBusy(true)
     try {
-      const credentials = await decryptCredentialsPayload(pin, blob)
-      setDecryptedText(credentials.text || '')
+      const payload = await decryptCredentialsPayload(pin, blob)
+      setCredentials(normalizeCredentialsPayload(payload))
       setShowHint(false)
-      setPin('')
+      setShowSecrets(false)
       setMode('view')
     } catch {
-      setShowHint(true)
-      setError('PIN incorrecto. No se ha revelado ninguna credencial.')
+      setShowHint(false)
+      setError('Contraseña incorrecta. No se ha revelado ninguna credencial.')
+    } finally {
+      setIsBusy(false)
+    }
+  }
+
+  async function saveRow() {
+    setError('')
+    if (!pin) return setError('Sesión sin PIN en memoria. Cierra y desbloquea de nuevo.')
+    const now = new Date().toISOString()
+    const row = normalizeCredential({ ...draft, modified: now, created: draft.created || now })
+    const nextCredentials = editingId
+      ? credentials.map((item) => (item.id === editingId ? { ...row, id: editingId, created: item.created || row.created } : item))
+      : [...credentials, row]
+    setIsBusy(true)
+    try {
+      await persistCredentials(nextCredentials)
+      setCredentials(nextCredentials)
+      setDraft(EMPTY_CREDENTIAL)
+      setEditingId(null)
+      setShowSecrets(false)
+    } catch (saveError) {
+      setError(saveError.message || 'No se pudo guardar la fila cifrada')
+    } finally {
+      setIsBusy(false)
+    }
+  }
+
+  function editRow(row) {
+    setDraft(row)
+    setEditingId(row.id)
+    setShowSecrets(false)
+  }
+
+  async function deleteRow(id) {
+    if (!window.confirm('¿Eliminar esta credencial?')) return
+    const nextCredentials = credentials.filter((row) => row.id !== id)
+    setIsBusy(true)
+    try {
+      await persistCredentials(nextCredentials)
+      setCredentials(nextCredentials)
+      if (editingId === id) {
+        setEditingId(null)
+        setDraft(EMPTY_CREDENTIAL)
+      }
+      setShowSecrets(false)
+    } catch (deleteError) {
+      setError(deleteError.message || 'No se pudo borrar la fila')
+    } finally {
+      setIsBusy(false)
+    }
+  }
+
+  async function resetCredentials() {
+    setError('')
+    const typedPin = window.prompt('Introduce el PIN para confirmar el reset de credenciales.')
+    if (!typedPin) return
+    try {
+      await decryptCredentialsPayload(typedPin, blob)
+    } catch {
+      setError('Contraseña incorrecta. Reset cancelado.')
+      return
+    }
+    const confirmation = window.prompt('Escribe ELIMINAR TODO para confirmar. Se eliminarán TODAS las credenciales y no será recuperable sin backup.')
+    if (confirmation !== 'ELIMINAR TODO') return
+    setIsBusy(true)
+    try {
+      await adminApiFetch(session, '/api/admin/mapa-control/credentials', { method: 'DELETE' })
+      setBlob(null)
+      setCredentials([])
+      setPin('')
+      setDraft(EMPTY_CREDENTIAL)
+      setMode('setup')
+    } catch (resetError) {
+      setError(resetError.message || 'No se pudo resetear el almacén')
     } finally {
       setIsBusy(false)
     }
@@ -317,30 +460,45 @@ function CredentialsModal({ session, onClose }) {
     setPin('')
     setNewPin('')
     setConfirmPin('')
-    setCredentialsText('')
     setHintText('')
-    setDecryptedText('')
+    setCredentials([])
+    setDraft(EMPTY_CREDENTIAL)
+    setEditingId(null)
     setShowHint(false)
+    setShowSecrets(false)
     onClose()
   }
 
+  const form = (
+    <div className="control-map-credential-editor">
+      <label>Servicio/Pertenece a<input value={draft.service} onChange={(event) => setDraft({ ...draft, service: event.target.value })} /></label>
+      <label>Tipo<input value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value })} placeholder="contraseña/token/API key/PIN..." /></label>
+      <label>Usuario/Correo<input value={draft.username} onChange={(event) => setDraft({ ...draft, username: event.target.value })} /></label>
+      <label>Contraseña/Valor secreto<input type="password" value={draft.secret} onChange={(event) => setDraft({ ...draft, secret: event.target.value })} autoComplete="new-password" /></label>
+      <label>URL/Enlace<input value={draft.url} onChange={(event) => setDraft({ ...draft, url: event.target.value })} /></label>
+      <label>Fecha de caducidad/rotación<input type="date" value={draft.expires} onChange={(event) => setDraft({ ...draft, expires: event.target.value })} /></label>
+      <label>Etiqueta/categoría<input value={draft.label} onChange={(event) => setDraft({ ...draft, label: event.target.value })} /></label>
+      <label className="control-map-credential-editor-wide">Notas<textarea value={draft.notes} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} rows={3} /></label>
+    </div>
+  )
+
   return (
-    <div className="control-map-modal-backdrop" role="presentation">
-      <div className="control-map-modal" role="dialog" aria-modal="true" aria-label="Credenciales cifradas">
+    <div className={`control-map-modal-backdrop ${mode === 'view' ? 'control-map-modal-backdrop-full' : ''}`} role="presentation">
+      <div className={`control-map-modal ${mode === 'view' ? 'control-map-modal-full' : ''}`} role="dialog" aria-modal="true" aria-label="Credenciales cifradas">
         <div className="control-map-modal-head">
           <h2>Credenciales</h2>
           <button type="button" onClick={closeAndWipe}>Cerrar</button>
         </div>
-        <p className="control-map-warning">Si olvidas el PIN, las credenciales no se pueden recuperar.</p>
+        <p className="control-map-warning">Si olvidas el PIN, las credenciales no se pueden recuperar. La pista no debe contener datos sensibles.</p>
         {error ? <div className="control-map-error">{error}</div> : null}
         {mode === 'loading' ? <div className="control-map-status">Cargando blob cifrado...</div> : null}
         {mode === 'setup' ? (
           <div className="control-map-form">
             <label>Nuevo PIN<input type="password" value={newPin} onChange={(event) => setNewPin(event.target.value)} autoComplete="new-password" /></label>
             <label>Repetir PIN<input type="password" value={confirmPin} onChange={(event) => setConfirmPin(event.target.value)} autoComplete="new-password" /></label>
-            <label>Credenciales<textarea value={credentialsText} onChange={(event) => setCredentialsText(event.target.value)} rows={8} /></label>
             <label>Pista (opcional) — se muestra si olvidas el PIN. NO pongas aquí datos sensibles.<textarea value={hintText} onChange={(event) => setHintText(event.target.value)} rows={3} /></label>
-            <button type="button" disabled={isBusy} onClick={saveEncryptedCredentials}>{isBusy ? 'Cifrando...' : 'Cifrar y guardar'}</button>
+            {form}
+            <button type="button" disabled={isBusy} onClick={saveInitialCredentials}>{isBusy ? 'Cifrando...' : 'Cifrar y guardar'}</button>
           </div>
         ) : null}
         {mode === 'unlock' ? (
@@ -351,7 +509,33 @@ function CredentialsModal({ session, onClose }) {
             {showHint && hintText ? <div className="control-map-hint">Pista: {hintText}</div> : null}
           </div>
         ) : null}
-        {mode === 'view' ? <pre className="control-map-credentials-view">{decryptedText}</pre> : null}
+        {mode === 'view' ? (
+          <div className="control-map-credentials-fullscreen">
+            <div className="control-map-credentials-toolbar">
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en todos los campos..." />
+              <button type="button" onClick={() => setShowSecrets((current) => !current)}>{showSecrets ? 'Ocultar todo' : 'Mostrar todo'}</button>
+              <button type="button" className="control-map-danger-button" onClick={resetCredentials}>Reset credenciales</button>
+            </div>
+            {form}
+            <div className="control-map-credential-actions">
+              <button type="button" disabled={isBusy} onClick={saveRow}>{editingId ? 'Guardar edición' : 'Añadir fila'}</button>
+              {editingId ? <button type="button" onClick={() => { setEditingId(null); setDraft(EMPTY_CREDENTIAL) }}>Cancelar edición</button> : null}
+            </div>
+            <div className="control-map-credentials-table-wrap">
+              <table className="control-map-credentials-table">
+                <thead><tr><th>Servicio</th><th>Tipo</th><th>Usuario</th><th>Secreto</th><th>Notas</th><th>URL</th><th>Creación</th><th>Caducidad</th><th>Etiqueta</th><th>Modificado</th><th>Acciones</th></tr></thead>
+                <tbody>
+                  {filteredCredentials.map((row) => (
+                    <tr key={row.id} className={isExpired(row.expires) ? 'control-map-expired-row' : ''}>
+                      <td>{row.service}</td><td>{row.type}</td><td>{row.username}</td><td>{showSecrets ? row.secret : '••••••••'}</td><td>{row.notes}</td><td>{row.url ? <a href={row.url} target="_blank" rel="noreferrer">Abrir</a> : ''}</td><td>{row.created?.slice(0, 10)}</td><td>{row.expires}</td><td>{row.label}</td><td>{row.modified?.slice(0, 10)}</td>
+                      <td><button type="button" onClick={() => editRow(row)}>Editar</button><button type="button" onClick={() => deleteRow(row.id)}>Borrar</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   )

@@ -1,4 +1,4 @@
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { access, mkdir, readFile, unlink, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 const defaultStatePath = path.resolve(process.cwd(), 'data/mapa-control/estado.json')
@@ -107,5 +107,26 @@ export async function putControlMapCredentials(req, res) {
   } catch (error) {
     console.error('Error guardando credenciales cifradas del mapa de control:', error)
     return res.status(500).json({ error: 'No se pudieron guardar las credenciales cifradas' })
+  }
+}
+
+
+export async function deleteControlMapCredentials(req, res) {
+  try {
+    const credentialsPath = await resolveCredentialsPath()
+    await unlink(credentialsPath)
+
+    console.info('Blob cifrado de credenciales del mapa de control eliminado', {
+      updatedAt: new Date().toISOString(),
+    })
+
+    return res.json({ status: 'ok' })
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      return res.status(404).json({ error: 'No hay credenciales cifradas configuradas' })
+    }
+
+    console.error('Error eliminando credenciales cifradas del mapa de control:', error)
+    return res.status(500).json({ error: 'No se pudieron eliminar las credenciales cifradas' })
   }
 }
