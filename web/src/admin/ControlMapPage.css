@@ -606,3 +606,18 @@
   font-size: 13px;
   line-height: 1.45;
 }
+
+.control-map-secondary-button {
+  background: transparent !important;
+  color: var(--control-map-ink-soft) !important;
+}
+
+.control-map-hint {
+  background: color-mix(in srgb, var(--control-map-accent) 8%, var(--control-map-panel));
+  border: 1px solid color-mix(in srgb, var(--control-map-accent-line) 28%, var(--control-map-line));
+  border-radius: 10px;
+  color: var(--control-map-ink-soft);
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 10px 12px;
+}

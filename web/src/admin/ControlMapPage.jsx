@@ -228,7 +228,9 @@ function CredentialsModal({ session, onClose }) {
   const [newPin, setNewPin] = useState('')
   const [confirmPin, setConfirmPin] = useState('')
   const [credentialsText, setCredentialsText] = useState('')
+  const [hintText, setHintText] = useState('')
   const [decryptedText, setDecryptedText] = useState('')
+  const [showHint, setShowHint] = useState(false)
   const [blob, setBlob] = useState(null)
   const [error, setError] = useState('')
   const [isBusy, setIsBusy] = useState(false)
@@ -243,6 +245,7 @@ function CredentialsModal({ session, onClose }) {
           setMode('setup')
         } else {
           setBlob(data)
+          setHintText(data.hint || '')
           setMode('unlock')
         }
       } catch (loadError) {
@@ -272,13 +275,17 @@ function CredentialsModal({ session, onClose }) {
 
     setIsBusy(true)
     try {
-      const encryptedBlob = await encryptCredentialsPayload(newPin, { text: credentialsText })
+      const encryptedBlob = {
+        ...(await encryptCredentialsPayload(newPin, { text: credentialsText })),
+        hint: hintText.trim(),
+      }
       await adminApiFetch(session, '/api/admin/mapa-control/credentials', {
         method: 'PUT',
         body: JSON.stringify(encryptedBlob),
       })
       setBlob(encryptedBlob)
       setCredentialsText('')
+      setHintText(encryptedBlob.hint || '')
       setNewPin('')
       setConfirmPin('')
       setMode('unlock')
@@ -295,9 +302,11 @@ function CredentialsModal({ session, onClose }) {
     try {
       const credentials = await decryptCredentialsPayload(pin, blob)
       setDecryptedText(credentials.text || '')
+      setShowHint(false)
       setPin('')
       setMode('view')
     } catch {
+      setShowHint(true)
       setError('PIN incorrecto. No se ha revelado ninguna credencial.')
     } finally {
       setIsBusy(false)
@@ -309,7 +318,9 @@ function CredentialsModal({ session, onClose }) {
     setNewPin('')
     setConfirmPin('')
     setCredentialsText('')
+    setHintText('')
     setDecryptedText('')
+    setShowHint(false)
     onClose()
   }
 
@@ -328,6 +339,7 @@ function CredentialsModal({ session, onClose }) {
             <label>Nuevo PIN<input type="password" value={newPin} onChange={(event) => setNewPin(event.target.value)} autoComplete="new-password" /></label>
             <label>Repetir PIN<input type="password" value={confirmPin} onChange={(event) => setConfirmPin(event.target.value)} autoComplete="new-password" /></label>
             <label>Credenciales<textarea value={credentialsText} onChange={(event) => setCredentialsText(event.target.value)} rows={8} /></label>
+            <label>Pista (opcional) — se muestra si olvidas el PIN. NO pongas aquí datos sensibles.<textarea value={hintText} onChange={(event) => setHintText(event.target.value)} rows={3} /></label>
             <button type="button" disabled={isBusy} onClick={saveEncryptedCredentials}>{isBusy ? 'Cifrando...' : 'Cifrar y guardar'}</button>
           </div>
         ) : null}
@@ -335,6 +347,8 @@ function CredentialsModal({ session, onClose }) {
           <div className="control-map-form">
             <label>PIN<input type="password" value={pin} onChange={(event) => setPin(event.target.value)} autoComplete="current-password" onKeyDown={(event) => { if (event.key === 'Enter') unlockCredentials() }} /></label>
             <button type="button" disabled={isBusy || !pin} onClick={unlockCredentials}>{isBusy ? 'Descifrando...' : 'Desbloquear'}</button>
+            {hintText ? <button type="button" className="control-map-secondary-button" onClick={() => setShowHint((current) => !current)}>{showHint ? 'Ocultar pista' : 'Ver pista'}</button> : null}
+            {showHint && hintText ? <div className="control-map-hint">Pista: {hintText}</div> : null}
           </div>
         ) : null}
         {mode === 'view' ? <pre className="control-map-credentials-view">{decryptedText}</pre> : null}
