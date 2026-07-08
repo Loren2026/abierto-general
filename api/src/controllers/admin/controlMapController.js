@@ -20,11 +20,39 @@ async function resolveStatePath() {
   return configuredPath || defaultStatePath
 }
 
+function validateControlMapState(state) {
+  const warnings = []
+
+  if (!state?.meta?.fecha) {
+    warnings.push('meta.fecha ausente')
+  }
+
+  if (!Array.isArray(state?.ecosistema?.children) || state.ecosistema.children.length === 0) {
+    warnings.push('ecosistema.children ausente o vacío')
+  }
+
+  if (Object.prototype.hasOwnProperty.call(state?.ecosistema || {}, 'bloques')) {
+    warnings.push('ecosistema.bloques existe en raíz; los bloques principales deben vivir en ecosistema.children')
+  }
+
+  for (const [index, child] of (state?.ecosistema?.children || []).entries()) {
+    if (!child?.id) warnings.push(`ecosistema.children[${index}].id ausente`)
+    if (!child?.name) warnings.push(`ecosistema.children[${index}].name ausente`)
+  }
+
+  return warnings
+}
+
 export async function getControlMapState(req, res) {
   try {
     const statePath = await resolveStatePath()
     const rawState = await readFile(statePath, 'utf8')
     const state = JSON.parse(rawState)
+    const warnings = validateControlMapState(state)
+
+    if (warnings.length) {
+      console.warn('Advertencias del estado del mapa de control:', { statePath, warnings })
+    }
 
     return res.json(state)
   } catch (error) {

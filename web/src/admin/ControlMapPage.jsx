@@ -42,10 +42,14 @@ function pctItems(items = []) {
   return Math.round(total / items.length)
 }
 
+function hasBloques(node) {
+  return Array.isArray(node?.bloques) && node.bloques.length > 0
+}
+
 function pct(node) {
   if (!node) return 0
   if (node.personas) return 100
-  if (node.bloques) {
+  if (hasBloques(node)) {
     const allItems = node.bloques
       .filter((bloque) => bloque.tipo !== 'usuarios')
       .flatMap((bloque) => bloque.items || [])
@@ -161,8 +165,9 @@ function Hero({ node }) {
   )
 }
 
-function ControlMapView({ root, path, setPath }) {
+function ControlMapView({ root, path, setPath, fecha }) {
   const currentNode = path.length ? nodeAt(root, path) : root
+  const currentNodeHasBloques = hasBloques(currentNode)
 
   const chain = useMemo(() => {
     const items = [{ name: 'Ecosistema', path: [] }]
@@ -247,7 +252,7 @@ function ControlMapView({ root, path, setPath }) {
           </>
         ) : null}
 
-        {currentNode.bloques ? (
+        {currentNodeHasBloques ? (
           <>
             <Hero node={currentNode} />
             <div className="control-map-level-label">Índice · toca un bloque para entrar</div>
@@ -257,7 +262,7 @@ function ControlMapView({ root, path, setPath }) {
           </>
         ) : null}
 
-        {!currentNode.personas && !currentNode.items && !currentNode.bloques ? (
+        {!currentNode.personas && !currentNode.items && !currentNodeHasBloques ? (
           <>
             {path.length === 0 ? (
               <div className="control-map-note">
@@ -276,7 +281,7 @@ function ControlMapView({ root, path, setPath }) {
         <div className="control-map-legend">
           <span className="control-map-scale"><span>0%</span><span className="control-map-grad" /><span>100%</span></span>
         </div>
-        Mapa de Control · todos los proyectos · 30/06/2026
+        Mapa de Control · todos los proyectos · {fecha || 'sin fecha'}
       </footer>
     </div>
   )
@@ -370,7 +375,7 @@ export default function ControlMapPage() {
           <div className="control-map-wrap"><div className="control-map-status">{error}</div></div>
         ) : null}
         {!isLoading && !error && state?.ecosistema ? (
-          <ControlMapView root={state.ecosistema} path={path} setPath={setPath} />
+          <ControlMapView root={state.ecosistema} path={path} setPath={setPath} fecha={state.meta?.fecha} />
         ) : null}
       </div>
     </AdminLayout>
