@@ -27,8 +27,9 @@ services:
       - ./api/.env
     environment:
       CONTROL_MAP_STATE_PATH: /app/data/mapa-control/estado.json
+      CONTROL_MAP_CREDENTIALS_PATH: /app/data/mapa-control/credentials.enc.json
     volumes:
-      - ./data/mapa-control:/app/data/mapa-control:ro
+      - ./data/mapa-control:/app/data/mapa-control
     restart: unless-stopped
     networks:
       - openclaw-2ns9_default

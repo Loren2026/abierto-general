@@ -472,3 +472,137 @@
     transition: none !important;
   }
 }
+
+.control-map-person-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.control-map-credentials-button {
+  border: 1px solid var(--control-map-accent-line);
+  background: color-mix(in srgb, var(--control-map-accent) 10%, var(--control-map-panel));
+  color: var(--control-map-accent);
+  border-radius: 10px;
+  padding: 8px 11px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.control-map-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(24, 24, 24, 0.42);
+}
+
+.control-map-modal {
+  width: min(560px, 100%);
+  max-height: 86vh;
+  overflow: auto;
+  background: var(--control-map-panel);
+  border: 1px solid var(--control-map-line);
+  border-radius: 16px;
+  box-shadow: 0 24px 70px rgba(20, 18, 14, 0.28);
+  padding: 18px;
+}
+
+.control-map-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.control-map-modal-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.control-map-modal-head button,
+.control-map-form button {
+  border: 1px solid var(--control-map-line);
+  background: var(--control-map-panel-2);
+  color: var(--control-map-ink);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.control-map-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.control-map-warning,
+.control-map-error {
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.control-map-warning {
+  background: color-mix(in srgb, #e8c233 18%, var(--control-map-panel));
+  color: var(--control-map-ink-soft);
+}
+
+.control-map-error {
+  background: color-mix(in srgb, #d33f3f 14%, var(--control-map-panel));
+  color: #8a2424;
+}
+
+.control-map-form {
+  display: grid;
+  gap: 12px;
+}
+
+.control-map-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--control-map-ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.control-map-form input,
+.control-map-form textarea {
+  width: 100%;
+  border: 1px solid var(--control-map-line);
+  background: #fff;
+  color: var(--control-map-ink);
+  border-radius: 10px;
+  padding: 10px 11px;
+  font: inherit;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.control-map-form textarea,
+.control-map-credentials-view {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+}
+
+.control-map-credentials-view {
+  background: #fff;
+  border: 1px solid var(--control-map-line);
+  border-radius: 12px;
+  padding: 14px;
+  max-height: 50vh;
+  overflow: auto;
+  font-size: 13px;
+  line-height: 1.45;
+}

@@ -5,6 +5,62 @@ import useAuthStore from '../store/useAuthStore'
 import './ControlMapPage.css'
 
 const FP = { verde: 100, ambar: 50, gris: 0, rojo: 12 }
+const CREDENTIALS_ITERATIONS = 600000
+const textEncoder = new TextEncoder()
+const textDecoder = new TextDecoder()
+
+
+function bytesToBase64(bytes) {
+  return btoa(String.fromCharCode(...new Uint8Array(bytes)))
+}
+
+function base64ToBytes(value) {
+  return Uint8Array.from(atob(value), (char) => char.charCodeAt(0))
+}
+
+async function deriveCredentialsKey(pin, salt, iterations = CREDENTIALS_ITERATIONS) {
+  const keyMaterial = await window.crypto.subtle.importKey('raw', textEncoder.encode(pin), 'PBKDF2', false, ['deriveKey'])
+  return window.crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt'],
+  )
+}
+
+async function encryptCredentialsPayload(pin, credentials) {
+  const salt = window.crypto.getRandomValues(new Uint8Array(16))
+  const iv = window.crypto.getRandomValues(new Uint8Array(12))
+  const key = await deriveCredentialsKey(pin, salt)
+  const plaintext = textEncoder.encode(JSON.stringify(credentials))
+  const ciphertext = await window.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext)
+
+  return {
+    version: 1,
+    kdf: {
+      name: 'PBKDF2',
+      hash: 'SHA-256',
+      iterations: CREDENTIALS_ITERATIONS,
+      salt: bytesToBase64(salt),
+    },
+    cipher: {
+      name: 'AES-GCM',
+      iv: bytesToBase64(iv),
+      ciphertext: bytesToBase64(ciphertext),
+    },
+    updatedAt: new Date().toISOString(),
+  }
+}
+
+async function decryptCredentialsPayload(pin, blob) {
+  const salt = base64ToBytes(blob.kdf.salt)
+  const iv = base64ToBytes(blob.cipher.iv)
+  const ciphertext = base64ToBytes(blob.cipher.ciphertext)
+  const key = await deriveCredentialsKey(pin, salt, blob.kdf.iterations)
+  const plaintext = await window.crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext)
+  return JSON.parse(textDecoder.decode(plaintext))
+}
 
 function colorFor(value) {
   const p = Math.max(0, Math.min(100, value))
@@ -165,9 +221,132 @@ function Hero({ node }) {
   )
 }
 
-function ControlMapView({ root, path, setPath, fecha }) {
+
+function CredentialsModal({ session, onClose }) {
+  const [mode, setMode] = useState('loading')
+  const [pin, setPin] = useState('')
+  const [newPin, setNewPin] = useState('')
+  const [confirmPin, setConfirmPin] = useState('')
+  const [credentialsText, setCredentialsText] = useState('')
+  const [decryptedText, setDecryptedText] = useState('')
+  const [blob, setBlob] = useState(null)
+  const [error, setError] = useState('')
+  const [isBusy, setIsBusy] = useState(false)
+
+  useEffect(() => {
+    let isMounted = true
+    async function loadBlob() {
+      try {
+        const data = await adminApiFetch(session, '/api/admin/mapa-control/credentials')
+        if (!isMounted) return
+        if (data?.empty || !data?.cipher?.ciphertext) {
+          setMode('setup')
+        } else {
+          setBlob(data)
+          setMode('unlock')
+        }
+      } catch (loadError) {
+        if (!isMounted) return
+        if (loadError.message?.includes('No hay credenciales')) setMode('setup')
+        else setError(loadError.message || 'No se pudo cargar el blob cifrado')
+      }
+    }
+    loadBlob()
+    return () => { isMounted = false }
+  }, [session])
+
+  async function saveEncryptedCredentials() {
+    setError('')
+    if (newPin.length < 8) {
+      setError('El PIN debe tener al menos 8 caracteres.')
+      return
+    }
+    if (newPin !== confirmPin) {
+      setError('Los PIN no coinciden.')
+      return
+    }
+    if (!credentialsText.trim()) {
+      setError('Introduce las credenciales antes de guardar.')
+      return
+    }
+
+    setIsBusy(true)
+    try {
+      const encryptedBlob = await encryptCredentialsPayload(newPin, { text: credentialsText })
+      await adminApiFetch(session, '/api/admin/mapa-control/credentials', {
+        method: 'PUT',
+        body: JSON.stringify(encryptedBlob),
+      })
+      setBlob(encryptedBlob)
+      setCredentialsText('')
+      setNewPin('')
+      setConfirmPin('')
+      setMode('unlock')
+    } catch (saveError) {
+      setError(saveError.message || 'No se pudieron cifrar/guardar las credenciales')
+    } finally {
+      setIsBusy(false)
+    }
+  }
+
+  async function unlockCredentials() {
+    setError('')
+    setIsBusy(true)
+    try {
+      const credentials = await decryptCredentialsPayload(pin, blob)
+      setDecryptedText(credentials.text || '')
+      setPin('')
+      setMode('view')
+    } catch {
+      setError('PIN incorrecto. No se ha revelado ninguna credencial.')
+    } finally {
+      setIsBusy(false)
+    }
+  }
+
+  function closeAndWipe() {
+    setPin('')
+    setNewPin('')
+    setConfirmPin('')
+    setCredentialsText('')
+    setDecryptedText('')
+    onClose()
+  }
+
+  return (
+    <div className="control-map-modal-backdrop" role="presentation">
+      <div className="control-map-modal" role="dialog" aria-modal="true" aria-label="Credenciales cifradas">
+        <div className="control-map-modal-head">
+          <h2>Credenciales</h2>
+          <button type="button" onClick={closeAndWipe}>Cerrar</button>
+        </div>
+        <p className="control-map-warning">Si olvidas el PIN, las credenciales no se pueden recuperar.</p>
+        {error ? <div className="control-map-error">{error}</div> : null}
+        {mode === 'loading' ? <div className="control-map-status">Cargando blob cifrado...</div> : null}
+        {mode === 'setup' ? (
+          <div className="control-map-form">
+            <label>Nuevo PIN<input type="password" value={newPin} onChange={(event) => setNewPin(event.target.value)} autoComplete="new-password" /></label>
+            <label>Repetir PIN<input type="password" value={confirmPin} onChange={(event) => setConfirmPin(event.target.value)} autoComplete="new-password" /></label>
+            <label>Credenciales<textarea value={credentialsText} onChange={(event) => setCredentialsText(event.target.value)} rows={8} /></label>
+            <button type="button" disabled={isBusy} onClick={saveEncryptedCredentials}>{isBusy ? 'Cifrando...' : 'Cifrar y guardar'}</button>
+          </div>
+        ) : null}
+        {mode === 'unlock' ? (
+          <div className="control-map-form">
+            <label>PIN<input type="password" value={pin} onChange={(event) => setPin(event.target.value)} autoComplete="current-password" onKeyDown={(event) => { if (event.key === 'Enter') unlockCredentials() }} /></label>
+            <button type="button" disabled={isBusy || !pin} onClick={unlockCredentials}>{isBusy ? 'Descifrando...' : 'Desbloquear'}</button>
+          </div>
+        ) : null}
+        {mode === 'view' ? <pre className="control-map-credentials-view">{decryptedText}</pre> : null}
+      </div>
+    </div>
+  )
+}
+
+function ControlMapView({ root, path, setPath, fecha, session }) {
   const currentNode = path.length ? nodeAt(root, path) : root
   const currentNodeHasBloques = hasBloques(currentNode)
+  const [credentialsOpen, setCredentialsOpen] = useState(false)
 
   const chain = useMemo(() => {
     const items = [{ name: 'Ecosistema', path: [] }]
@@ -226,8 +405,17 @@ function ControlMapView({ root, path, setPath, fecha }) {
             <div className="control-map-note">El equipo fijo del ecosistema y la función de cada uno.</div>
             {currentNode.personas.map((persona) => (
               <div className="control-map-person" key={persona.nombre}>
-                <div className="control-map-p-name">{persona.nombre}</div>
-                <div className="control-map-p-role">{persona.rol}</div>
+                <div className="control-map-person-head">
+                  <div>
+                    <div className="control-map-p-name">{persona.nombre}</div>
+                    <div className="control-map-p-role">{persona.rol}</div>
+                  </div>
+                  {persona.nombre === 'Loren' ? (
+                    <button className="control-map-credentials-button" type="button" onClick={() => setCredentialsOpen(true)}>
+                      Credenciales
+                    </button>
+                  ) : null}
+                </div>
                 <div className="control-map-p-fn">{persona.fn}</div>
               </div>
             ))}
@@ -276,6 +464,8 @@ function ControlMapView({ root, path, setPath, fecha }) {
           </>
         ) : null}
       </main>
+
+      {credentialsOpen ? <CredentialsModal session={session} onClose={() => setCredentialsOpen(false)} /> : null}
 
       <footer className="control-map-footer">
         <div className="control-map-legend">
@@ -375,7 +565,7 @@ export default function ControlMapPage() {
           <div className="control-map-wrap"><div className="control-map-status">{error}</div></div>
         ) : null}
         {!isLoading && !error && state?.ecosistema ? (
-          <ControlMapView root={state.ecosistema} path={path} setPath={setPath} fecha={state.meta?.fecha} />
+          <ControlMapView root={state.ecosistema} path={path} setPath={setPath} fecha={state.meta?.fecha} session={session} />
         ) : null}
       </div>
     </AdminLayout>
