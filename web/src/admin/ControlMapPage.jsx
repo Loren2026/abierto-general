@@ -6,6 +6,18 @@ import './ControlMapPage.css'
 
 const FP = { verde: 100, ambar: 50, gris: 0, rojo: 12 }
 const CREDENTIALS_ITERATIONS = 600000
+const CREDENTIAL_COLUMNS = [
+  ['service', 'Servicio'],
+  ['type', 'Tipo'],
+  ['username', 'Usuario'],
+  ['secret', 'Secreto'],
+  ['notes', 'Notas'],
+  ['url', 'URL'],
+  ['created', 'Creación'],
+  ['expires', 'Caducidad'],
+  ['label', 'Etiqueta'],
+  ['modified', 'Modificado'],
+]
 const textEncoder = new TextEncoder()
 const textDecoder = new TextDecoder()
 
@@ -306,6 +318,7 @@ function CredentialsModal({ session, onClose }) {
   const [editingId, setEditingId] = useState(null)
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
+  const [columnFilters, setColumnFilters] = useState({})
   const [showSecrets, setShowSecrets] = useState(false)
   const [visibleSecrets, setVisibleSecrets] = useState({})
   const [showCredentialForm, setShowCredentialForm] = useState(false)
@@ -341,8 +354,13 @@ function CredentialsModal({ session, onClose }) {
   }, [query])
 
   const filteredCredentials = useMemo(
-    () => credentials.filter((row) => credentialMatches(row, debouncedQuery)),
-    [credentials, debouncedQuery],
+    () => credentials.filter((row) => credentialMatches(row, debouncedQuery) && CREDENTIAL_COLUMNS.every(([key]) => {
+      const selected = columnFilters[key]
+      if (!selected) return true
+      const value = key === 'created' || key === 'modified' ? row[key]?.slice(0, 10) : row[key]
+      return String(value || '') === selected
+    })),
+    [credentials, debouncedQuery, columnFilters],
   )
 
   const searchTerms = debouncedQuery.toLowerCase().split(/\s+/).filter(Boolean)
@@ -455,6 +473,62 @@ function CredentialsModal({ session, onClose }) {
     }
   }
 
+
+  async function exportCredentials() {
+    setError('')
+    if (!pin) return setError('Sesión sin PIN en memoria. Cierra y desbloquea de nuevo.')
+    setIsBusy(true)
+    try {
+      const exportBlob = await encryptCredentialsPayload(pin, { credentials })
+      const fileBlob = new Blob([JSON.stringify({ ...exportBlob, hint: hintText.trim() }, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(fileBlob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `credenciales-mapa-${new Date().toISOString().slice(0, 10)}.enc.json`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+    } catch (exportError) {
+      setError(exportError.message || 'No se pudo exportar el blob cifrado')
+    } finally {
+      setIsBusy(false)
+    }
+  }
+
+  async function importCredentials(event) {
+    setError('')
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    const importPin = window.prompt('Introduce el PIN del fichero exportado.')
+    if (!importPin) return
+    setIsBusy(true)
+    try {
+      const importedBlob = JSON.parse(await file.text())
+      const payload = await decryptCredentialsPayload(importPin, importedBlob)
+      const importedCredentials = normalizeCredentialsPayload(payload)
+      if (!Array.isArray(importedCredentials)) throw new Error('Formato de credenciales no válido')
+      await adminApiFetch(session, '/api/admin/mapa-control/credentials', {
+        method: 'PUT',
+        body: JSON.stringify(importedBlob),
+      })
+      setPin(importPin)
+      setBlob(importedBlob)
+      setHintText(importedBlob.hint || '')
+      setCredentials(importedCredentials)
+      setColumnFilters({})
+      setQuery('')
+      setDebouncedQuery('')
+      setShowCredentialForm(false)
+      setVisibleSecrets({})
+    } catch (importError) {
+      setError(importError.message || 'No se pudo importar. PIN incorrecto o fichero inválido.')
+    } finally {
+      setIsBusy(false)
+    }
+  }
+
   async function resetCredentials() {
     setError('')
     const typedPin = window.prompt('Introduce el PIN para confirmar el reset de credenciales.')
@@ -502,6 +576,14 @@ function CredentialsModal({ session, onClose }) {
     return Object.fromEntries(keys.map((key) => [key, [...new Set(credentials.map((row) => row[key]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }))]))
   }, [credentials])
 
+  const columnOptions = useMemo(() => Object.fromEntries(CREDENTIAL_COLUMNS.map(([key]) => [
+    key,
+    [...new Set(credentials.map((row) => {
+      const value = key === 'created' || key === 'modified' ? row[key]?.slice(0, 10) : row[key]
+      return value || ''
+    }).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' })),
+  ])), [credentials])
+
   function updateDraftField(field, value) {
     setDraft((current) => ({ ...current, [field]: value }))
   }
@@ -548,9 +630,11 @@ function CredentialsModal({ session, onClose }) {
   return (
     <div className={`control-map-modal-backdrop ${mode === 'view' ? 'control-map-modal-backdrop-full' : ''}`} role="presentation">
       <div className={`control-map-modal ${mode === 'view' ? 'control-map-modal-full' : ''}`} role="dialog" aria-modal="true" aria-label="Credenciales cifradas">
-        <div className="control-map-modal-head">
+        <div className="control-map-modal-head control-map-modal-head-grid">
           {mode === 'view' ? <button type="button" className="control-map-compact-button" onClick={() => { setShowCredentialForm((current) => !current); if (!showCredentialForm) setDraft((current) => ({ ...EMPTY_CREDENTIAL, ...current, expires: current.expires || today })) }}>{showCredentialForm ? 'Ocultar alta' : 'Añadir credencial'}</button> : <span />}
+          {mode === 'view' ? <label className="control-map-compact-button control-map-import-button">Importar<input type="file" accept="application/json,.json" onChange={importCredentials} /></label> : <span />}
           <button type="button" className="control-map-compact-button" onClick={closeAndWipe}>Cerrar</button>
+          {mode === 'view' ? <button type="button" className="control-map-compact-button" onClick={exportCredentials}>Exportar</button> : <span />}
         </div>
         {error ? <div className="control-map-error">{error}</div> : null}
         {mode === 'loading' ? <div className="control-map-status">Cargando blob cifrado...</div> : null}
@@ -583,7 +667,9 @@ function CredentialsModal({ session, onClose }) {
             </div> : null}
             <div className="control-map-credentials-table-wrap">
               <table className="control-map-credentials-table">
-                <thead><tr><th>Servicio</th><th>Tipo</th><th>Usuario</th><th>Secreto</th><th>Notas</th><th>URL</th><th>Creación</th><th>Caducidad</th><th>Etiqueta</th><th>Modificado</th><th>Acciones</th></tr></thead>
+                <thead><tr>{CREDENTIAL_COLUMNS.map(([key, label]) => (
+                  <th key={key}>{label}<select value={columnFilters[key] || ''} onChange={(event) => setColumnFilters((current) => ({ ...current, [key]: event.target.value }))}><option value="">— Todos —</option>{(columnOptions[key] || []).map((value) => <option key={value} value={value}>{value}</option>)}</select></th>
+                ))}<th>Acciones</th></tr></thead>
                 <tbody>
                   {filteredCredentials.map((row) => (
                     <tr key={row.id} className={isExpired(row.expires) ? 'control-map-expired-row' : ''}>

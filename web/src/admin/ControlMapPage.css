@@ -896,3 +896,101 @@
 .control-map-suggestions button {
   background-color: #fff !important;
 }
+
+.control-map-modal-backdrop-full,
+.control-map-modal-full {
+  background: #e2e0da !important;
+}
+
+.control-map-modal-full {
+  border-radius: 0;
+  height: 100dvh;
+  max-height: 100dvh;
+  width: 100vw;
+  padding: clamp(10px, 2vw, 22px);
+}
+
+.control-map-modal-full .control-map-credentials-fullscreen {
+  gap: clamp(10px, 1.8vw, 18px);
+}
+
+.control-map-modal-full,
+.control-map-modal-full input,
+.control-map-modal-full textarea,
+.control-map-modal-full button,
+.control-map-modal-full select {
+  font-size: clamp(12px, 1.6vw, 15px);
+}
+
+.control-map-modal-head-grid {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr);
+  gap: 8px;
+  justify-content: stretch;
+  margin-bottom: clamp(10px, 1.8vw, 16px);
+}
+
+.control-map-modal-head-grid .control-map-compact-button {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  margin: 0 !important;
+  min-height: 34px;
+  width: 100%;
+}
+
+.control-map-import-button {
+  border: 2px solid #22c55e !important;
+  border-radius: 10px;
+  color: var(--control-map-ink);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.control-map-import-button input {
+  display: none;
+}
+
+.control-map-credentials-table-wrap {
+  border-color: #000 !important;
+  border-width: 2px;
+  max-height: min(62dvh, 680px);
+}
+
+.control-map-credentials-table th,
+.control-map-credentials-table td {
+  background: #fff !important;
+  border: 1px solid #000 !important;
+}
+
+.control-map-credentials-table th {
+  color: #111;
+}
+
+.control-map-credentials-table th select {
+  background: #fff;
+  border: 1px solid #000;
+  border-radius: 6px;
+  color: #111;
+  display: block;
+  margin-top: 6px;
+  max-width: 180px;
+  padding: 5px 6px;
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .control-map-modal-full {
+    padding: 8px;
+  }
+
+  .control-map-modal-head-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .control-map-credentials-table th,
+  .control-map-credentials-table td {
+    font-size: 11px;
+    padding: 7px 8px;
+  }
+}
