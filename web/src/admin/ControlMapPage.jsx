@@ -326,7 +326,6 @@ function CredentialsModal({ session, onClose }) {
   const [isBusy, setIsBusy] = useState(false)
   const [isEditingHint, setIsEditingHint] = useState(false)
   const [hintDraft, setHintDraft] = useState('')
-  const [copiedSecret, setCopiedSecret] = useState(null)
   const [activeSuggestField, setActiveSuggestField] = useState(null)
 
   useEffect(() => {
@@ -691,7 +690,6 @@ function CredentialsModal({ session, onClose }) {
             <div className="control-map-credentials-toolbar">
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en todos los campos..." />
               {debouncedQuery ? <span className="control-map-search-count">{filteredCredentials.length} coincidencia{filteredCredentials.length === 1 ? '' : 's'}</span> : null}
-              {copiedSecret ? <span className="control-map-copied-hint">Copiado: {copiedSecret.slice(0, 15)}…</span> : null}
             </div>
             {showCredentialForm ? form : null}
             {showCredentialForm ? <div className="control-map-credential-actions">
