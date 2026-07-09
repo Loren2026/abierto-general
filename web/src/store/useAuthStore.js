@@ -23,7 +23,16 @@ const useAuthStore = create((set, get) => ({
   isLoading: false,
   error: null,
 
-  applyAuthSession: (data) => {
+  applyAuthSession: async (data) => {
+    if (data.session?.accessToken && data.session?.refreshToken) {
+      const { error } = await supabase.auth.setSession({
+        access_token: data.session.accessToken,
+        refresh_token: data.session.refreshToken,
+      });
+
+      if (error) throw error;
+    }
+
     set({
       user: data.user,
       session: data.session,
@@ -46,7 +55,7 @@ const useAuthStore = create((set, get) => ({
       });
 
       const data = await readJsonResponse(response);
-      get().applyAuthSession(data);
+      await get().applyAuthSession(data);
 
       return { success: true };
     } catch (error) {
@@ -97,7 +106,7 @@ const useAuthStore = create((set, get) => ({
       });
 
       const exchangeData = await readJsonResponse(exchangeResponse);
-      get().applyAuthSession(exchangeData);
+      await get().applyAuthSession(exchangeData);
 
       return { success: true };
     } catch (error) {
@@ -113,6 +122,8 @@ const useAuthStore = create((set, get) => ({
     set({ isLoading: true });
     
     try {
+      await supabase.auth.signOut();
+
       const response = await fetch('/api/auth/logout', {
         method: 'POST',
         headers: {
@@ -148,6 +159,8 @@ const useAuthStore = create((set, get) => ({
             expiresAt: session.expires_at,
           },
         });
+      } else {
+        set({ user: null, session: null, csrfToken: null });
       }
     } catch (error) {
       console.error('Error verificando sesión:', error);

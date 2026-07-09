@@ -817,7 +817,7 @@
 
 .control-map-modal-backdrop-full,
 .control-map-modal-full {
-  background: #6c6b68;
+  background: #7b7a77;
 }
 
 .control-map-credential-editor input,
@@ -883,4 +883,16 @@
   border-radius: 4px;
   color: inherit;
   padding: 0 2px;
+}
+
+
+.control-map-credentials-toolbar input,
+.control-map-credential-editor input,
+.control-map-credential-editor textarea,
+.control-map-form input,
+.control-map-form textarea,
+.control-map-secret-toggle,
+.control-map-suggestions,
+.control-map-suggestions button {
+  background-color: #fff !important;
 }

@@ -1,10 +1,15 @@
+import { supabase } from './supabase'
+
 export async function readJson(response) {
   return response.json().catch(() => ({}))
 }
 
 export async function adminApiFetch(session, path, options = {}) {
+  const { data: authData } = await supabase.auth.getSession()
+  const accessToken = authData.session?.access_token || session?.accessToken
+
   const headers = {
-    Authorization: `Bearer ${session?.accessToken}`,
+    Authorization: `Bearer ${accessToken}`,
     ...(options.headers || {}),
   }
 
