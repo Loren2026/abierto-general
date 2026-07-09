@@ -601,11 +601,9 @@ function CredentialsModal({ session, onClose }) {
   )
 }
 
-function ControlMapView({ root, path, setPath, fecha, session }) {
+function ControlMapView({ root, path, setPath, fecha, onOpenCredentials }) {
   const currentNode = path.length ? nodeAt(root, path) : root
   const currentNodeHasBloques = hasBloques(currentNode)
-  const [credentialsOpen, setCredentialsOpen] = useState(false)
-
   const chain = useMemo(() => {
     const items = [{ name: 'Ecosistema', path: [] }]
     let current = root
@@ -669,7 +667,7 @@ function ControlMapView({ root, path, setPath, fecha, session }) {
                     <div className="control-map-p-role">{persona.rol}</div>
                   </div>
                   {persona.nombre === 'Loren' ? (
-                    <button className="control-map-credentials-button" type="button" onClick={() => setCredentialsOpen(true)}>
+                    <button className="control-map-credentials-button" type="button" onClick={onOpenCredentials}>
                       Credenciales
                     </button>
                   ) : null}
@@ -723,7 +721,6 @@ function ControlMapView({ root, path, setPath, fecha, session }) {
         ) : null}
       </main>
 
-      {credentialsOpen ? <CredentialsModal session={session} onClose={() => setCredentialsOpen(false)} /> : null}
 
       <footer className="control-map-footer">
         <div className="control-map-legend">
@@ -741,6 +738,7 @@ export default function ControlMapPage() {
   const [path, setPath] = useState([])
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const [credentialsOpen, setCredentialsOpen] = useState(false)
 
   useEffect(() => {
     const previousManifest = document.querySelector('link[rel="manifest"]')
@@ -823,8 +821,9 @@ export default function ControlMapPage() {
           <div className="control-map-wrap"><div className="control-map-status">{error}</div></div>
         ) : null}
         {!isLoading && !error && state?.ecosistema ? (
-          <ControlMapView root={state.ecosistema} path={path} setPath={setPath} fecha={state.meta?.fecha} session={session} />
+          <ControlMapView root={state.ecosistema} path={path} setPath={setPath} fecha={state.meta?.fecha} onOpenCredentials={() => setCredentialsOpen(true)} />
         ) : null}
+        {credentialsOpen ? <CredentialsModal session={session} onClose={() => setCredentialsOpen(false)} /> : null}
       </div>
     </AdminLayout>
   )
