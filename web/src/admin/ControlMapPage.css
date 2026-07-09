@@ -994,3 +994,28 @@
     padding: 7px 8px;
   }
 }
+
+.control-map-modal-full {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+.control-map-modal-full .control-map-credentials-fullscreen {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.control-map-modal-full .control-map-credentials-table-wrap {
+  flex: 1 1 auto;
+  max-height: none;
+  min-height: 0;
+  overflow: auto;
+}
+
+.control-map-modal-full .control-map-credentials-table {
+  height: 100%;
+}

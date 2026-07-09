@@ -649,7 +649,7 @@ function CredentialsModal({ session, onClose }) {
         ) : null}
         {mode === 'unlock' ? (
           <div className="control-map-form">
-            <div className="control-map-unlock-row"><label>PIN<input type="password" value={pin} onChange={(event) => setPin(event.target.value)} autoComplete="current-password" onKeyDown={(event) => { if (event.key === 'Enter') unlockCredentials() }} /></label>{hintText ? <button type="button" className="control-map-secondary-button" onClick={() => setShowHint((current) => !current)}>{showHint ? 'Ocultar pista' : 'Ver pista'}</button> : null}</div>
+            <div className="control-map-unlock-row"><label>PIN<input type="password" value={pin} onChange={(event) => setPin(event.target.value)} autoComplete="current-password" onKeyDown={(event) => { if (event.key === 'Enter') unlockCredentials() }} /></label>{hintText ? <button type="button" className="control-map-secondary-button" onClick={() => setShowHint((current) => !current)}>{showHint ? 'Ocultar pista' : 'Pista'}</button> : null}</div>
             <button type="button" disabled={isBusy || !pin} onClick={unlockCredentials}>{isBusy ? 'Descifrando...' : 'Desbloquear'}</button>
             {showHint && hintText ? <div className="control-map-hint">Pista: {hintText}</div> : null}
           </div>
