@@ -810,3 +810,77 @@
   overflow-wrap: anywhere;
   text-align: left;
 }
+
+.control-map-modal-backdrop {
+  z-index: 10000;
+}
+
+.control-map-modal-backdrop-full,
+.control-map-modal-full {
+  background: #6c6b68;
+}
+
+.control-map-credential-editor input,
+.control-map-credential-editor textarea,
+.control-map-form input,
+.control-map-form textarea,
+.control-map-credentials-toolbar input {
+  border-color: #f97316 !important;
+  border-width: 2px !important;
+}
+
+.control-map-modal-head button,
+.control-map-form button,
+.control-map-credentials-toolbar button,
+.control-map-credential-actions button,
+.control-map-credentials-table button {
+  border-color: #22c55e !important;
+  border-width: 2px !important;
+}
+
+.control-map-suggest-field {
+  position: relative;
+}
+
+.control-map-suggestions {
+  background: #fff;
+  border: 2px solid #f97316;
+  border-radius: 10px;
+  box-shadow: 0 12px 24px rgba(20, 18, 14, 0.18);
+  left: 0;
+  max-height: 220px;
+  overflow: auto;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 10002;
+}
+
+.control-map-suggestions button {
+  background: #fff !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--control-map-line-soft) !important;
+  color: var(--control-map-ink) !important;
+  display: block;
+  font: inherit;
+  padding: 9px 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.control-map-suggestions button:hover {
+  background: #fff7ed !important;
+}
+
+.control-map-search-count {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.control-map-credentials-table mark {
+  background: #fed7aa;
+  border-radius: 4px;
+  color: inherit;
+  padding: 0 2px;
+}

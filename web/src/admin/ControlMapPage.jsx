@@ -275,9 +275,22 @@ function isExpired(value) {
 }
 
 function credentialMatches(row, query) {
-  if (!query) return true
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean)
+  if (!terms.length) return true
   const haystack = Object.values(row).join(' ').toLowerCase()
-  return haystack.includes(query.toLowerCase())
+  return terms.every((term) => haystack.includes(term))
+}
+
+
+function highlight(value = '', terms = []) {
+  const text = String(value || '')
+  if (!terms.length || !text) return text
+  const escapedTerms = terms.filter(Boolean).map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  if (!escapedTerms.length) return text
+  const regex = new RegExp(`(${escapedTerms.join('|')})`, 'ig')
+  return text.split(regex).map((part, index) => (
+    terms.some((term) => part.toLowerCase() === term.toLowerCase()) ? <mark key={`${part}-${index}`}>{part}</mark> : part
+  ))
 }
 
 function CredentialsModal({ session, onClose }) {
@@ -298,6 +311,7 @@ function CredentialsModal({ session, onClose }) {
   const [showCredentialForm, setShowCredentialForm] = useState(false)
   const [error, setError] = useState('')
   const [isBusy, setIsBusy] = useState(false)
+  const [activeSuggestField, setActiveSuggestField] = useState(null)
 
   useEffect(() => {
     let isMounted = true
@@ -330,6 +344,9 @@ function CredentialsModal({ session, onClose }) {
     () => credentials.filter((row) => credentialMatches(row, debouncedQuery)),
     [credentials, debouncedQuery],
   )
+
+  const searchTerms = debouncedQuery.toLowerCase().split(/\s+/).filter(Boolean)
+
 
   async function persistCredentials(nextCredentials, pinToUse = pin) {
     const encryptedBlob = {
@@ -482,24 +499,49 @@ function CredentialsModal({ session, onClose }) {
 
   const fieldOptions = useMemo(() => {
     const keys = ['service', 'type', 'username', 'url', 'expires', 'label', 'notes']
-    return Object.fromEntries(keys.map((key) => [key, [...new Set(credentials.map((row) => row[key]).filter(Boolean))].sort()]))
+    return Object.fromEntries(keys.map((key) => [key, [...new Set(credentials.map((row) => row[key]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }))]))
   }, [credentials])
+
+  function updateDraftField(field, value) {
+    setDraft((current) => ({ ...current, [field]: value }))
+  }
+
+  function suggestionField(label, field, inputProps = {}) {
+    const options = (fieldOptions[field] || []).filter((value) => value.toLowerCase().includes(String(draft[field] || '').toLowerCase()))
+    return (
+      <label className="control-map-suggest-field">{label}
+        <input
+          value={draft[field] || ''}
+          onFocus={() => setActiveSuggestField(field)}
+          onBlur={() => window.setTimeout(() => setActiveSuggestField((current) => (current === field ? null : current)), 140)}
+          onChange={(event) => updateDraftField(field, event.target.value)}
+          {...inputProps}
+        />
+        {activeSuggestField === field && options.length ? (
+          <div className="control-map-suggestions">
+            {options.map((value) => (
+              <button type="button" key={value} onMouseDown={(event) => { event.preventDefault(); updateDraftField(field, value); setActiveSuggestField(null) }}>{value}</button>
+            ))}
+          </div>
+        ) : null}
+      </label>
+    )
+  }
 
   const today = new Date().toISOString().slice(0, 10)
 
   const form = (
     <div className="control-map-credential-editor">
-      <label>Servicio/Pertenece a<input list="credential-service-options" value={draft.service} onChange={(event) => setDraft({ ...draft, service: event.target.value })} /></label>
-      <label>Tipo<input list="credential-type-options" value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value })} placeholder="contraseña/token/API key/PIN..." /></label>
-      <label>Usuario/Correo<input list="credential-username-options" value={draft.username} onChange={(event) => setDraft({ ...draft, username: event.target.value })} /></label>
+      {suggestionField('Servicio/Pertenece a', 'service')}
+      {suggestionField('Tipo', 'type', { placeholder: 'contraseña/token/API key/PIN...' })}
+      {suggestionField('Usuario/Correo', 'username')}
       <label>Contraseña/Valor secreto<input type="password" value={draft.secret} onChange={(event) => setDraft({ ...draft, secret: event.target.value })} autoComplete="new-password" /></label>
-      <label>URL/Enlace<input list="credential-url-options" value={draft.url} onChange={(event) => setDraft({ ...draft, url: event.target.value })} /></label>
-      <label>Fecha<input list="credential-expires-options" type="date" value={draft.expires || today} onChange={(event) => setDraft({ ...draft, expires: event.target.value })} /></label>
-      <label>Etiqueta/categoría<input list="credential-label-options" value={draft.label} onChange={(event) => setDraft({ ...draft, label: event.target.value })} /></label>
-      <label className="control-map-credential-editor-wide">Notas<textarea value={draft.notes} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} rows={3} /></label>
-      {Object.entries(fieldOptions).map(([key, values]) => (
-        <datalist key={key} id={`credential-${key}-options`}>{values.map((value) => <option key={value} value={value} />)}</datalist>
-      ))}
+      {suggestionField('URL/Enlace', 'url')}
+      {suggestionField('Fecha', 'expires', { type: 'date' })}
+      {suggestionField('Etiqueta/categoría', 'label')}
+      <label className="control-map-credential-editor-wide control-map-suggest-field">Notas<textarea value={draft.notes} onFocus={() => setActiveSuggestField('notes')} onBlur={() => window.setTimeout(() => setActiveSuggestField((current) => (current === 'notes' ? null : current)), 140)} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} rows={3} />
+        {activeSuggestField === 'notes' && fieldOptions.notes?.length ? <div className="control-map-suggestions">{fieldOptions.notes.map((value) => <button type="button" key={value} onMouseDown={(event) => { event.preventDefault(); updateDraftField('notes', value); setActiveSuggestField(null) }}>{value}</button>)}</div> : null}
+      </label>
     </div>
   )
 
@@ -532,6 +574,7 @@ function CredentialsModal({ session, onClose }) {
           <div className="control-map-credentials-fullscreen">
             <div className="control-map-credentials-toolbar">
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en todos los campos..." />
+              {debouncedQuery ? <span className="control-map-search-count">{filteredCredentials.length} coincidencia{filteredCredentials.length === 1 ? '' : 's'}</span> : null}
             </div>
             {showCredentialForm ? form : null}
             {showCredentialForm ? <div className="control-map-credential-actions">
@@ -544,7 +587,7 @@ function CredentialsModal({ session, onClose }) {
                 <tbody>
                   {filteredCredentials.map((row) => (
                     <tr key={row.id} className={isExpired(row.expires) ? 'control-map-expired-row' : ''}>
-                      <td>{row.service}</td><td>{row.type}</td><td>{row.username}</td><td><button type="button" className="control-map-secret-toggle" onClick={() => setVisibleSecrets((current) => ({ ...current, [row.id]: !current[row.id] }))}>{visibleSecrets[row.id] ? row.secret : '••••••••'}</button></td><td>{row.notes}</td><td>{row.url ? <a href={row.url} target="_blank" rel="noreferrer">Abrir</a> : ''}</td><td>{row.created?.slice(0, 10)}</td><td>{row.expires}</td><td>{row.label}</td><td>{row.modified?.slice(0, 10)}</td>
+                      <td>{highlight(row.service, searchTerms)}</td><td>{highlight(row.type, searchTerms)}</td><td>{highlight(row.username, searchTerms)}</td><td><button type="button" className="control-map-secret-toggle" onClick={() => setVisibleSecrets((current) => ({ ...current, [row.id]: !current[row.id] }))}>{visibleSecrets[row.id] ? row.secret : '••••••••'}</button></td><td>{highlight(row.notes, searchTerms)}</td><td>{row.url ? <a href={row.url} target="_blank" rel="noreferrer">Abrir</a> : ''}</td><td>{row.created?.slice(0, 10)}</td><td>{highlight(row.expires, searchTerms)}</td><td>{highlight(row.label, searchTerms)}</td><td>{row.modified?.slice(0, 10)}</td>
                       <td><button type="button" onClick={() => editRow(row)}>Editar</button><button type="button" onClick={() => deleteRow(row.id)}>Borrar</button></td>
                     </tr>
                   ))}
