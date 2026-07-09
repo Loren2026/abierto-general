@@ -1075,16 +1075,7 @@
   text-align: left;
 }
 
-.control-map-copied-hint {
-  background: #fff;
-  border: 2px solid #22c55e;
-  border-radius: 10px;
-  color: var(--control-map-ink);
-  display: inline-block;
-  font-size: 12px;
-  font-weight: 800;
-  padding: 6px 8px;
-}
+
 
 .control-map-hint-editor {
   background: #fff;
