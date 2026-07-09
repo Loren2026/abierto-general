@@ -1053,3 +1053,77 @@
   padding: 10px 11px;
   text-transform: none;
 }
+
+.control-map-credentials-table th,
+.control-map-credentials-table td {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.control-map-credentials-table th select,
+.control-map-credentials-table td input,
+.control-map-credentials-table td textarea {
+  user-select: auto;
+  -webkit-user-select: auto;
+}
+
+.control-map-secret-toggle {
+  background: #fff !important;
+  border-style: dashed !important;
+  max-width: 260px;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.control-map-copied-hint {
+  background: #fff;
+  border: 2px solid #22c55e;
+  border-radius: 10px;
+  color: var(--control-map-ink);
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 8px;
+}
+
+.control-map-hint-editor {
+  background: #fff;
+  border: 2px solid #f97316;
+  border-radius: 12px;
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 12px;
+}
+
+.control-map-hint-editor label {
+  color: var(--control-map-ink-soft);
+  display: grid;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 6px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.control-map-hint-editor textarea {
+  background: #fff;
+  border: 2px solid #f97316;
+  border-radius: 10px;
+  color: var(--control-map-ink);
+  font: inherit;
+  padding: 10px 11px;
+  text-transform: none;
+}
+
+.control-map-modal-full .control-map-credential-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.control-map-modal-full .control-map-credential-form > * {
+  flex-shrink: 0;
+}
