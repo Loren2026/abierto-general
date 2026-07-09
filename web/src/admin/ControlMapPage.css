@@ -1019,3 +1019,37 @@
 .control-map-modal-full .control-map-credentials-table {
   height: 100%;
 }
+
+.control-map-wide-button {
+  grid-column: 1 / -1;
+}
+
+.control-map-hint-editor {
+  background: #fff;
+  border: 2px solid #f97316;
+  border-radius: 12px;
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 12px;
+}
+
+.control-map-hint-editor label {
+  color: var(--control-map-ink-soft);
+  display: grid;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 6px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.control-map-hint-editor textarea {
+  background: #fff;
+  border: 2px solid #f97316;
+  border-radius: 10px;
+  color: var(--control-map-ink);
+  font: inherit;
+  padding: 10px 11px;
+  text-transform: none;
+}
