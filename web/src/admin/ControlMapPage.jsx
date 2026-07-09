@@ -326,6 +326,7 @@ function CredentialsModal({ session, onClose }) {
   const [isBusy, setIsBusy] = useState(false)
   const [isEditingHint, setIsEditingHint] = useState(false)
   const [hintDraft, setHintDraft] = useState('')
+  const [copiedSecret, setCopiedSecret] = useState(null)
   const [activeSuggestField, setActiveSuggestField] = useState(null)
 
   useEffect(() => {
@@ -534,6 +535,28 @@ function CredentialsModal({ session, onClose }) {
 
 
   async function saveHintOnly() {
+    if (copiedSecret) {
+      setTimeout(() => {
+        navigator.clipboard.writeText('').catch(() => {})
+        setCopiedSecret(null)
+      }, 45000)
+    }
+  }
+
+  async function copySecret(text) {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedSecret(text)
+      setTimeout(() => {
+        navigator.clipboard.writeText('').catch(() => {})
+        setCopiedSecret(null)
+      }, 45000)
+    } catch (copyError) {
+      console.error('No se pudo copiar el secreto:', copyError)
+    }
+  }
+
+  async function saveHintOnly() {
     setError('')
     if (!blob) return setError('No hay blob de credenciales cargado.')
     const updatedBlob = { ...blob, hint: hintDraft.trim() }
@@ -662,7 +685,12 @@ function CredentialsModal({ session, onClose }) {
           {mode === 'view' ? <button type="button" className="control-map-compact-button control-map-wide-button" onClick={() => { setHintDraft(hintText); setIsEditingHint((current) => !current) }}>Editar pista</button> : null}
         </div>
         {isEditingHint ? (
-          <div className="control-map-hint-editor">
+          <div className="control-map-hint-editor" onCopy={() => {}}>
+            <label>Pista (opcional) — NO pongas aquí datos sensibles.<textarea value={hintDraft} onChange={(event) => setHintDraft(event.target.value)} rows={3} /></label>
+            <div className="control-map-credential-actions"><button type="button" disabled={isBusy} onClick={saveHintOnly}>Guardar pista</button><button type="button" onClick={() => setIsEditingHint(false)}>Cancelar</button></div>
+          </div>
+        ) : null}
+        {error ? <div className="control-map-error">{error}</div> : null}
             <label>Pista (opcional) — NO pongas aquí datos sensibles.<textarea value={hintDraft} onChange={(event) => setHintDraft(event.target.value)} rows={3} /></label>
             <div className="control-map-credential-actions"><button type="button" disabled={isBusy} onClick={saveHintOnly}>Guardar pista</button><button type="button" onClick={() => setIsEditingHint(false)}>Cancelar</button></div>
           </div>
@@ -690,6 +718,7 @@ function CredentialsModal({ session, onClose }) {
             <div className="control-map-credentials-toolbar">
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en todos los campos..." />
               {debouncedQuery ? <span className="control-map-search-count">{filteredCredentials.length} coincidencia{filteredCredentials.length === 1 ? '' : 's'}</span> : null}
+              {copiedSecret ? <span className="control-map-copied-hint">Copiado: {copiedSecret.slice(0, 15)}…</span> : null}
             </div>
             {showCredentialForm ? form : null}
             {showCredentialForm ? <div className="control-map-credential-actions">
