@@ -324,6 +324,8 @@ function CredentialsModal({ session, onClose }) {
   const [showCredentialForm, setShowCredentialForm] = useState(false)
   const [error, setError] = useState('')
   const [isBusy, setIsBusy] = useState(false)
+  const [isEditingHint, setIsEditingHint] = useState(false)
+  const [hintDraft, setHintDraft] = useState('')
   const [activeSuggestField, setActiveSuggestField] = useState(null)
 
   useEffect(() => {
@@ -522,8 +524,30 @@ function CredentialsModal({ session, onClose }) {
       setDebouncedQuery('')
       setShowCredentialForm(false)
       setVisibleSecrets({})
+      setIsEditingHint(false)
     } catch (importError) {
       setError(importError.message || 'No se pudo importar. PIN incorrecto o fichero inválido.')
+    } finally {
+      setIsBusy(false)
+    }
+  }
+
+
+  async function saveHintOnly() {
+    setError('')
+    if (!blob) return setError('No hay blob de credenciales cargado.')
+    const updatedBlob = { ...blob, hint: hintDraft.trim() }
+    setIsBusy(true)
+    try {
+      await adminApiFetch(session, '/api/admin/mapa-control/credentials', {
+        method: 'PUT',
+        body: JSON.stringify(updatedBlob),
+      })
+      setBlob(updatedBlob)
+      setHintText(updatedBlob.hint || '')
+      setIsEditingHint(false)
+    } catch (hintError) {
+      setError(hintError.message || 'No se pudo guardar la pista')
     } finally {
       setIsBusy(false)
     }
@@ -635,7 +659,14 @@ function CredentialsModal({ session, onClose }) {
           {mode === 'view' ? <label className="control-map-compact-button control-map-import-button">Importar<input type="file" accept="application/json,.json" onChange={importCredentials} /></label> : <span />}
           <button type="button" className="control-map-compact-button" onClick={closeAndWipe}>Cerrar</button>
           {mode === 'view' ? <button type="button" className="control-map-compact-button" onClick={exportCredentials}>Exportar</button> : <span />}
+          {mode === 'view' ? <button type="button" className="control-map-compact-button control-map-wide-button" onClick={() => { setHintDraft(hintText); setIsEditingHint((current) => !current) }}>Editar pista</button> : null}
         </div>
+        {isEditingHint ? (
+          <div className="control-map-hint-editor">
+            <label>Pista (opcional) — NO pongas aquí datos sensibles.<textarea value={hintDraft} onChange={(event) => setHintDraft(event.target.value)} rows={3} /></label>
+            <div className="control-map-credential-actions"><button type="button" disabled={isBusy} onClick={saveHintOnly}>Guardar pista</button><button type="button" onClick={() => setIsEditingHint(false)}>Cancelar</button></div>
+          </div>
+        ) : null}
         {error ? <div className="control-map-error">{error}</div> : null}
         {mode === 'loading' ? <div className="control-map-status">Cargando blob cifrado...</div> : null}
         {mode === 'setup' ? (
@@ -649,7 +680,7 @@ function CredentialsModal({ session, onClose }) {
         ) : null}
         {mode === 'unlock' ? (
           <div className="control-map-form">
-            <div className="control-map-unlock-row"><label>PIN<input type="password" value={pin} onChange={(event) => setPin(event.target.value)} autoComplete="current-password" onKeyDown={(event) => { if (event.key === 'Enter') unlockCredentials() }} /></label>{hintText ? <button type="button" className="control-map-secondary-button" onClick={() => setShowHint((current) => !current)}>{showHint ? 'Ocultar pista' : 'Ver pista'}</button> : null}</div>
+            <div className="control-map-unlock-row"><label>PIN<input type="password" value={pin} onChange={(event) => setPin(event.target.value)} autoComplete="current-password" onKeyDown={(event) => { if (event.key === 'Enter') unlockCredentials() }} /></label>{hintText ? <button type="button" className="control-map-secondary-button" onClick={() => setShowHint((current) => !current)}>{showHint ? 'Ocultar pista' : 'Pista'}</button> : null}</div>
             <button type="button" disabled={isBusy || !pin} onClick={unlockCredentials}>{isBusy ? 'Descifrando...' : 'Desbloquear'}</button>
             {showHint && hintText ? <div className="control-map-hint">Pista: {hintText}</div> : null}
           </div>
