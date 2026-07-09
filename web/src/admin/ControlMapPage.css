@@ -760,3 +760,53 @@
     grid-template-columns: 1fr;
   }
 }
+
+.control-map-modal-backdrop-full {
+  background: #d8d5cf;
+}
+
+.control-map-modal-full {
+  background: #d8d5cf;
+}
+
+.control-map-compact-button {
+  font-size: 12px !important;
+  min-height: 30px;
+  padding: 6px 9px !important;
+  width: 132px;
+}
+
+.control-map-modal-head {
+  justify-content: flex-start;
+}
+
+.control-map-modal-head .control-map-compact-button:last-child {
+  margin-left: auto;
+}
+
+.control-map-unlock-row {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.control-map-credentials-toolbar {
+  grid-template-columns: minmax(220px, 1fr);
+}
+
+.control-map-credentials-toolbar input,
+.control-map-credential-editor input,
+.control-map-credential-editor textarea,
+.control-map-form input,
+.control-map-form textarea {
+  background: #fff !important;
+}
+
+.control-map-secret-toggle {
+  background: #fff !important;
+  border-style: dashed !important;
+  max-width: 260px;
+  overflow-wrap: anywhere;
+  text-align: left;
+}

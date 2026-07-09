@@ -294,6 +294,8 @@ function CredentialsModal({ session, onClose }) {
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [showSecrets, setShowSecrets] = useState(false)
+  const [visibleSecrets, setVisibleSecrets] = useState({})
+  const [showCredentialForm, setShowCredentialForm] = useState(false)
   const [error, setError] = useState('')
   const [isBusy, setIsBusy] = useState(false)
 
@@ -373,6 +375,8 @@ function CredentialsModal({ session, onClose }) {
       setCredentials(normalizeCredentialsPayload(payload))
       setShowHint(false)
       setShowSecrets(false)
+      setVisibleSecrets({})
+      setShowCredentialForm(false)
       setMode('view')
     } catch {
       setShowHint(false)
@@ -396,7 +400,9 @@ function CredentialsModal({ session, onClose }) {
       setCredentials(nextCredentials)
       setDraft(EMPTY_CREDENTIAL)
       setEditingId(null)
+      setShowCredentialForm(false)
       setShowSecrets(false)
+      setVisibleSecrets({})
     } catch (saveError) {
       setError(saveError.message || 'No se pudo guardar la fila cifrada')
     } finally {
@@ -407,6 +413,7 @@ function CredentialsModal({ session, onClose }) {
   function editRow(row) {
     setDraft(row)
     setEditingId(row.id)
+    setShowCredentialForm(true)
     setShowSecrets(false)
   }
 
@@ -420,8 +427,10 @@ function CredentialsModal({ session, onClose }) {
       if (editingId === id) {
         setEditingId(null)
         setDraft(EMPTY_CREDENTIAL)
+        setShowCredentialForm(false)
       }
       setShowSecrets(false)
+      setVisibleSecrets({})
     } catch (deleteError) {
       setError(deleteError.message || 'No se pudo borrar la fila')
     } finally {
@@ -466,19 +475,31 @@ function CredentialsModal({ session, onClose }) {
     setEditingId(null)
     setShowHint(false)
     setShowSecrets(false)
+    setVisibleSecrets({})
+    setShowCredentialForm(false)
     onClose()
   }
 
+  const fieldOptions = useMemo(() => {
+    const keys = ['service', 'type', 'username', 'url', 'expires', 'label', 'notes']
+    return Object.fromEntries(keys.map((key) => [key, [...new Set(credentials.map((row) => row[key]).filter(Boolean))].sort()]))
+  }, [credentials])
+
+  const today = new Date().toISOString().slice(0, 10)
+
   const form = (
     <div className="control-map-credential-editor">
-      <label>Servicio/Pertenece a<input value={draft.service} onChange={(event) => setDraft({ ...draft, service: event.target.value })} /></label>
-      <label>Tipo<input value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value })} placeholder="contraseña/token/API key/PIN..." /></label>
-      <label>Usuario/Correo<input value={draft.username} onChange={(event) => setDraft({ ...draft, username: event.target.value })} /></label>
+      <label>Servicio/Pertenece a<input list="credential-service-options" value={draft.service} onChange={(event) => setDraft({ ...draft, service: event.target.value })} /></label>
+      <label>Tipo<input list="credential-type-options" value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value })} placeholder="contraseña/token/API key/PIN..." /></label>
+      <label>Usuario/Correo<input list="credential-username-options" value={draft.username} onChange={(event) => setDraft({ ...draft, username: event.target.value })} /></label>
       <label>Contraseña/Valor secreto<input type="password" value={draft.secret} onChange={(event) => setDraft({ ...draft, secret: event.target.value })} autoComplete="new-password" /></label>
-      <label>URL/Enlace<input value={draft.url} onChange={(event) => setDraft({ ...draft, url: event.target.value })} /></label>
-      <label>Fecha de caducidad/rotación<input type="date" value={draft.expires} onChange={(event) => setDraft({ ...draft, expires: event.target.value })} /></label>
-      <label>Etiqueta/categoría<input value={draft.label} onChange={(event) => setDraft({ ...draft, label: event.target.value })} /></label>
+      <label>URL/Enlace<input list="credential-url-options" value={draft.url} onChange={(event) => setDraft({ ...draft, url: event.target.value })} /></label>
+      <label>Fecha<input list="credential-expires-options" type="date" value={draft.expires || today} onChange={(event) => setDraft({ ...draft, expires: event.target.value })} /></label>
+      <label>Etiqueta/categoría<input list="credential-label-options" value={draft.label} onChange={(event) => setDraft({ ...draft, label: event.target.value })} /></label>
       <label className="control-map-credential-editor-wide">Notas<textarea value={draft.notes} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} rows={3} /></label>
+      {Object.entries(fieldOptions).map(([key, values]) => (
+        <datalist key={key} id={`credential-${key}-options`}>{values.map((value) => <option key={value} value={value} />)}</datalist>
+      ))}
     </div>
   )
 
@@ -486,10 +507,9 @@ function CredentialsModal({ session, onClose }) {
     <div className={`control-map-modal-backdrop ${mode === 'view' ? 'control-map-modal-backdrop-full' : ''}`} role="presentation">
       <div className={`control-map-modal ${mode === 'view' ? 'control-map-modal-full' : ''}`} role="dialog" aria-modal="true" aria-label="Credenciales cifradas">
         <div className="control-map-modal-head">
-          <h2>Credenciales</h2>
-          <button type="button" onClick={closeAndWipe}>Cerrar</button>
+          {mode === 'view' ? <button type="button" className="control-map-compact-button" onClick={() => { setShowCredentialForm((current) => !current); if (!showCredentialForm) setDraft((current) => ({ ...EMPTY_CREDENTIAL, ...current, expires: current.expires || today })) }}>{showCredentialForm ? 'Ocultar alta' : 'Añadir credencial'}</button> : <span />}
+          <button type="button" className="control-map-compact-button" onClick={closeAndWipe}>Cerrar</button>
         </div>
-        <p className="control-map-warning">Si olvidas el PIN, las credenciales no se pueden recuperar. La pista no debe contener datos sensibles.</p>
         {error ? <div className="control-map-error">{error}</div> : null}
         {mode === 'loading' ? <div className="control-map-status">Cargando blob cifrado...</div> : null}
         {mode === 'setup' ? (
@@ -503,9 +523,8 @@ function CredentialsModal({ session, onClose }) {
         ) : null}
         {mode === 'unlock' ? (
           <div className="control-map-form">
-            <label>PIN<input type="password" value={pin} onChange={(event) => setPin(event.target.value)} autoComplete="current-password" onKeyDown={(event) => { if (event.key === 'Enter') unlockCredentials() }} /></label>
+            <div className="control-map-unlock-row"><label>PIN<input type="password" value={pin} onChange={(event) => setPin(event.target.value)} autoComplete="current-password" onKeyDown={(event) => { if (event.key === 'Enter') unlockCredentials() }} /></label>{hintText ? <button type="button" className="control-map-secondary-button" onClick={() => setShowHint((current) => !current)}>{showHint ? 'Ocultar pista' : 'Ver pista'}</button> : null}</div>
             <button type="button" disabled={isBusy || !pin} onClick={unlockCredentials}>{isBusy ? 'Descifrando...' : 'Desbloquear'}</button>
-            {hintText ? <button type="button" className="control-map-secondary-button" onClick={() => setShowHint((current) => !current)}>{showHint ? 'Ocultar pista' : 'Ver pista'}</button> : null}
             {showHint && hintText ? <div className="control-map-hint">Pista: {hintText}</div> : null}
           </div>
         ) : null}
@@ -513,21 +532,19 @@ function CredentialsModal({ session, onClose }) {
           <div className="control-map-credentials-fullscreen">
             <div className="control-map-credentials-toolbar">
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en todos los campos..." />
-              <button type="button" onClick={() => setShowSecrets((current) => !current)}>{showSecrets ? 'Ocultar todo' : 'Mostrar todo'}</button>
-              <button type="button" className="control-map-danger-button" onClick={resetCredentials}>Reset credenciales</button>
             </div>
-            {form}
-            <div className="control-map-credential-actions">
+            {showCredentialForm ? form : null}
+            {showCredentialForm ? <div className="control-map-credential-actions">
               <button type="button" disabled={isBusy} onClick={saveRow}>{editingId ? 'Guardar edición' : 'Añadir fila'}</button>
-              {editingId ? <button type="button" onClick={() => { setEditingId(null); setDraft(EMPTY_CREDENTIAL) }}>Cancelar edición</button> : null}
-            </div>
+              {editingId ? <button type="button" onClick={() => { setEditingId(null); setDraft(EMPTY_CREDENTIAL); setShowCredentialForm(false) }}>Cancelar edición</button> : null}
+            </div> : null}
             <div className="control-map-credentials-table-wrap">
               <table className="control-map-credentials-table">
                 <thead><tr><th>Servicio</th><th>Tipo</th><th>Usuario</th><th>Secreto</th><th>Notas</th><th>URL</th><th>Creación</th><th>Caducidad</th><th>Etiqueta</th><th>Modificado</th><th>Acciones</th></tr></thead>
                 <tbody>
                   {filteredCredentials.map((row) => (
                     <tr key={row.id} className={isExpired(row.expires) ? 'control-map-expired-row' : ''}>
-                      <td>{row.service}</td><td>{row.type}</td><td>{row.username}</td><td>{showSecrets ? row.secret : '••••••••'}</td><td>{row.notes}</td><td>{row.url ? <a href={row.url} target="_blank" rel="noreferrer">Abrir</a> : ''}</td><td>{row.created?.slice(0, 10)}</td><td>{row.expires}</td><td>{row.label}</td><td>{row.modified?.slice(0, 10)}</td>
+                      <td>{row.service}</td><td>{row.type}</td><td>{row.username}</td><td><button type="button" className="control-map-secret-toggle" onClick={() => setVisibleSecrets((current) => ({ ...current, [row.id]: !current[row.id] }))}>{visibleSecrets[row.id] ? row.secret : '••••••••'}</button></td><td>{row.notes}</td><td>{row.url ? <a href={row.url} target="_blank" rel="noreferrer">Abrir</a> : ''}</td><td>{row.created?.slice(0, 10)}</td><td>{row.expires}</td><td>{row.label}</td><td>{row.modified?.slice(0, 10)}</td>
                       <td><button type="button" onClick={() => editRow(row)}>Editar</button><button type="button" onClick={() => deleteRow(row.id)}>Borrar</button></td>
                     </tr>
                   ))}
