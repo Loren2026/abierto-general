@@ -321,6 +321,9 @@ function CredentialsModal({ session, onClose }) {
   const [columnFilters, setColumnFilters] = useState({})
   const [showSecrets, setShowSecrets] = useState(false)
   const [visibleSecrets, setVisibleSecrets] = useState({})
+  const [showDraftSecret, setShowDraftSecret] = useState(false)
+  const [editingRowId, setEditingRowId] = useState(null)
+  const [editingRowDraft, setEditingRowDraft] = useState(null)
   const [showCredentialForm, setShowCredentialForm] = useState(false)
   const [error, setError] = useState('')
   const [isBusy, setIsBusy] = useState(false)
@@ -641,7 +644,7 @@ function CredentialsModal({ session, onClose }) {
       {suggestionField('Servicio/Pertenece a', 'service')}
       {suggestionField('Tipo', 'type', { placeholder: 'contraseña/token/API key/PIN...' })}
       {suggestionField('Usuario/Correo', 'username')}
-      <label>Contraseña/Valor secreto<input type="password" value={draft.secret} onChange={(event) => setDraft({ ...draft, secret: event.target.value })} autoComplete="new-password" /></label>
+      <label>Contraseña/Valor secreto<button type="button" className="control-map-secret-toggle" onClick={() => setShowDraftSecret((current) => !current)}>{showDraftSecret ? '••••••••' : (draft.secret || '••••••••')}</button><input type={showDraftSecret ? 'text' : 'password'} value={draft.secret} onChange={(event) => setDraft({ ...draft, secret: event.target.value })} autoComplete="new-password" /></label>
       {suggestionField('URL/Enlace', 'url')}
       {suggestionField('Caducidad / Rotación', 'expires', { type: 'date' })}
       {suggestionField('Etiqueta/categoría', 'label')}
@@ -660,7 +663,6 @@ function CredentialsModal({ session, onClose }) {
           {mode === 'view' ? <label className="control-map-compact-button control-map-import-button">Importar<input type="file" accept="application/json,.json" onChange={importCredentials} /></label> : <span />}
           <button type="button" className="control-map-compact-button" onClick={closeAndWipe}>Cerrar</button>
           {mode === 'view' ? <button type="button" className="control-map-compact-button" onClick={exportCredentials}>Exportar</button> : <span />}
-          {mode === 'view' ? <button type="button" className="control-map-compact-button control-map-wide-button" onClick={() => { setHintDraft(hintText); setIsEditingHint((current) => !current) }}>Editar pista</button> : null}
         </div>
         {isEditingHint ? (
           <div className="control-map-hint-editor">
@@ -706,8 +708,8 @@ function CredentialsModal({ session, onClose }) {
                 <tbody>
                   {filteredCredentials.map((row) => (
                     <tr key={row.id} className={isExpired(row.expires) ? 'control-map-expired-row' : ''}>
-                      <td>{highlight(row.service, searchTerms)}</td><td>{highlight(row.type, searchTerms)}</td><td>{highlight(row.username, searchTerms)}</td><td><button type="button" className="control-map-secret-toggle" onClick={() => setVisibleSecrets((current) => ({ ...current, [row.id]: !current[row.id] }))}>{visibleSecrets[row.id] ? row.secret : '••••••••'}</button></td><td>{highlight(row.notes, searchTerms)}</td><td>{row.url ? <a href={row.url} target="_blank" rel="noreferrer">Abrir</a> : ''}</td><td>{row.created?.slice(0, 10)}</td><td>{highlight(row.expires, searchTerms)}</td><td>{highlight(row.label, searchTerms)}</td><td>{row.modified?.slice(0, 10)}</td>
-                      <td><button type="button" onClick={() => editRow(row)}>Editar</button><button type="button" onClick={() => deleteRow(row.id)}>Borrar</button></td>
+                      <td>{highlight(row.service, searchTerms)}</td><td>{highlight(row.type, searchTerms)}</td><td>{highlight(row.username, searchTerms)}</td><td><button type="button" className="control-map-secret-toggle" onClick={() => toggleRowSecret(row.id)}>{visibleSecrets[row.id] ? <span className="control-map-secret-text">{row.secret}</span> : '••••••••'}</button></td><td>{highlight(row.notes, searchTerms)}</td><td>{row.url ? <a href={row.url} target="_blank" rel="noreferrer">Abrir</a> : ''}</td><td>{row.created?.slice(0, 10)}</td><td>{highlight(row.expires, searchTerms)}</td><td>{highlight(row.label, searchTerms)}</td><td>{row.modified?.slice(0, 10)}</td>
+                      <td>{editingRowId === row.id ? <button type="button" onClick={() => saveRowEdit(row.id)}>Grabar</button> : <button type="button" onClick={() => toggleRowEdit(row.id)}>Editar</button>}<button type="button" onClick={() => deleteRow(row.id)}>Borrar</button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -747,6 +749,46 @@ function ControlMapView({ root, path, setPath, fecha, onOpenCredentials }) {
 
   function goTo(targetPath) {
     setPath(targetPath)
+  }
+
+  function toggleDraftSecret() {
+    setShowDraftSecret((current) => !current)
+  }
+
+  function toggleRowSecret(id) {
+    setVisibleSecrets((current) => ({ ...current, [id]: !current[id] }))
+  }
+
+  function toggleRowEdit(id) {
+    if (editingRowId === id) {
+      setEditingRowId(null)
+      setEditingRowDraft(null)
+    } else {
+      const row = credentials.find((c) => c.id === id)
+      if (row) {
+        setEditingRowId(id)
+        setEditingRowDraft({ ...row })
+      }
+    }
+  }
+
+  function saveRowEdit(id) {
+    const index = credentials.findIndex((c) => c.id === id)
+    if (index !== -1 && editingRowDraft) {
+      const updated = normalizeCredential(editingRowDraft)
+      setCredentials((current) => {
+        const newCredentials = [...current]
+        newCredentials[index] = updated
+        return newCredentials
+      })
+      setEditingRowId(null)
+      setEditingRowDraft(null)
+    }
+  }
+
+  function cancelRowEdit() {
+    setEditingRowId(null)
+    setEditingRowDraft(null)
   }
 
   return (

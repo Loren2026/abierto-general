@@ -809,6 +809,13 @@
   max-width: 260px;
   overflow-wrap: anywhere;
   text-align: left;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.control-map-secret-text {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .control-map-modal-backdrop {
