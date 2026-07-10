@@ -1027,10 +1027,6 @@
   height: 100%;
 }
 
-.control-map-wide-button {
-  grid-column: 1 / -1;
-}
-
 .control-map-hint-editor {
   background: #fff;
   border: 2px solid #f97316;
