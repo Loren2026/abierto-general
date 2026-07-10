@@ -643,7 +643,7 @@ function CredentialsModal({ session, onClose }) {
       {suggestionField('Usuario/Correo', 'username')}
       <label>Contraseña/Valor secreto<input type="password" value={draft.secret} onChange={(event) => setDraft({ ...draft, secret: event.target.value })} autoComplete="new-password" /></label>
       {suggestionField('URL/Enlace', 'url')}
-      {suggestionField('Fecha', 'expires', { type: 'date' })}
+      {suggestionField('Caducidad / Rotación', 'expires', { type: 'date' })}
       {suggestionField('Etiqueta/categoría', 'label')}
       <label>Creación<input type="date" value={draft.created?.slice(0, 10) || ''} onChange={(event) => setDraft({ ...draft, created: event.target.value })} /></label>
       <label className="control-map-credential-editor-wide control-map-suggest-field">Notas<textarea value={draft.notes} onFocus={() => setActiveSuggestField('notes')} onBlur={() => window.setTimeout(() => setActiveSuggestField((current) => (current === 'notes' ? null : current)), 140)} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} rows={3} />
