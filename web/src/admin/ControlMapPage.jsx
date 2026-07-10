@@ -655,7 +655,7 @@ function CredentialsModal({ session, onClose }) {
     <div className={`control-map-modal-backdrop ${mode === 'view' ? 'control-map-modal-backdrop-full' : ''}`} role="presentation">
       <div className={`control-map-modal ${mode === 'view' ? 'control-map-modal-full' : ''}`} role="dialog" aria-modal="true" aria-label="Credenciales cifradas">
         <div className="control-map-modal-head control-map-modal-head-grid">
-          {mode === 'view' ? <button type="button" className="control-map-compact-button" onClick={() => { setShowCredentialForm((current) => !current); if (!showCredentialForm) setDraft((current) => ({ ...EMPTY_CREDENTIAL, ...current, expires: current.expires || today })) }}>{showCredentialForm ? 'Ocultar alta' : 'Añadir credencial'}</button> : <span />}
+          {mode === 'view' ? <button type="button" className="control-map-compact-button" onClick={() => { setShowCredentialForm((current) => !current); if (!showCredentialForm) setDraft((current) => ({ ...EMPTY_CREDENTIAL, ...current, expires: current.expires || '' })) }}>{showCredentialForm ? 'Ocultar alta' : 'Añadir credencial'}</button> : <span />}
           {mode === 'view' ? <label className="control-map-compact-button control-map-import-button">Importar<input type="file" accept="application/json,.json" onChange={importCredentials} /></label> : <span />}
           <button type="button" className="control-map-compact-button" onClick={closeAndWipe}>Cerrar</button>
           {mode === 'view' ? <button type="button" className="control-map-compact-button" onClick={exportCredentials}>Exportar</button> : <span />}
@@ -688,6 +688,7 @@ function CredentialsModal({ session, onClose }) {
         {mode === 'view' ? (
           <div className="control-map-credentials-fullscreen">
             <div className="control-map-credentials-toolbar">
+              <button type="button" className="control-map-compact-button control-map-wide-button" onClick={() => { setHintDraft(hintText); setIsEditingHint((current) => !current) }}>Editar pista</button>
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en todos los campos..." />
               {debouncedQuery ? <span className="control-map-search-count">{filteredCredentials.length} coincidencia{filteredCredentials.length === 1 ? '' : 's'}</span> : null}
             </div>
