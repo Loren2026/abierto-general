@@ -645,6 +645,7 @@ function CredentialsModal({ session, onClose }) {
       {suggestionField('URL/Enlace', 'url')}
       {suggestionField('Fecha', 'expires', { type: 'date' })}
       {suggestionField('Etiqueta/categoría', 'label')}
+      <label>Creación<input type="date" value={draft.created?.slice(0, 10) || ''} onChange={(event) => setDraft({ ...draft, created: event.target.value })} /></label>
       <label className="control-map-credential-editor-wide control-map-suggest-field">Notas<textarea value={draft.notes} onFocus={() => setActiveSuggestField('notes')} onBlur={() => window.setTimeout(() => setActiveSuggestField((current) => (current === 'notes' ? null : current)), 140)} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} rows={3} />
         {activeSuggestField === 'notes' && fieldOptions.notes?.length ? <div className="control-map-suggestions">{fieldOptions.notes.map((value) => <button type="button" key={value} onMouseDown={(event) => { event.preventDefault(); updateDraftField('notes', value); setActiveSuggestField(null) }}>{value}</button>)}</div> : null}
       </label>
