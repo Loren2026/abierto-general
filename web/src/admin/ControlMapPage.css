@@ -642,7 +642,7 @@
 
 .control-map-credentials-toolbar {
   display: grid;
-  grid-template-columns: auto minmax(220px, 1fr) auto;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
   align-items: center;
 }
