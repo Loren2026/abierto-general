@@ -755,7 +755,6 @@
 }
 
 @media (max-width: 900px) {
-  .control-map-credentials-toolbar,
   .control-map-credential-editor {
     grid-template-columns: 1fr;
   }
@@ -792,7 +791,7 @@
 }
 
 .control-map-credentials-toolbar {
-  grid-template-columns: minmax(220px, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .control-map-credentials-toolbar input,
@@ -883,6 +882,7 @@
   color: #fff;
   font-size: 12px;
   font-weight: 800;
+  grid-column: 1 / -1;
 }
 
 .control-map-credentials-table mark {
@@ -995,6 +995,10 @@
     grid-template-columns: 1fr 1fr;
   }
 
+  .control-map-credentials-toolbar {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .control-map-credentials-table th,
   .control-map-credentials-table td {
     font-size: 11px;
@@ -1076,6 +1080,46 @@
   max-width: 260px;
   overflow-wrap: anywhere;
   text-align: left;
+}
+
+.control-map-credentials-toolbar .control-map-compact-button,
+.control-map-credentials-toolbar input {
+  min-width: 0;
+  width: 100%;
+}
+
+.control-map-copyable {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.control-map-secret-cell {
+  align-items: flex-start;
+  display: flex;
+  gap: 7px;
+  min-width: 180px;
+}
+
+.control-map-secret-reveal {
+  flex: 0 0 auto;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.control-map-table-input {
+  background: #fff;
+  border: 2px solid #f97316;
+  border-radius: 8px;
+  color: var(--control-map-ink);
+  font: inherit;
+  min-width: 130px;
+  padding: 7px 8px;
+  width: 100%;
+}
+
+.control-map-credentials-table td:last-child {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 

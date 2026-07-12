@@ -242,6 +242,7 @@ const EMPTY_CREDENTIAL = {
   secret: '',
   notes: '',
   url: '',
+  created: '',
   expires: '',
   label: '',
 }
@@ -391,7 +392,7 @@ function CredentialsModal({ session, onClose }) {
     setIsBusy(true)
     try {
       const now = new Date().toISOString()
-      const firstRow = normalizeCredential({ ...draft, created: now, modified: now })
+      const firstRow = normalizeCredential({ ...draft, created: draft.created || now, modified: now })
       const nextCredentials = firstRow.service || firstRow.username || firstRow.secret || firstRow.notes || firstRow.url ? [firstRow] : []
       await persistCredentials(nextCredentials, newPin)
       setCredentials(nextCredentials)
@@ -591,6 +592,8 @@ function CredentialsModal({ session, onClose }) {
     setCredentials([])
     setDraft(EMPTY_CREDENTIAL)
     setEditingId(null)
+    setEditingRowId(null)
+    setEditingRowDraft(null)
     setShowHint(false)
     setShowSecrets(false)
     setVisibleSecrets({})
@@ -613,6 +616,102 @@ function CredentialsModal({ session, onClose }) {
 
   function updateDraftField(field, value) {
     setDraft((current) => ({ ...current, [field]: value }))
+  }
+
+  function updateEditingRowField(field, value) {
+    setEditingRowDraft((current) => ({ ...(current || {}), [field]: value }))
+  }
+
+  function toggleRowSecret(id) {
+    setVisibleSecrets((current) => ({ ...current, [id]: !current[id] }))
+  }
+
+  function toggleRowEdit(row) {
+    if (editingRowId === row.id) {
+      setEditingRowId(null)
+      setEditingRowDraft(null)
+    } else {
+      setEditingId(null)
+      setShowCredentialForm(false)
+      setEditingRowId(row.id)
+      setEditingRowDraft({ ...row })
+    }
+  }
+
+  async function saveRowEdit(id) {
+    setError('')
+    if (!pin) return setError('Sesión sin PIN en memoria. Cierra y desbloquea de nuevo.')
+    if (!editingRowDraft) return
+    const now = new Date().toISOString()
+    const nextCredentials = credentials.map((item) => (
+      item.id === id
+        ? normalizeCredential({ ...editingRowDraft, id, created: editingRowDraft.created || item.created, modified: now })
+        : item
+    ))
+    setIsBusy(true)
+    try {
+      await persistCredentials(nextCredentials)
+      setCredentials(nextCredentials)
+      setEditingRowId(null)
+      setEditingRowDraft(null)
+      setShowSecrets(false)
+      setVisibleSecrets({})
+    } catch (saveError) {
+      setError(saveError.message || 'No se pudo guardar la edición cifrada')
+    } finally {
+      setIsBusy(false)
+    }
+  }
+
+  function cancelRowEdit() {
+    setEditingRowId(null)
+    setEditingRowDraft(null)
+  }
+
+  function renderCredentialCell(row, key) {
+    const isEditing = editingRowId === row.id
+    const value = isEditing ? (editingRowDraft?.[key] || '') : (row[key] || '')
+    if (isEditing && key !== 'modified') {
+      if (key === 'notes') {
+        return (
+          <textarea
+            className="control-map-table-input"
+            value={value}
+            onChange={(event) => updateEditingRowField(key, event.target.value)}
+            rows={2}
+          />
+        )
+      }
+      return (
+        <input
+          className="control-map-table-input"
+          type={key === 'created' || key === 'expires' ? 'date' : 'text'}
+          value={key === 'created' || key === 'expires' ? String(value).slice(0, 10) : value}
+          onChange={(event) => updateEditingRowField(key, event.target.value)}
+        />
+      )
+    }
+
+    if (key === 'secret') {
+      return (
+        <div className="control-map-secret-cell">
+          <button type="button" className="control-map-secret-reveal" onClick={() => toggleRowSecret(row.id)}>
+            {visibleSecrets[row.id] ? 'Ocultar' : 'Revelar'}
+          </button>
+          <span className="control-map-secret-text control-map-copyable">{visibleSecrets[row.id] ? row.secret : '••••••••'}</span>
+        </div>
+      )
+    }
+
+    if (key === 'url') {
+      return value ? <a className="control-map-copyable" href={value} target="_blank" rel="noreferrer">{highlight(value, searchTerms)}</a> : ''
+    }
+
+    if (key === 'created' || key === 'modified') {
+      return <span className="control-map-copyable">{String(value).slice(0, 10)}</span>
+    }
+
+    return <span className="control-map-copyable">{highlight(value, searchTerms)}</span>
   }
 
   function suggestionField(label, field, inputProps = {}) {
@@ -659,7 +758,7 @@ function CredentialsModal({ session, onClose }) {
     <div className={`control-map-modal-backdrop ${mode === 'view' ? 'control-map-modal-backdrop-full' : ''}`} role="presentation">
       <div className={`control-map-modal ${mode === 'view' ? 'control-map-modal-full' : ''}`} role="dialog" aria-modal="true" aria-label="Credenciales cifradas">
         <div className="control-map-modal-head control-map-modal-head-grid">
-          {mode === 'view' ? <button type="button" className="control-map-compact-button" onClick={() => { setShowCredentialForm((current) => !current); if (!showCredentialForm) setDraft((current) => ({ ...EMPTY_CREDENTIAL, ...current, expires: current.expires || '' })) }}>{showCredentialForm ? 'Ocultar alta' : 'Añadir credencial'}</button> : <span />}
+          {mode === 'view' ? <button type="button" className="control-map-compact-button" onClick={() => { setShowCredentialForm((current) => !current); if (!showCredentialForm) { setEditingRowId(null); setEditingRowDraft(null); setEditingId(null); setDraft({ ...EMPTY_CREDENTIAL, created: today }) } }}>{showCredentialForm ? 'Ocultar alta' : 'Añadir credencial'}</button> : <span />}
           {mode === 'view' ? <label className="control-map-compact-button control-map-import-button">Importar<input type="file" accept="application/json,.json" onChange={importCredentials} /></label> : <span />}
           <button type="button" className="control-map-compact-button" onClick={closeAndWipe}>Cerrar</button>
           {mode === 'view' ? <button type="button" className="control-map-compact-button" onClick={exportCredentials}>Exportar</button> : <span />}
@@ -708,8 +807,8 @@ function CredentialsModal({ session, onClose }) {
                 <tbody>
                   {filteredCredentials.map((row) => (
                     <tr key={row.id} className={isExpired(row.expires) ? 'control-map-expired-row' : ''}>
-                      <td>{highlight(row.service, searchTerms)}</td><td>{highlight(row.type, searchTerms)}</td><td>{highlight(row.username, searchTerms)}</td><td><button type="button" className="control-map-secret-toggle" onClick={() => toggleRowSecret(row.id)}>{visibleSecrets[row.id] ? <span className="control-map-secret-text">{row.secret}</span> : '••••••••'}</button></td><td>{highlight(row.notes, searchTerms)}</td><td>{row.url ? <a href={row.url} target="_blank" rel="noreferrer">Abrir</a> : ''}</td><td>{row.created?.slice(0, 10)}</td><td>{highlight(row.expires, searchTerms)}</td><td>{highlight(row.label, searchTerms)}</td><td>{row.modified?.slice(0, 10)}</td>
-                      <td>{editingRowId === row.id ? <button type="button" onClick={() => saveRowEdit(row.id)}>Grabar</button> : <button type="button" onClick={() => toggleRowEdit(row.id)}>Editar</button>}<button type="button" onClick={() => deleteRow(row.id)}>Borrar</button></td>
+                      {CREDENTIAL_COLUMNS.map(([key]) => <td key={key}>{renderCredentialCell(row, key)}</td>)}
+                      <td>{editingRowId === row.id ? <><button type="button" disabled={isBusy} onClick={() => saveRowEdit(row.id)}>Grabar</button><button type="button" onClick={cancelRowEdit}>Cancelar</button></> : <button type="button" onClick={() => toggleRowEdit(row)}>Editar</button>}<button type="button" onClick={() => deleteRow(row.id)}>Borrar</button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -749,46 +848,6 @@ function ControlMapView({ root, path, setPath, fecha, onOpenCredentials }) {
 
   function goTo(targetPath) {
     setPath(targetPath)
-  }
-
-  function toggleDraftSecret() {
-    setShowDraftSecret((current) => !current)
-  }
-
-  function toggleRowSecret(id) {
-    setVisibleSecrets((current) => ({ ...current, [id]: !current[id] }))
-  }
-
-  function toggleRowEdit(id) {
-    if (editingRowId === id) {
-      setEditingRowId(null)
-      setEditingRowDraft(null)
-    } else {
-      const row = credentials.find((c) => c.id === id)
-      if (row) {
-        setEditingRowId(id)
-        setEditingRowDraft({ ...row })
-      }
-    }
-  }
-
-  function saveRowEdit(id) {
-    const index = credentials.findIndex((c) => c.id === id)
-    if (index !== -1 && editingRowDraft) {
-      const updated = normalizeCredential(editingRowDraft)
-      setCredentials((current) => {
-        const newCredentials = [...current]
-        newCredentials[index] = updated
-        return newCredentials
-      })
-      setEditingRowId(null)
-      setEditingRowDraft(null)
-    }
-  }
-
-  function cancelRowEdit() {
-    setEditingRowId(null)
-    setEditingRowDraft(null)
   }
 
   return (
