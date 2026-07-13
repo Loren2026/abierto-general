@@ -433,6 +433,47 @@ function persistenceHeaders(){
   return { Authorization: 'Bearer '+window.ANALISIS_PERSISTENCE_TOKEN };
 }
 
+function hasPersistenceToken(){ return !!(window.ANALISIS_PERSISTENCE_TOKEN || localStorage.getItem('analisis_persistence_token')); }
+function savePersistenceToken(){
+  const input = document.getElementById('persistence-token-input');
+  const value = (input?.value || '').trim();
+  if(!value){ toast('Introduce el token de persistencia'); return; }
+  localStorage.setItem('analisis_persistence_token', value);
+  window.ANALISIS_PERSISTENCE_TOKEN = value;
+  if(input) input.value = '';
+  rConfig();
+  toast('✅ Token guardado en este navegador');
+}
+function togglePersistenceTokenVisibility(){
+  const input = document.getElementById('persistence-token-input');
+  const btn = document.getElementById('persistence-token-toggle');
+  if(!input) return;
+  const show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  if(btn) btn.textContent = show ? 'Ocultar' : 'Mostrar';
+}
+
+function livePortfolioSnapshot(){
+  return JSON.stringify(D || {c:JSON.parse(JSON.stringify(IC)),p:JSON.parse(JSON.stringify(IP))});
+}
+
+function countPortfolioPositionsFromIdc7(idc7){
+  let parsed = idc7;
+  if(typeof parsed === 'string'){
+    try { parsed = JSON.parse(parsed); } catch(e){ parsed = null; }
+  }
+  return Array.isArray(parsed?.c) ? parsed.c.filter(item => String(item?.tk || item?.symbol || item?.ticker || '').trim()).length : 0;
+}
+
+function clearLocalValuationStores(){
+  const keys = [];
+  for(let i=0; i<localStorage.length; i++){
+    const k = localStorage.key(i);
+    if(k && (k.startsWith('val_data_') || k.startsWith('idc_inputs_'))) keys.push(k);
+  }
+  keys.forEach(k=>localStorage.removeItem(k));
+}
+
 function buildPersistenceSnapshot(){
   const valuations = {};
   for(let i=0; i<localStorage.length; i++){
@@ -441,30 +482,40 @@ function buildPersistenceSnapshot(){
   }
   return {
     schemaVersion: 1,
-    idc7: localStorage.getItem('idc7'),
+    idc7: livePortfolioSnapshot(),
     valuations,
     brokerTariffs: localStorage.getItem('brokerTariffs'),
-    fxRates: localStorage.getItem('fxRates')
+    fxRates: JSON.stringify(FX_RATES)
   };
 }
 
 async function syncSnapshotToServer(){
   const headers = persistenceHeaders();
   if(!headers){ toast('Configura el token de persistencia antes de sincronizar'); return; }
-  await backendFetch('/api/persistence/snapshot', { method:'PUT', headers, body: JSON.stringify({ snapshot: buildPersistenceSnapshot() }) });
-  toast('✅ Datos guardados en servidor');
+  const snapshot = buildPersistenceSnapshot();
+  const positionCount = countPortfolioPositionsFromIdc7(snapshot.idc7);
+  if(positionCount < 1){ toast('❌ No se puede guardar una cartera vacía'); return; }
+  if(!confirm('Esto reemplazará la cartera guardada en el servidor por la que tienes ahora en pantalla. ¿Continuar?')) return;
+  await backendFetch('/api/persistence/snapshot', { method:'PUT', headers, body: JSON.stringify({ snapshot }) });
+  toast(`✅ ${positionCount} posiciones guardadas en servidor`);
 }
 
 async function loadSnapshotFromServer(){
   const headers = persistenceHeaders();
   if(!headers){ toast('Configura el token de persistencia antes de cargar'); return; }
+  if(!confirm('Esto reemplazará tu cartera actual en este navegador por la del servidor. ¿Continuar?')) return;
   const data = await backendFetch('/api/persistence/snapshot', { headers });
   const snapshot = data.snapshot || {};
-  if(snapshot.idc7) localStorage.setItem('idc7', snapshot.idc7);
-  if(snapshot.brokerTariffs) localStorage.setItem('brokerTariffs', snapshot.brokerTariffs);
-  if(snapshot.fxRates) localStorage.setItem('fxRates', snapshot.fxRates);
+  const positionCount = countPortfolioPositionsFromIdc7(snapshot.idc7);
+  if(positionCount < 1){ toast('❌ El servidor no tiene cartera válida para cargar'); return; }
+  localStorage.setItem('idc7', snapshot.idc7);
+  if(snapshot.brokerTariffs != null) localStorage.setItem('brokerTariffs', snapshot.brokerTariffs);
+  else localStorage.removeItem('brokerTariffs');
+  if(snapshot.fxRates != null) localStorage.setItem('fxRates', snapshot.fxRates);
+  else localStorage.removeItem('fxRates');
+  clearLocalValuationStores();
   Object.entries(snapshot.valuations || {}).forEach(([k,v])=> localStorage.setItem(k, v));
-  toast('✅ Datos cargados del servidor — recargando...');
+  toast(`✅ ${positionCount} posiciones cargadas del servidor — recargando...`);
   setTimeout(()=>location.reload(), 1000);
 }
 
@@ -1494,7 +1545,18 @@ function rConfig(){
 
   <div class="card"><div class="card-t">💾 Tus datos</div>
     <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;line-height:1.5">Exporta una copia local de toda tu información y guárdala en OneDrive. Importar reemplaza la cartera actual solo tras confirmación.</div>
+    <div style="border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;background:#fff">
+      <div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:6px">Token de persistencia</div>
+      <div style="font-size:12px;color:var(--ink3);margin-bottom:8px;line-height:1.4">${hasPersistenceToken() ? '✅ Token configurado en este navegador.' : 'Introduce el token una vez para guardar/cargar en servidor.'}</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="persistence-token-input" type="password" autocomplete="off" placeholder="Pega aquí el token" style="flex:1;min-width:0;padding:12px;border:1px solid var(--line);border-radius:10px;font-family:var(--sans);font-size:13px">
+        <button id="persistence-token-toggle" onclick="togglePersistenceTokenVisibility()" style="padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;font-family:var(--sans);font-size:12px;font-weight:800;color:var(--ink);cursor:pointer">Mostrar</button>
+      </div>
+      <button onclick="savePersistenceToken()" style="width:100%;padding:12px;border:1.5px solid var(--blue);border-radius:12px;background:var(--blue-light);font-family:var(--sans);font-size:13px;font-weight:800;color:var(--blue);cursor:pointer;margin-top:8px">Guardar token</button>
+    </div>
     <button onclick="exportData()" style="width:100%;padding:16px;border:1.5px solid var(--green);border-radius:14px;background:var(--green-light);font-family:var(--sans);font-size:15px;font-weight:800;color:var(--green);cursor:pointer;margin-bottom:8px">📥 Exportar información</button>
+    <button onclick="syncSnapshotToServer().catch(err=>toast('❌ '+err.message))" style="width:100%;padding:16px;border:1.5px solid var(--blue);border-radius:14px;background:var(--blue-light);font-family:var(--sans);font-size:15px;font-weight:800;color:var(--blue);cursor:pointer;margin-bottom:8px">☁️ Guardar en servidor</button>
+    <button onclick="loadSnapshotFromServer().catch(err=>toast('❌ '+err.message))" style="width:100%;padding:16px;border:1.5px solid var(--line);border-radius:14px;background:#fff;font-family:var(--sans);font-size:15px;font-weight:800;color:var(--ink);cursor:pointer;margin-bottom:8px">🔄 Cargar desde servidor</button>
     <div style="position:relative">
       <button onclick="document.getElementById('import-file').click()" style="width:100%;padding:16px;border:1.5px solid var(--blue);border-radius:14px;background:#eef6ff;font-family:var(--sans);font-size:15px;font-weight:800;color:var(--blue);cursor:pointer">📤 Importar información</button>
       <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
@@ -2903,12 +2965,13 @@ function printReport(tk){
    EXPORTAR / IMPORTAR DATOS
    ════════════════════════════════════════════════ */
 function exportData(){
+  const portfolioSnapshot = livePortfolioSnapshot();
   const backup = {
     _version: 'analisis-loren-v1',
     _date: new Date().toISOString(),
-    idc7: localStorage.getItem('idc7'),
+    idc7: portfolioSnapshot,
     brokerTariffs: localStorage.getItem('brokerTariffs'),
-    fxRates: localStorage.getItem('fxRates'),
+    fxRates: JSON.stringify(FX_RATES),
   };
   // También exportar datos de valoración IDC por empresa
   for(let i=0; i<localStorage.length; i++){
@@ -2945,10 +3008,18 @@ function importData(event){
         return;
       }
       let count = 0;
-      for(const [k,v] of Object.entries(backup)){
-        if(k.startsWith('_')) continue; // skip metadata
+      const knownKeys = ['idc7','brokerTariffs','fxRates'];
+      knownKeys.forEach(k=>{
+        const v = backup[k];
         if(v != null){
-          localStorage.setItem(k, v);
+          localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
+          count++;
+        }
+      });
+      for(const [k,v] of Object.entries(backup)){
+        if(k.startsWith('_') || knownKeys.includes(k)) continue; // skip metadata and handled keys
+        if(v != null && (k.startsWith('idc_inputs_') || k.startsWith('val_data_'))){
+          localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
           count++;
         }
       }
