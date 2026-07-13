@@ -86,6 +86,17 @@ function migrate(database) {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS covered_calls (
+      id TEXT PRIMARY KEY,
+      profile_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+      symbol TEXT NOT NULL,
+      status TEXT NOT NULL,
+      payload_json TEXT NOT NULL,
+      schema_version INTEGER NOT NULL DEFAULT ${SCHEMA_VERSION},
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
   `);
 }
 
@@ -115,6 +126,7 @@ function getSnapshot(profileId = config.persistenceProfileId) {
       valuations: {},
       brokerTariffs: null,
       fxRates: null,
+      coveredCalls: [],
       updatedAt: null
     };
   }
@@ -127,6 +139,7 @@ function getSnapshot(profileId = config.persistenceProfileId) {
   ]));
   const brokerTariffs = database.prepare('SELECT tariffs_json FROM broker_tariffs WHERE profile_id = ?').get(profileId);
   const fxRates = database.prepare('SELECT rates_json FROM fx_rates WHERE profile_id = ?').get(profileId);
+  const coveredCalls = database.prepare('SELECT payload_json FROM covered_calls WHERE profile_id = ? ORDER BY updated_at DESC, symbol').all(profileId).map((row) => parseJson(row.payload_json, null)).filter(Boolean);
 
   return {
     schemaVersion: profile.schema_version,
@@ -135,6 +148,7 @@ function getSnapshot(profileId = config.persistenceProfileId) {
     valuations,
     brokerTariffs: brokerTariffs?.tariffs_json || null,
     fxRates: fxRates?.rates_json || null,
+    coveredCalls,
     updatedAt: profile.updated_at
   };
 }
@@ -146,6 +160,7 @@ function putSnapshot(snapshot, profileId = config.persistenceProfileId) {
   const portfolio = Array.isArray(idc7?.c) ? idc7.c : [];
   const watchlist = Array.isArray(idc7?.p) ? idc7.p : [];
   const valuations = snapshot?.valuations && typeof snapshot.valuations === 'object' ? snapshot.valuations : {};
+  const coveredCalls = Array.isArray(snapshot?.coveredCalls) ? snapshot.coveredCalls : [];
 
   const tx = database.transaction(() => {
     database.prepare(`
@@ -157,6 +172,7 @@ function putSnapshot(snapshot, profileId = config.persistenceProfileId) {
     database.prepare('DELETE FROM portfolio_positions WHERE profile_id = ?').run(profileId);
     database.prepare('DELETE FROM watchlist_positions WHERE profile_id = ?').run(profileId);
     database.prepare('DELETE FROM valuations WHERE profile_id = ?').run(profileId);
+    database.prepare('DELETE FROM covered_calls WHERE profile_id = ?').run(profileId);
 
     const insertPortfolio = database.prepare(`
       INSERT INTO portfolio_positions (id, profile_id, symbol, name, payload_json, schema_version, created_at, updated_at)
@@ -187,6 +203,18 @@ function putSnapshot(snapshot, profileId = config.persistenceProfileId) {
       const value = parseJson(raw, raw || {});
       if (!symbol) continue;
       insertValuation.run(stableId('valuation', profileId, symbol), profileId, symbol, JSON.stringify(value || {}), value?.config ? JSON.stringify(value.config) : null, SCHEMA_VERSION, updatedAt, updatedAt);
+    }
+
+    const insertCoveredCall = database.prepare(`
+      INSERT INTO covered_calls (id, profile_id, symbol, status, payload_json, schema_version, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    for (const item of coveredCalls) {
+      const symbol = normalizeSymbol(item);
+      if (!symbol) continue;
+      const id = item.id || stableId('covered_call', profileId, `${symbol}:${item.expiration || 'no-exp'}:${item.strike || 'no-strike'}:${item.createdAt || updatedAt}`);
+      const status = String(item.status || 'open');
+      insertCoveredCall.run(id, profileId, symbol, status, JSON.stringify({ ...item, id }), SCHEMA_VERSION, item.createdAt || updatedAt, updatedAt);
     }
 
     if (snapshot?.brokerTariffs != null) {
