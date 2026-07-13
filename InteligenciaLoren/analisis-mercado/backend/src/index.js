@@ -8,6 +8,7 @@ const recommendationRoutes = require('./routes/recommendations');
 const ibkrImportRoutes = require('./routes/ibkrImport');
 const brokerTariffRoutes = require('./routes/brokerTariffs');
 const persistenceRoutes = require('./routes/persistence');
+const optionsRoutes = require('./routes/options');
 
 validateConfig();
 
@@ -52,6 +53,7 @@ app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/ibkr', ibkrImportRoutes);
 app.use('/api/broker', brokerTariffRoutes);
 app.use('/api/persistence', persistenceRoutes);
+app.use('/api/options', optionsRoutes);
 
 app.use((err, req, res, _next) => {
   console.error('[server] controlled error', {

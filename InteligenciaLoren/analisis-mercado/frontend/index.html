@@ -310,6 +310,25 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 .opt-sim-only{display:none}.opt-panel.sim .opt-sim-only{display:block}
 .opt-call.simulated{background:#fffdf5;border:1px solid rgba(180,83,9,.25);border-radius:14px;padding:14px;margin-bottom:10px}
 .opt-status.simulated{background:var(--yellow-bg);color:var(--yellow)}
+.opt-chain-tools{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
+@media(max-width:559px){.opt-chain-tools{grid-template-columns:1fr}}
+.opt-chain-meta{font-size:12px;color:var(--ink3);font-weight:800;line-height:1.45;margin:8px 0 12px}
+.opt-chain-table{width:100%;border-collapse:separate;border-spacing:0 6px;font-size:12px}
+.opt-chain-table th{text-align:right;color:var(--ink4);font-size:10px;text-transform:uppercase;letter-spacing:.04em;padding:0 6px 4px}
+.opt-chain-table th:first-child,.opt-chain-table td:first-child{text-align:left}
+.opt-chain-table td{padding:10px 6px;background:#f8fafc;border-top:1px solid var(--border);border-bottom:1px solid var(--border);text-align:right;font-family:var(--mono);font-weight:700;color:var(--ink)}
+.opt-chain-table td:first-child{border-left:1px solid var(--border);border-radius:10px 0 0 10px}
+.opt-chain-table td:last-child{border-right:1px solid var(--border);border-radius:0 10px 10px 0}
+.opt-chain-table button{padding:8px 10px;border:1px solid var(--blue);border-radius:9px;background:var(--blue-light);color:var(--blue);font-family:var(--sans);font-size:11px;font-weight:900;cursor:pointer}
+.opt-chain-scroll{overflow-x:auto}
+.opt-analysis{margin-top:12px;padding:14px;border:1.5px solid var(--blue);border-radius:14px;background:#f8fbff}
+.opt-analysis h3{font-size:16px;font-weight:900;color:var(--blue);margin-bottom:8px}
+.opt-analysis-sec{margin-top:12px}
+.opt-analysis-sec h4{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);margin-bottom:6px}
+.opt-analysis p,.opt-analysis li{font-size:13px;line-height:1.5;color:var(--ink2);font-weight:700}
+.opt-analysis ul{padding-left:18px}
+.opt-chain-actions{display:flex;gap:6px;justify-content:flex-end}
+.opt-chain-actions button:last-child{border-color:var(--yellow);background:var(--yellow-bg);color:var(--yellow)}
 </style>
 </head>
 <body>
@@ -1547,6 +1566,7 @@ const OPTIONS_PERMISSION_CONFIG = {
   permissionLevel: 'IBKR Nivel 1'
 };
 const OPTIONS_STATUS_LABELS = { open:'Abierta', assigned:'Asignada', expired:'Expirada', bought_back:'Recomprada' };
+const OPTIONS_CHAIN_STATE = { ticker:'', loading:false, error:'', chain:null, expiration:'' };
 const BLOCKED_OPTION_STRATEGIES = {
   protective_put: 'Bloqueada: el permiso actual de IBKR Nivel 1 de Loren no permite puts protectoras.',
   spread: 'Bloqueada: el permiso actual de IBKR Nivel 1 de Loren no permite spreads.',
@@ -1573,8 +1593,14 @@ function optionDateDiffDays(expiration){
 }
 function optionMoney(value, digits=2){ return value==null || !isFinite(value) ? 'no disponible' : `${f(value,digits)}€`; }
 function optionPct(value){ return value==null || !isFinite(value) ? 'no disponible' : `${(value>=0?'+':'')}${f(value*100,2)}%`; }
+function optionNumber(value, digits=2){ return value==null || !isFinite(Number(value)) ? 'no disponible' : f(Number(value), digits); }
+function optionNative(value, cur, digits=2){ return value==null || !isFinite(Number(value)) ? 'no disponible' : `${f(Number(value), digits)} ${cur || ''}`.trim(); }
 function optionInput(id){ return (document.getElementById(id)?.value || '').trim(); }
 function escHtml(value){ return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+function setInputValue(id, value){
+  const el = document.getElementById(id);
+  if(el) el.value = value == null ? '' : String(value);
+}
 function currentOptionMode(){ return document.getElementById('opt-mode-sim')?.classList.contains('on') ? 'simulate' : 'real'; }
 function setOptionMode(mode){
   const simulate = mode === 'simulate';
@@ -1764,6 +1790,199 @@ function deleteCoveredCall(id){
   rOpciones();
   toast('Registro eliminado');
 }
+async function fetchOptionsChainFromCboe(){
+  const ticker = optionTicker(optionInput('opt-chain-ticker'));
+  const expiration = optionInput('opt-chain-expiration');
+  if(!ticker){ toast('Introduce un ticker'); return; }
+  const headers = persistenceHeaders();
+  if(!headers){ toast('Configura el token de persistencia antes de traer la cadena'); return; }
+  OPTIONS_CHAIN_STATE.ticker = ticker;
+  OPTIONS_CHAIN_STATE.expiration = expiration;
+  OPTIONS_CHAIN_STATE.loading = true;
+  OPTIONS_CHAIN_STATE.error = '';
+  rOpciones();
+  try {
+    const q = expiration ? `?expiration=${encodeURIComponent(expiration)}` : '';
+    const data = await backendFetch(`/api/options/chain/${encodeURIComponent(ticker)}${q}`, { headers });
+    OPTIONS_CHAIN_STATE.chain = data.chain || null;
+    OPTIONS_CHAIN_STATE.expiration = expiration || OPTIONS_CHAIN_STATE.chain?.expirations?.[0] || '';
+    OPTIONS_CHAIN_STATE.error = '';
+    toast(`✅ Cadena CBOE cargada: ${OPTIONS_CHAIN_STATE.chain?.calls?.length || 0} calls`);
+  } catch(err){
+    OPTIONS_CHAIN_STATE.chain = null;
+    OPTIONS_CHAIN_STATE.error = err.message || 'Cadena no disponible';
+    toast('❌ '+OPTIONS_CHAIN_STATE.error);
+  } finally {
+    OPTIONS_CHAIN_STATE.loading = false;
+    rOpciones();
+  }
+}
+function changeOptionsChainExpiration(value){
+  OPTIONS_CHAIN_STATE.expiration = value || '';
+  rOpciones();
+}
+function applyOptionChainRow(contractSymbol){
+  const row = (OPTIONS_CHAIN_STATE.chain?.calls || []).find(item => item.contractSymbol === contractSymbol);
+  if(!row) return;
+  setOptionMode('simulate');
+  setInputValue('opt-ticker', row.underlying || OPTIONS_CHAIN_STATE.chain?.symbol || OPTIONS_CHAIN_STATE.ticker);
+  setInputValue('opt-expiration', row.expiration);
+  setInputValue('opt-strike', row.strike);
+  setInputValue('opt-premium', row.bid);
+  setInputValue('opt-underlying-price', OPTIONS_CHAIN_STATE.chain?.underlyingPrice);
+  setInputValue('opt-query-date', new Date().toISOString().slice(0,10));
+  setInputValue('opt-bid', row.bid);
+  setInputValue('opt-ask', row.ask);
+  setInputValue('opt-volume', row.volume);
+  setInputValue('opt-open-interest', row.openInterest);
+  setInputValue('opt-iv', row.impliedVolatility);
+  setInputValue('opt-delta', row.delta);
+  updateCoveredCallPreview();
+  toast('Fila CBOE aplicada a la simulación. Confirma bid/ask en IBKR antes de operar.');
+}
+function chainCallsForCurrentExpiration(){
+  return (OPTIONS_CHAIN_STATE.chain?.calls || []).filter(row => !OPTIONS_CHAIN_STATE.expiration || row.expiration === OPTIONS_CHAIN_STATE.expiration);
+}
+function calculateCoveredCallPartial(draft, position){
+  if(!position) return {};
+  const cur = optionCurrency(position);
+  const shares = draft.hasSimulatedShares && Number.isFinite(draft.simulatedShares) && draft.simulatedShares > 0 ? draft.simulatedShares : (draft.hasContracts && Number.isFinite(draft.contracts) && draft.contracts > 0 ? draft.contracts * OPTIONS_PERMISSION_CONFIG.contractMultiplier : Number(position.qty || 0));
+  const grossNative = Number.isFinite(draft.premium) && shares > 0 ? draft.premium * shares : null;
+  const grossEur = grossNative == null ? null : optionEur(grossNative, cur);
+  const commissionOk = draft.hasCommission && Number.isFinite(draft.commission) && draft.commission >= 0;
+  const netEur = grossEur != null && commissionOk ? grossEur - draft.commission : null;
+  const commissionNative = commissionOk ? draft.commission * getFx(cur) : null;
+  const netPerShareNative = grossNative != null && commissionNative != null && shares > 0 ? (grossNative - commissionNative) / shares : null;
+  const netPerShareEur = netEur != null && shares > 0 ? netEur / shares : null;
+  const assignedPrice = netPerShareNative != null && Number.isFinite(draft.strike) ? draft.strike + netPerShareNative : null;
+  const breakEven = netPerShareNative != null && Number.isFinite(Number(position.avg)) ? Number(position.avg) - netPerShareNative : null;
+  const capitalCoveredEur = Number.isFinite(draft.underlyingPrice) && shares > 0 ? optionEur(draft.underlyingPrice * shares, cur) : null;
+  const simpleReturn = netEur != null && capitalCoveredEur > 0 ? netEur / capitalCoveredEur : null;
+  const days = optionDateDiffDays(draft.expiration);
+  const annualizedReturn = simpleReturn != null && days > 0 ? simpleReturn * 365 / days : null;
+  const upsideNative = Number.isFinite(draft.strike) && Number.isFinite(draft.underlyingPrice) ? draft.strike - draft.underlyingPrice : null;
+  const upsidePct = upsideNative != null && draft.underlyingPrice > 0 ? upsideNative / draft.underlyingPrice : null;
+  return { cur, shares, grossNative, grossEur, netEur, netPerShareNative, netPerShareEur, assignedPrice, breakEven, capitalCoveredEur, simpleReturn, annualizedReturn, days, upsideNative, upsidePct };
+}
+function classifyMoneyness(row, underlyingPrice){
+  if(!Number.isFinite(row?.strike) || !Number.isFinite(underlyingPrice) || underlyingPrice <= 0) return { label:'no disponible', distance:null };
+  const distance = (row.strike - underlyingPrice) / underlyingPrice;
+  const label = Math.abs(distance) <= 0.01 ? 'ATM' : (distance > 0 ? 'OTM' : 'ITM');
+  return { label, distance };
+}
+function ivContext(row){
+  const values = chainCallsForCurrentExpiration().map(item=>item.impliedVolatility).filter(v=>Number.isFinite(v) && v > 0).sort((a,b)=>a-b);
+  if(!Number.isFinite(row?.impliedVolatility) || row.impliedVolatility <= 0 || values.length < 3) return { label:'no disponible', percentile:null };
+  const below = values.filter(v=>v < row.impliedVolatility).length;
+  const percentile = values.length > 1 ? below / (values.length - 1) : null;
+  const label = percentile == null ? 'no disponible' : (percentile >= 0.66 ? 'alta frente a esta cadena' : (percentile <= 0.33 ? 'baja frente a esta cadena' : 'media frente a esta cadena'));
+  return { label, percentile };
+}
+function liquidityContext(row){
+  const bid = Number(row?.bid);
+  const ask = Number(row?.ask);
+  const mid = Number.isFinite(bid) && Number.isFinite(ask) ? (bid + ask) / 2 : null;
+  const spread = Number.isFinite(bid) && Number.isFinite(ask) ? ask - bid : null;
+  const spreadPct = spread != null && mid > 0 ? spread / mid : null;
+  const volume = Number(row?.volume);
+  const oi = Number(row?.openInterest);
+  const risks = [];
+  if(spreadPct != null && spreadPct > 0.10) risks.push(`Spread ancho: bid/ask separados un ${f(spreadPct*100,2)}% del punto medio.`);
+  if(Number.isFinite(volume) && volume < 10) risks.push(`Volumen bajo: ${f(volume,0)} contratos.`);
+  if(Number.isFinite(oi) && oi < 50) risks.push(`Interés abierto bajo: ${f(oi,0)} contratos.`);
+  if(Number.isFinite(volume) && Number.isFinite(oi) && volume === 0 && oi === 0) risks.push('Contrato muerto: volumen e interés abierto a 0.');
+  return { spread, spreadPct, volume: Number.isFinite(volume) ? volume : null, openInterest: Number.isFinite(oi) ? oi : null, risks };
+}
+function analyzeOptionChainRow(contractSymbol){
+  const row = (OPTIONS_CHAIN_STATE.chain?.calls || []).find(item => item.contractSymbol === contractSymbol);
+  if(!row) return;
+  applyOptionChainRow(contractSymbol);
+  OPTIONS_CHAIN_STATE.analysis = { contractSymbol };
+  renderOptionChainAnalysis();
+}
+function renderOptionChainAnalysis(){
+  const box = document.getElementById('opt-chain-analysis');
+  if(!box || !OPTIONS_CHAIN_STATE.analysis) return;
+  const row = (OPTIONS_CHAIN_STATE.chain?.calls || []).find(item => item.contractSymbol === OPTIONS_CHAIN_STATE.analysis.contractSymbol);
+  if(!row){ box.innerHTML = ''; return; }
+  const draft = readCoveredCallForm();
+  const position = portfolioPosition(row.underlying || OPTIONS_CHAIN_STATE.chain?.symbol);
+  const calc = calculateCoveredCallPartial(draft, position);
+  const underlying = OPTIONS_CHAIN_STATE.chain?.underlyingPrice;
+  const moneyness = classifyMoneyness(row, underlying);
+  const iv = ivContext(row);
+  const liq = liquidityContext(row);
+  const deltaText = Number.isFinite(row.delta) ? `${f(Math.abs(row.delta)*100,1)}% aproximado usando delta ${f(row.delta,4)}` : 'no disponible';
+  const risks = [...liq.risks];
+  if(calc.days != null && calc.days > 90) risks.push(`Vencimiento largo: ${calc.days} días. Hay más tiempo inmovilizado y más incertidumbre.`);
+  if(calc.upsidePct != null && calc.simpleReturn != null && calc.upsidePct > 0.10 && calc.simpleReturn < 0.02) risks.push('Upside sacrificado grande frente a una prima pequeña: el strike deja mucha subida por encima y la prima neta pesa poco sobre el capital cubierto.');
+  if(!draft.hasCommission) risks.push('Comisión no introducida: prima neta, break-even y rentabilidades netas quedan no disponibles.');
+  const riskHtml = risks.length ? risks.map(r=>`<li>${escHtml(r)}</li>`).join('') : '<li>No aparece ningún riesgo mecánico destacado con las reglas actuales; esto no significa que sea una operación adecuada.</li>';
+  const metrics = [
+    ['Prima bruta', optionNative(calc.grossNative, calc.cur)],
+    ['Prima neta', optionMoney(calc.netEur)],
+    ['Rentabilidad simple', optionPct(calc.simpleReturn)],
+    ['Rentabilidad anualizada', optionPct(calc.annualizedReturn)],
+    ['Break-even', optionNative(calc.breakEven, calc.cur)],
+    ['Precio efectivo si asignan', optionNative(calc.assignedPrice, calc.cur)],
+    ['Upside sacrificado', calc.upsidePct==null ? 'no disponible' : `por encima de ${optionNative(row.strike, calc.cur)} · ${optionPct(calc.upsidePct)}`]
+  ].map(([label,value])=>`<li><b>${label}:</b> ${value}</li>`).join('');
+  box.innerHTML = `<div class="opt-analysis">
+    <h3>Análisis objetivo · ${escHtml(row.contractSymbol)}</h3>
+    <div class="opt-alert">Esto es análisis objetivo, no asesoramiento financiero. La decisión es tuya.</div>
+    <div class="opt-analysis-sec"><h4>Métricas</h4><ul>${metrics}</ul></div>
+    <div class="opt-analysis-sec"><h4>Contexto de mercado</h4>
+      <p>El subyacente cotiza en ${optionNative(underlying, calc.cur)} y el strike está en ${optionNative(row.strike, calc.cur)}. Con la regla ATM = ±1%, esta call está ${moneyness.label}; distancia al strike: ${optionPct(moneyness.distance)}.</p>
+      <p>Delta: ${deltaText}. Se usa solo como aproximación mecánica de probabilidad de acabar ITM/asignada, no como certeza.</p>
+      <p>IV: ${iv.label}${iv.percentile==null?'':` · percentil ${f(iv.percentile*100,0)} dentro de las calls del vencimiento seleccionado`}.</p>
+      <p>Liquidez: bid ${optionNumber(row.bid)}, ask ${optionNumber(row.ask)}, spread ${liq.spread==null?'no disponible':optionNumber(liq.spread)}, volumen ${optionNumber(liq.volume,0)}, interés abierto ${optionNumber(liq.openInterest,0)}.</p>
+    </div>
+    <div class="opt-analysis-sec"><h4>Escenarios</h4><ul>
+      <li>Si el precio sube por encima del strike: te asignan, vendes a strike, cobras la prima, pero renuncias a la subida por encima.</li>
+      <li>Si el precio se queda entre el actual y el strike: no te asignan, te quedas la prima y las acciones. Es el escenario mecánicamente más favorable para una call cubierta.</li>
+      <li>Si el precio baja: te quedas la prima, pero las acciones pierden valor. La prima amortigua, no protege.</li>
+    </ul></div>
+    <div class="opt-analysis-sec"><h4>Riesgos detectados</h4><ul>${riskHtml}</ul></div>
+    <div class="opt-analysis-sec"><h4>Razonamiento paso a paso</h4><ul>
+      <li>Primero miro el strike contra el precio actual para saber si la call está fuera, cerca o dentro del dinero.</li>
+      <li>Después miro el bid/ask porque Loren vendería la call: el bid es la prima disponible de referencia; si el spread es ancho, entrar puede costar caro.</li>
+      <li>Luego miro volumen e interés abierto para ver si hay mercado real o si el contrato está casi parado.</li>
+      <li>Con la prima, el tamaño de acciones y la comisión introducida calculo prima neta, break-even, rentabilidad y precio efectivo si asignan.</li>
+      <li>Finalmente separo los tres escenarios para que la decisión no dependa de un único número.</li>
+    </ul></div>
+  </div>`;
+}
+function optionsChainHtml(){
+  const chain = OPTIONS_CHAIN_STATE.chain;
+  const expirationOptions = (chain?.expirations || []).map(exp => `<option value="${exp}" ${exp===OPTIONS_CHAIN_STATE.expiration?'selected':''}>${exp}</option>`).join('');
+  const visibleCalls = (chain?.calls || []).filter(row => !OPTIONS_CHAIN_STATE.expiration || row.expiration === OPTIONS_CHAIN_STATE.expiration);
+  const rows = visibleCalls.slice(0, 80).map((row, idx)=>`<tr>
+    <td>${escHtml(row.expiration)}</td>
+    <td>${optionNumber(row.strike)}</td>
+    <td>${optionNumber(row.bid)}</td>
+    <td>${optionNumber(row.ask)}</td>
+    <td>${optionNumber(row.last)}</td>
+    <td>${optionNumber(row.volume,0)}</td>
+    <td>${optionNumber(row.openInterest,0)}</td>
+    <td>${optionNumber(row.impliedVolatility,4)}</td>
+    <td>${optionNumber(row.delta,4)}</td>
+    <td><div class="opt-chain-actions"><button onclick="applyOptionChainRow('${escHtml(row.contractSymbol)}')">Usar</button><button onclick="analyzeOptionChainRow('${escHtml(row.contractSymbol)}')">Analizar</button></div></td>
+  </tr>`).join('');
+  return `<div class="card"><div class="card-t">📡 Cadena CBOE</div>
+    <div class="opt-alert">⚠️ Datos RETRASADOS (CBOE). Antes de lanzar cualquier orden, confirma el bid/ask actual en IBKR.</div>
+    <div class="opt-chain-tools">
+      <div class="opt-field" style="margin-bottom:0"><label>Ticker</label><input id="opt-chain-ticker" value="${escHtml(OPTIONS_CHAIN_STATE.ticker)}" placeholder="META" style="text-transform:uppercase"></div>
+      <button onclick="fetchOptionsChainFromCboe()" style="padding:13px 16px;border:1.5px solid var(--blue);border-radius:12px;background:var(--blue-light);font-family:var(--sans);font-size:13px;font-weight:900;color:var(--blue);cursor:pointer">Traer cadena</button>
+    </div>
+    ${OPTIONS_CHAIN_STATE.loading ? '<div class="loader-wrap" style="padding:24px"><div class="loader"></div><div class="loader-txt">Cargando CBOE...</div></div>' : ''}
+    ${OPTIONS_CHAIN_STATE.error ? `<div class="opt-msg err">${escHtml(OPTIONS_CHAIN_STATE.error)}</div>` : ''}
+    ${chain ? `<div class="opt-chain-meta">Fuente: CBOE delayed · Subyacente: ${optionNumber(chain.underlyingPrice)} · Timestamp CBOE: ${escHtml(chain.cboeTimestamp || 'no disponible')} · Cache: ${chain.cache?.hit?'hit':'nuevo'} · Calls: ${visibleCalls.length}</div>
+      <div class="opt-field"><label>Vencimiento</label><select id="opt-chain-expiration" onchange="changeOptionsChainExpiration(this.value)">${expirationOptions}</select></div>
+      <div class="opt-chain-scroll"><table class="opt-chain-table"><thead><tr><th>Vto.</th><th>Strike</th><th>Bid</th><th>Ask</th><th>Último</th><th>Vol.</th><th>OI</th><th>IV</th><th>Delta</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div id="opt-chain-analysis"></div>
+      ${visibleCalls.length > 80 ? '<div class="opt-chain-meta">Mostrando 80 primeras calls del vencimiento para mantener la vista manejable.</div>' : ''}` : '<div class="opt-chain-meta">Introduce un ticker de mercado US/CA y trae la cadena. Si CBOE falla, la app mostrará cadena no disponible.</div>'}
+  </div>`;
+}
 function rOpciones(){
   const calls = loadCoveredCalls();
   const tickerOptions = (D.c||[]).map(e=>`<option value="${e.tk}">${e.tk} · ${e.qty || 0} acc. · ${e.ex || '—'}</option>`).join('');
@@ -1786,7 +2005,8 @@ function rOpciones(){
   }).join('') : '<div style="font-size:13px;color:var(--ink3);font-weight:700">Sin calls cubiertas registradas.</div>';
 
   document.getElementById('v-opciones').innerHTML=`<h2 style="font-size:22px;font-weight:900;color:var(--blue);margin-bottom:14px">Opciones</h2>
-    <div class="opt-alert">La app solo calcula y registra calls cubiertas manuales. Loren consulta la cadena en IBKR/Yahoo y ejecuta las órdenes personalmente en IBKR. No hay conexión con IBKR, no hay cotizaciones automáticas de opciones y esto no es asesoramiento financiero.</div>
+    <div class="opt-alert">La app calcula y registra calls cubiertas. La cadena viene de CBOE con datos retrasados; Loren ejecuta las órdenes personalmente en IBKR. Esto no es asesoramiento financiero.</div>
+    ${optionsChainHtml()}
     <div class="card opt-panel sim" id="opt-panel"><div class="card-t">🛡️ Call cubierta manual</div>
       <div class="opt-mode">
         <button id="opt-mode-sim" class="on sim" onclick="setOptionMode('simulate')">Simular<br><span style="font-size:11px;font-weight:700">aprender, no operar</span></button>
