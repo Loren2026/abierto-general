@@ -274,6 +274,42 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 .rpt-event-val{font-family:var(--mono);font-weight:700;margin-top:2px}
 .rpt-section{margin-bottom:14px}
 .rpt-section-t{font-size:14px;font-weight:900;color:var(--blue);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+
+/* ══ OPCIONES — CALL CUBIERTA ══ */
+.opt-alert{padding:14px 16px;border-radius:14px;background:var(--yellow-bg);border:1.5px solid rgba(180,83,9,.25);color:var(--yellow);font-size:13px;font-weight:800;line-height:1.45;margin-bottom:14px}
+.opt-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:559px){.opt-grid{grid-template-columns:1fr}}
+.opt-field{margin-bottom:12px}
+.opt-field label{display:block;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);margin-bottom:6px}
+.opt-field input,.opt-field select,.opt-field textarea{width:100%;padding:12px;border:1.5px solid var(--border);border-radius:12px;background:#fff;color:var(--ink);font-family:var(--sans);font-size:14px;font-weight:700}
+.opt-field textarea{min-height:74px;resize:vertical}
+.opt-results{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+@media(max-width:559px){.opt-results{grid-template-columns:1fr}}
+.opt-result{padding:12px;background:#f8fafc;border:1px solid var(--border);border-radius:12px}
+.opt-result-l{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;color:var(--ink4);margin-bottom:4px}
+.opt-result-v{font-family:var(--mono);font-size:15px;font-weight:800;color:var(--ink)}
+.opt-result-v.up{color:var(--green)}.opt-result-v.warn{color:var(--yellow)}.opt-result-v.dn{color:var(--red)}
+.opt-msg{padding:12px;border-radius:12px;font-size:13px;font-weight:800;line-height:1.4;margin-top:10px}
+.opt-msg.err{background:var(--red-bg);color:var(--red);border:1px solid rgba(224,36,36,.2)}
+.opt-msg.warn{background:var(--yellow-bg);color:var(--yellow);border:1px solid rgba(180,83,9,.2)}
+.opt-call{padding:14px 0;border-bottom:1px solid var(--border)}.opt-call:last-child{border-bottom:none}
+.opt-call-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.opt-call-title{font-family:var(--mono);font-size:17px;font-weight:800;color:var(--ink)}
+.opt-call-sub{font-size:12px;font-weight:700;color:var(--ink3);line-height:1.45;margin-top:3px}
+.opt-status{font-size:11px;font-weight:900;text-transform:uppercase;padding:5px 9px;border-radius:999px;background:#e8edf2;color:var(--ink3);white-space:nowrap}
+.opt-status.open{background:var(--green-light);color:var(--green)}
+.opt-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+@media(max-width:559px){.opt-actions{grid-template-columns:1fr 1fr}}
+.opt-actions button{padding:9px 6px;border:1px solid var(--border);border-radius:10px;background:#fff;font-size:11px;font-weight:900;color:var(--ink3);font-family:var(--sans);cursor:pointer}
+.opt-mode{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.opt-mode button{padding:13px 8px;border-radius:12px;border:1.5px solid var(--border);background:#fff;color:var(--ink3);font-family:var(--sans);font-size:13px;font-weight:900;cursor:pointer}
+.opt-mode button.on.sim{background:var(--yellow-bg);border-color:rgba(180,83,9,.35);color:var(--yellow)}
+.opt-mode button.on.real{background:var(--green-light);border-color:rgba(13,148,72,.35);color:var(--green)}
+.opt-panel.sim{border-color:rgba(180,83,9,.35);background:#fffdf5}
+.opt-panel.real{border-color:rgba(13,148,72,.28)}
+.opt-sim-only{display:none}.opt-panel.sim .opt-sim-only{display:block}
+.opt-call.simulated{background:#fffdf5;border:1px solid rgba(180,83,9,.25);border-radius:14px;padding:14px;margin-bottom:10px}
+.opt-status.simulated{background:var(--yellow-bg);color:var(--yellow)}
 </style>
 </head>
 <body>
@@ -284,12 +320,14 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
   <div class="tabs">
     <button class="tab on" data-v="resumen" onclick="go('resumen')">📊 Cartera <span class="tcnt" id="nc1">6</span></button>
     <button class="tab" data-v="valoracion" onclick="go('valoracion')">🎯 Valorar <span class="tcnt" id="nc2">13</span></button>
+    <button class="tab" data-v="opciones" onclick="go('opciones')">🛡️ Opciones</button>
     <button class="tab" data-v="config" onclick="go('config')">⚙️ Config</button>
   </div>
 </div>
 
 <div class="view on" id="v-resumen"></div>
 <div class="view" id="v-valoracion"></div>
+<div class="view" id="v-opciones"></div>
 <div class="view" id="v-config"></div>
 
 <div class="overlay" id="modal" onclick="if(event.target===this)closeM()">
@@ -485,7 +523,8 @@ function buildPersistenceSnapshot(){
     idc7: livePortfolioSnapshot(),
     valuations,
     brokerTariffs: localStorage.getItem('brokerTariffs'),
-    fxRates: JSON.stringify(FX_RATES)
+    fxRates: JSON.stringify(FX_RATES),
+    coveredCalls: loadCoveredCalls()
   };
 }
 
@@ -513,6 +552,8 @@ async function loadSnapshotFromServer(){
   else localStorage.removeItem('brokerTariffs');
   if(snapshot.fxRates != null) localStorage.setItem('fxRates', snapshot.fxRates);
   else localStorage.removeItem('fxRates');
+  if(Array.isArray(snapshot.coveredCalls)) localStorage.setItem('coveredCalls', JSON.stringify(snapshot.coveredCalls));
+  else localStorage.removeItem('coveredCalls');
   clearLocalValuationStores();
   Object.entries(snapshot.valuations || {}).forEach(([k,v])=> localStorage.setItem(k, v));
   toast(`✅ ${positionCount} posiciones cargadas del servidor — recargando...`);
@@ -1390,7 +1431,7 @@ function f(n,d){return n==null?'—':Number(n).toLocaleString('es-ES',{minimumFr
 function roundMoney(n){ return Math.round((Number(n) + Number.EPSILON) * 100) / 100; }
 
 let cur='resumen';
-function go(v){cur=v;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.v===v));document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));document.getElementById(`v-${v}`).classList.add('on');({resumen:rResumen,valoracion:rValoracion,config:rConfig})[v]?.();window.scrollTo({top:0});}
+function go(v){cur=v;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.v===v));document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));document.getElementById(`v-${v}`).classList.add('on');({resumen:rResumen,valoracion:rValoracion,opciones:rOpciones,config:rConfig})[v]?.();window.scrollTo({top:0});}
 
 function rResumen(){
   const tv=D.c.reduce((s,e)=>s+e.val,0),tp=D.c.reduce((s,e)=>s+e.pnl,0),td=D.c.reduce((s,e)=>s+(e.divs||0),0);
@@ -1494,6 +1535,289 @@ async function startValoracion(tk, backTo){
     else if(String(err.message||'').includes('Failed to fetch') || String(err.message||'').includes('NetworkError')) msg='Backend no disponible o error de red';
     el.innerHTML=`<button class="det-back" onclick="go('${backTo}')">← Volver</button><div class="card" style="text-align:center;padding:40px 20px"><div style="font-size:40px;margin-bottom:12px">⚠️</div><div style="font-size:17px;font-weight:800;color:var(--red);margin-bottom:8px">${msg}</div><div style="font-size:13px;color:var(--ink3)">${err.message}</div></div>`;
   }
+}
+
+/* ════════════════════════════════════════════════
+   OPCIONES — Call cubierta manual
+   ════════════════════════════════════════════════ */
+const OPTIONS_PERMISSION_CONFIG = {
+  allowedStrategy: 'covered_call',
+  contractMultiplier: 100,
+  allowedMarkets: ['NASDAQ','NYSE','AMEX','ARCA','TSE','TSX','TSXV'],
+  permissionLevel: 'IBKR Nivel 1'
+};
+const OPTIONS_STATUS_LABELS = { open:'Abierta', assigned:'Asignada', expired:'Expirada', bought_back:'Recomprada' };
+const BLOCKED_OPTION_STRATEGIES = {
+  protective_put: 'Bloqueada: el permiso actual de IBKR Nivel 1 de Loren no permite puts protectoras.',
+  spread: 'Bloqueada: el permiso actual de IBKR Nivel 1 de Loren no permite spreads.',
+  naked_call: 'Bloqueada: el permiso actual de IBKR Nivel 1 de Loren no permite ventas descubiertas.'
+};
+function loadCoveredCalls(){
+  try {
+    const parsed = JSON.parse(localStorage.getItem('coveredCalls') || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch(e){ return []; }
+}
+function saveCoveredCalls(calls){ localStorage.setItem('coveredCalls', JSON.stringify(calls || [])); }
+function optionTicker(value){ return String(value||'').trim().toUpperCase(); }
+function portfolioPosition(ticker){ const tk=optionTicker(ticker); return (D.c||[]).find(e=>optionTicker(e.tk)===tk) || null; }
+function isAllowedOptionsMarket(position){ return OPTIONS_PERMISSION_CONFIG.allowedMarkets.includes(String(position?.ex||'').toUpperCase()); }
+function maxCoveredCallContracts(position){ return Math.floor((Number(position?.qty)||0) / OPTIONS_PERMISSION_CONFIG.contractMultiplier); }
+function optionCurrency(position){ return String(position?.cur || 'USD').toUpperCase(); }
+function optionEur(n, cur){ if(n==null || n==='' || !isFinite(Number(n))) return null; return toEur(Number(n), cur); }
+function optionDateDiffDays(expiration){
+  const exp = new Date(String(expiration||'')+'T00:00:00');
+  if(isNaN(exp.getTime())) return null;
+  const now = new Date(); now.setHours(0,0,0,0);
+  return Math.ceil((exp - now) / 86400000);
+}
+function optionMoney(value, digits=2){ return value==null || !isFinite(value) ? 'no disponible' : `${f(value,digits)}€`; }
+function optionPct(value){ return value==null || !isFinite(value) ? 'no disponible' : `${(value>=0?'+':'')}${f(value*100,2)}%`; }
+function optionInput(id){ return (document.getElementById(id)?.value || '').trim(); }
+function escHtml(value){ return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+function currentOptionMode(){ return document.getElementById('opt-mode-sim')?.classList.contains('on') ? 'simulate' : 'real'; }
+function setOptionMode(mode){
+  const simulate = mode === 'simulate';
+  document.getElementById('opt-mode-sim')?.classList.toggle('on', simulate);
+  document.getElementById('opt-mode-real')?.classList.toggle('on', !simulate);
+  const panel = document.getElementById('opt-panel');
+  if(panel){ panel.classList.toggle('sim', simulate); panel.classList.toggle('real', !simulate); }
+  document.getElementById('opt-save-real')?.style.setProperty('display', simulate ? 'none' : 'block');
+  document.getElementById('opt-save-sim')?.style.setProperty('display', simulate ? 'block' : 'none');
+  updateCoveredCallPreview();
+}
+function readCoveredCallForm(){
+  const commissionText = optionInput('opt-commission');
+  const simulatedSharesText = optionInput('opt-sim-shares');
+  const contractsText = optionInput('opt-contracts');
+  return {
+    mode: currentOptionMode(),
+    strategy: optionInput('opt-strategy') || OPTIONS_PERMISSION_CONFIG.allowedStrategy,
+    ticker: optionTicker(optionInput('opt-ticker')),
+    contracts: Number(contractsText),
+    hasContracts: contractsText !== '',
+    simulatedShares: Number(simulatedSharesText),
+    hasSimulatedShares: simulatedSharesText !== '',
+    expiration: optionInput('opt-expiration'),
+    strike: Number(optionInput('opt-strike')),
+    premium: Number(optionInput('opt-premium')),
+    commission: Number(commissionText),
+    hasCommission: commissionText !== '',
+    underlyingPrice: Number(optionInput('opt-underlying-price')),
+    queryDate: optionInput('opt-query-date'),
+    bid: optionInput('opt-bid') === '' ? null : Number(optionInput('opt-bid')),
+    ask: optionInput('opt-ask') === '' ? null : Number(optionInput('opt-ask')),
+    volume: optionInput('opt-volume') === '' ? null : Number(optionInput('opt-volume')),
+    openInterest: optionInput('opt-open-interest') === '' ? null : Number(optionInput('opt-open-interest')),
+    impliedVolatility: optionInput('opt-iv') === '' ? null : Number(optionInput('opt-iv')),
+    delta: optionInput('opt-delta') === '' ? null : Number(optionInput('opt-delta')),
+    notes: optionInput('opt-notes')
+  };
+}
+function validateCoveredCallDraft(draft, position){
+  const errors = [];
+  const warnings = [];
+  if(draft.strategy !== OPTIONS_PERMISSION_CONFIG.allowedStrategy) errors.push(BLOCKED_OPTION_STRATEGIES[draft.strategy] || 'Estrategia bloqueada: solo se permite call cubierta.');
+  if(!position) errors.push(`Ticker bloqueado: ${draft.ticker || 'sin ticker'} no está en la cartera actual.`);
+  if(draft.mode === 'real' && position && !isAllowedOptionsMarket(position)) errors.push(`${position.tk} cotiza en ${position.ex || 'mercado desconocido'}. El permiso actual solo cubre EE.UU. y Canadá.`);
+  if(draft.mode === 'real' && position){
+    const max = maxCoveredCallContracts(position);
+    if(max < 1) errors.push(`Necesitas al menos ${OPTIONS_PERMISSION_CONFIG.contractMultiplier} acciones de ${position.tk} para vender 1 contrato. Tienes ${Number(position.qty)||0}.`);
+    if(Number.isFinite(draft.contracts) && draft.contracts > max) errors.push(`Contratos bloqueados: máximo ${max} para ${position.tk} con ${Number(position.qty)||0} acciones.`);
+  }
+  if(draft.mode === 'real' && (!draft.hasContracts || !Number.isFinite(draft.contracts) || draft.contracts < 1 || !Number.isInteger(draft.contracts))) errors.push('Introduce un número entero de contratos válido.');
+  if(draft.mode === 'simulate' && !draft.hasContracts && !draft.hasSimulatedShares) errors.push('Introduce acciones simuladas o contratos simulados.');
+  if(draft.mode === 'simulate' && draft.hasContracts && (!Number.isFinite(draft.contracts) || draft.contracts <= 0)) errors.push('Introduce contratos simulados válidos.');
+  if(draft.mode === 'simulate' && draft.hasSimulatedShares && (!Number.isFinite(draft.simulatedShares) || draft.simulatedShares <= 0)) errors.push('Introduce acciones simuladas válidas.');
+  if(!draft.expiration) errors.push('Introduce el vencimiento.');
+  if(!Number.isFinite(draft.strike) || draft.strike <= 0) errors.push('Introduce un strike válido.');
+  if(!Number.isFinite(draft.premium) || draft.premium <= 0) errors.push('Introduce una prima por acción válida.');
+  if(!draft.hasCommission || !Number.isFinite(draft.commission) || draft.commission < 0) errors.push('Introduce una comisión válida, aunque sea 0.');
+  if(!Number.isFinite(draft.underlyingPrice) || draft.underlyingPrice <= 0) errors.push('Introduce el precio actual del subyacente.');
+  if(!draft.queryDate) errors.push('Introduce la fecha de consulta.');
+  if(draft.mode === 'real' && position && !isAllowedOptionsMarket(position)) warnings.push('Este aviso está centralizado en OPTIONS_PERMISSION_CONFIG.allowedMarkets para poder cambiarlo si IBKR amplía permisos.');
+  return { errors, warnings };
+}
+function calculateCoveredCall(draft, position){
+  if(!position) return {};
+  const cur = optionCurrency(position);
+  const shares = draft.mode === 'simulate' && draft.hasSimulatedShares ? draft.simulatedShares : OPTIONS_PERMISSION_CONFIG.contractMultiplier * draft.contracts;
+  const contractsEquivalent = shares / OPTIONS_PERMISSION_CONFIG.contractMultiplier;
+  const grossNative = draft.premium * shares;
+  const grossEur = optionEur(grossNative, cur);
+  const netEur = grossEur == null ? null : grossEur - draft.commission;
+  const netPerShareEur = netEur == null ? null : netEur / shares;
+  const commissionNative = draft.commission * getFx(cur);
+  const netPerShareNative = (grossNative - commissionNative) / shares;
+  const assignedPrice = draft.strike + netPerShareNative;
+  const breakEven = Number(position.avg) - netPerShareNative;
+  const capitalCoveredEur = optionEur(draft.underlyingPrice * shares, cur);
+  const simpleReturn = netEur != null && capitalCoveredEur > 0 ? netEur / capitalCoveredEur : null;
+  const days = optionDateDiffDays(draft.expiration);
+  const annualizedReturn = simpleReturn != null && days > 0 ? simpleReturn * 365 / days : null;
+  const upsideNative = draft.strike - draft.underlyingPrice;
+  const upsidePct = draft.underlyingPrice > 0 ? upsideNative / draft.underlyingPrice : null;
+  return { cur, shares, contractsEquivalent, grossEur, netEur, netPerShareEur, netPerShareNative, assignedPrice, breakEven, capitalCoveredEur, simpleReturn, annualizedReturn, days, upsideNative, upsidePct };
+}
+function simulationWarnings(draft, position, calc){
+  if(draft.mode !== 'simulate' || !position) return [];
+  const warnings = [];
+  const realMax = maxCoveredCallContracts(position);
+  if(draft.hasSimulatedShares && draft.hasContracts && Math.abs((draft.contracts * OPTIONS_PERMISSION_CONFIG.contractMultiplier) - draft.simulatedShares) > 0.0001){
+    warnings.push(`SIMULACIÓN: has indicado acciones y contratos no equivalentes. La calculadora usa ${f(calc.shares,2)} acciones y muestra ${f(calc.contractsEquivalent,2)} contratos equivalentes.`);
+  }
+  if(realMax < 1 || calc.contractsEquivalent < 1){
+    warnings.push(`⚠️ SIMULACIÓN. Con ${f(calc.shares,2)} acciones de ${position.tk} NO puedes vender una call cubierta real: IBKR exige contratos de ${OPTIONS_PERMISSION_CONFIG.contractMultiplier} acciones (tendrías ${f(calc.contractsEquivalent,2)} contratos). Estos números son solo para entender el mecanismo.`);
+  }
+  if(!isAllowedOptionsMarket(position)){
+    warnings.push(`⚠️ SIMULACIÓN. ${position.tk} cotiza en ${position.ex || 'mercado desconocido'} y tu Nivel 1 solo cubre EE.UU. y Canadá.`);
+  }
+  if(!warnings.length) warnings.push('SIMULACIÓN operable en tamaño y mercado, pero no se guardará como operación real.');
+  return warnings;
+}
+function coveredCallResultsHtml(calc){
+  const result = (label, value, cls='') => `<div class="opt-result"><div class="opt-result-l">${label}</div><div class="opt-result-v ${cls}">${value}</div></div>`;
+  return `<div class="opt-results">
+    ${result('Prima bruta', optionMoney(calc.grossEur))}
+    ${result('Prima neta', optionMoney(calc.netEur), 'up')}
+    ${result('Prima neta / acción', calc.netPerShareEur==null?'no disponible':`${optionMoney(calc.netPerShareEur)} · ${f(calc.netPerShareNative,4)} ${calc.cur}`)}
+    ${result('Precio efectivo si asignan', calc.assignedPrice==null?'no disponible':`${f(calc.assignedPrice,2)} ${calc.cur}`)}
+    ${result('Break-even bajista', calc.breakEven==null?'no disponible':`${f(calc.breakEven,2)} ${calc.cur}`)}
+    ${result('Rentabilidad simple', optionPct(calc.simpleReturn), 'up')}
+    ${result('Rentabilidad anualizada', optionPct(calc.annualizedReturn), 'up')}
+    ${result('Upside hasta strike', calc.upsideNative==null?'no disponible':`${f(calc.upsideNative,2)} ${calc.cur} · ${optionPct(calc.upsidePct)}`, calc.upsideNative>=0?'up':'dn')}
+    ${result('Upside sacrificado', 'Todo lo que suba por encima del strike si asignan', 'warn')}
+    ${result('Días a vencimiento', calc.days==null?'no disponible':String(calc.days))}
+    ${result('Contratos equivalentes', calc.contractsEquivalent==null?'no disponible':f(calc.contractsEquivalent,2))}
+  </div>`;
+}
+function updateCoveredCallPreview(){
+  const box = document.getElementById('opt-preview');
+  if(!box) return;
+  const draft = readCoveredCallForm();
+  const position = portfolioPosition(draft.ticker);
+  const validation = validateCoveredCallDraft(draft, position);
+  const calc = validation.errors.length ? {} : calculateCoveredCall(draft, position);
+  const simWarnings = validation.errors.length ? [] : simulationWarnings(draft, position, calc);
+  const msgs = [
+    ...validation.errors.map(e=>`<div class="opt-msg err">${e}</div>`),
+    ...validation.warnings.map(w=>`<div class="opt-msg warn">${w}</div>`),
+    ...simWarnings.map(w=>`<div class="opt-msg warn">${w}</div>`)
+  ].join('');
+  box.innerHTML = msgs + (validation.errors.length ? '' : coveredCallResultsHtml(calc));
+}
+function saveCoveredCallFromForm(simulated=false){
+  const draft = readCoveredCallForm();
+  if(simulated) draft.mode = 'simulate';
+  if(!simulated && draft.mode !== 'real'){ toast('Cambia a Registrar para guardar una operación real'); return; }
+  const position = portfolioPosition(draft.ticker);
+  const validation = validateCoveredCallDraft(draft, position);
+  if(validation.errors.length){ toast('❌ '+validation.errors[0]); updateCoveredCallPreview(); return; }
+  const calc = calculateCoveredCall(draft, position);
+  const record = {
+    id: 'cc_'+Date.now(),
+    strategy: OPTIONS_PERMISSION_CONFIG.allowedStrategy,
+    status: simulated ? 'simulation' : 'open',
+    simulated,
+    ticker: position.tk,
+    market: position.ex || '',
+    currency: calc.cur,
+    contracts: simulated ? calc.contractsEquivalent : draft.contracts,
+    simulatedShares: simulated ? calc.shares : null,
+    multiplier: OPTIONS_PERMISSION_CONFIG.contractMultiplier,
+    expiration: draft.expiration,
+    strike: draft.strike,
+    premium: draft.premium,
+    commission: draft.commission,
+    underlyingPrice: draft.underlyingPrice,
+    queryDate: draft.queryDate,
+    bid: draft.bid,
+    ask: draft.ask,
+    volume: draft.volume,
+    openInterest: draft.openInterest,
+    impliedVolatility: draft.impliedVolatility,
+    delta: draft.delta,
+    notes: draft.notes,
+    calculations: calc,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  const calls = loadCoveredCalls();
+  calls.unshift(record);
+  saveCoveredCalls(calls);
+  rOpciones();
+  toast(simulated ? '✅ Simulación guardada' : '✅ Call cubierta registrada');
+}
+function setCoveredCallStatus(id, status){
+  const calls = loadCoveredCalls();
+  const item = calls.find(c=>c.id===id);
+  if(!item) return;
+  item.status = status;
+  item.updatedAt = new Date().toISOString();
+  saveCoveredCalls(calls);
+  rOpciones();
+  toast(`Estado actualizado: ${OPTIONS_STATUS_LABELS[status] || status}`);
+}
+function deleteCoveredCall(id){
+  if(!confirm('¿Eliminar este registro de call cubierta?')) return;
+  saveCoveredCalls(loadCoveredCalls().filter(c=>c.id!==id));
+  rOpciones();
+  toast('Registro eliminado');
+}
+function rOpciones(){
+  const calls = loadCoveredCalls();
+  const tickerOptions = (D.c||[]).map(e=>`<option value="${e.tk}">${e.tk} · ${e.qty || 0} acc. · ${e.ex || '—'}</option>`).join('');
+  const list = calls.length ? calls.map(c=>{
+    const label = c.simulated ? 'Simulación' : (OPTIONS_STATUS_LABELS[c.status] || c.status || 'Abierta');
+    return `<div class="opt-call ${c.simulated?'simulated':''}">
+      <div class="opt-call-top">
+        <div><div class="opt-call-title">${escHtml(c.ticker)} · ${c.contracts} contrato${c.contracts===1?'':'s'} · strike ${f(c.strike,2)} ${escHtml(c.currency || '')}</div>
+        <div class="opt-call-sub">${c.simulated?`Escenario hipotético · ${f(c.simulatedShares,2)} acciones · `:''}Vence ${escHtml(c.expiration || '—')} · prima ${f(c.premium,2)} ${escHtml(c.currency || '')} · neto ${optionMoney(c.calculations?.netEur)} · consulta ${escHtml(c.queryDate || '—')}${c.notes?`<br>Notas: ${escHtml(c.notes)}`:''}</div></div>
+        <span class="opt-status ${c.simulated?'simulated':(c.status==='open'?'open':'')}">${label}</span>
+      </div>
+      <div class="opt-actions" style="${c.simulated?'grid-template-columns:1fr':''}">
+        ${c.simulated ? '' : `
+        <button onclick="setCoveredCallStatus('${c.id}','assigned')">Asignada</button>
+        <button onclick="setCoveredCallStatus('${c.id}','expired')">Expirada</button>
+        <button onclick="setCoveredCallStatus('${c.id}','bought_back')">Recomprada</button>`}
+        <button onclick="deleteCoveredCall('${c.id}')">Eliminar</button>
+      </div>
+    </div>`;
+  }).join('') : '<div style="font-size:13px;color:var(--ink3);font-weight:700">Sin calls cubiertas registradas.</div>';
+
+  document.getElementById('v-opciones').innerHTML=`<h2 style="font-size:22px;font-weight:900;color:var(--blue);margin-bottom:14px">Opciones</h2>
+    <div class="opt-alert">La app solo calcula y registra calls cubiertas manuales. Loren consulta la cadena en IBKR/Yahoo y ejecuta las órdenes personalmente en IBKR. No hay conexión con IBKR, no hay cotizaciones automáticas de opciones y esto no es asesoramiento financiero.</div>
+    <div class="card opt-panel sim" id="opt-panel"><div class="card-t">🛡️ Call cubierta manual</div>
+      <div class="opt-mode">
+        <button id="opt-mode-sim" class="on sim" onclick="setOptionMode('simulate')">Simular<br><span style="font-size:11px;font-weight:700">aprender, no operar</span></button>
+        <button id="opt-mode-real" class="real" onclick="setOptionMode('real')">Registrar<br><span style="font-size:11px;font-weight:700">operación real</span></button>
+      </div>
+      <div class="opt-grid">
+        <div class="opt-field"><label>Estrategia</label><select id="opt-strategy" onchange="updateCoveredCallPreview()"><option value="covered_call">Call cubierta</option><option value="protective_put">Put protectora (bloqueada)</option><option value="spread">Spread (bloqueado)</option><option value="naked_call">Venta descubierta (bloqueada)</option></select></div>
+        <div class="opt-field"><label>Ticker en cartera</label><select id="opt-ticker" onchange="updateCoveredCallPreview()">${tickerOptions}</select></div>
+        <div class="opt-field opt-sim-only"><label>Acciones simuladas</label><input id="opt-sim-shares" type="number" min="0.01" step="0.01" inputmode="decimal" oninput="updateCoveredCallPreview()"></div>
+        <div class="opt-field"><label>Nº contratos</label><input id="opt-contracts" type="number" min="0.01" step="0.01" inputmode="decimal" oninput="updateCoveredCallPreview()"></div>
+        <div class="opt-field"><label>Vencimiento</label><input id="opt-expiration" type="date" oninput="updateCoveredCallPreview()"></div>
+        <div class="opt-field"><label>Strike</label><input id="opt-strike" type="number" step="0.01" inputmode="decimal" oninput="updateCoveredCallPreview()"></div>
+        <div class="opt-field"><label>Prima por acción</label><input id="opt-premium" type="number" step="0.01" inputmode="decimal" oninput="updateCoveredCallPreview()"></div>
+        <div class="opt-field"><label>Comisión (€)</label><input id="opt-commission" type="number" step="0.01" inputmode="decimal" oninput="updateCoveredCallPreview()"></div>
+        <div class="opt-field"><label>Precio actual subyacente</label><input id="opt-underlying-price" type="number" step="0.01" inputmode="decimal" oninput="updateCoveredCallPreview()"></div>
+        <div class="opt-field"><label>Fecha consulta</label><input id="opt-query-date" type="date" oninput="updateCoveredCallPreview()"></div>
+        <div class="opt-field"><label>Bid opcional</label><input id="opt-bid" type="number" step="0.01" inputmode="decimal"></div>
+        <div class="opt-field"><label>Ask opcional</label><input id="opt-ask" type="number" step="0.01" inputmode="decimal"></div>
+        <div class="opt-field"><label>Volumen opcional</label><input id="opt-volume" type="number" step="1" inputmode="numeric"></div>
+        <div class="opt-field"><label>Open interest opcional</label><input id="opt-open-interest" type="number" step="1" inputmode="numeric"></div>
+        <div class="opt-field"><label>IV opcional</label><input id="opt-iv" type="number" step="0.01" inputmode="decimal"></div>
+        <div class="opt-field"><label>Delta opcional</label><input id="opt-delta" type="number" step="0.01" inputmode="decimal"></div>
+      </div>
+      <div class="opt-field"><label>Notas opcionales</label><textarea id="opt-notes"></textarea></div>
+      <div id="opt-preview"></div>
+      <button id="opt-save-sim" onclick="saveCoveredCallFromForm(true)" style="width:100%;padding:16px;border:1.5px solid var(--yellow);border-radius:14px;background:var(--yellow-bg);font-family:var(--sans);font-size:15px;font-weight:900;color:var(--yellow);cursor:pointer;margin-top:12px">Guardar simulación</button>
+      <button id="opt-save-real" onclick="saveCoveredCallFromForm(false)" style="display:none;width:100%;padding:16px;border:1.5px solid var(--green);border-radius:14px;background:var(--green-light);font-family:var(--sans);font-size:15px;font-weight:900;color:var(--green);cursor:pointer;margin-top:12px">Registrar operación real</button>
+    </div>
+    <div class="card"><div class="card-t">📒 Registro</div>${list}</div>`;
+  setOptionMode('simulate');
+  updateCoveredCallPreview();
 }
 
 function rConfig(){
@@ -2972,6 +3296,7 @@ function exportData(){
     idc7: portfolioSnapshot,
     brokerTariffs: localStorage.getItem('brokerTariffs'),
     fxRates: JSON.stringify(FX_RATES),
+    coveredCalls: loadCoveredCalls(),
   };
   // También exportar datos de valoración IDC por empresa
   for(let i=0; i<localStorage.length; i++){
@@ -3008,7 +3333,7 @@ function importData(event){
         return;
       }
       let count = 0;
-      const knownKeys = ['idc7','brokerTariffs','fxRates'];
+      const knownKeys = ['idc7','brokerTariffs','fxRates','coveredCalls'];
       knownKeys.forEach(k=>{
         const v = backup[k];
         if(v != null){
