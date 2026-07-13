@@ -1,5 +1,5 @@
 const express = require('express');
-const { config } = require('../config/env');
+const { requirePersistenceAuth } = require('../middleware/auth');
 const { getSnapshot, putSnapshot } = require('../services/persistenceService');
 
 const router = express.Router();
@@ -97,21 +97,6 @@ function validateCoveredCalls(snapshot) {
   }
 
   return null;
-}
-
-function requirePersistenceAuth(req, res, next) {
-  if (!config.persistenceAuthToken) {
-    return res.status(503).json({ status: 'error', message: 'Persistencia no configurada: falta ANALISIS_PERSISTENCE_TOKEN.' });
-  }
-
-  const auth = req.headers.authorization || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : req.headers['x-analisis-token'];
-
-  if (!token || token !== config.persistenceAuthToken) {
-    return res.status(401).json({ status: 'error', message: 'No autorizado.' });
-  }
-
-  next();
 }
 
 router.get('/snapshot', requirePersistenceAuth, (_req, res) => {

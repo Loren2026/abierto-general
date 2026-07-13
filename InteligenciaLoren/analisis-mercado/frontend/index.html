@@ -310,6 +310,17 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 .opt-sim-only{display:none}.opt-panel.sim .opt-sim-only{display:block}
 .opt-call.simulated{background:#fffdf5;border:1px solid rgba(180,83,9,.25);border-radius:14px;padding:14px;margin-bottom:10px}
 .opt-status.simulated{background:var(--yellow-bg);color:var(--yellow)}
+.opt-chain-tools{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
+@media(max-width:559px){.opt-chain-tools{grid-template-columns:1fr}}
+.opt-chain-meta{font-size:12px;color:var(--ink3);font-weight:800;line-height:1.45;margin:8px 0 12px}
+.opt-chain-table{width:100%;border-collapse:separate;border-spacing:0 6px;font-size:12px}
+.opt-chain-table th{text-align:right;color:var(--ink4);font-size:10px;text-transform:uppercase;letter-spacing:.04em;padding:0 6px 4px}
+.opt-chain-table th:first-child,.opt-chain-table td:first-child{text-align:left}
+.opt-chain-table td{padding:10px 6px;background:#f8fafc;border-top:1px solid var(--border);border-bottom:1px solid var(--border);text-align:right;font-family:var(--mono);font-weight:700;color:var(--ink)}
+.opt-chain-table td:first-child{border-left:1px solid var(--border);border-radius:10px 0 0 10px}
+.opt-chain-table td:last-child{border-right:1px solid var(--border);border-radius:0 10px 10px 0}
+.opt-chain-table button{padding:8px 10px;border:1px solid var(--blue);border-radius:9px;background:var(--blue-light);color:var(--blue);font-family:var(--sans);font-size:11px;font-weight:900;cursor:pointer}
+.opt-chain-scroll{overflow-x:auto}
 </style>
 </head>
 <body>
@@ -1547,6 +1558,7 @@ const OPTIONS_PERMISSION_CONFIG = {
   permissionLevel: 'IBKR Nivel 1'
 };
 const OPTIONS_STATUS_LABELS = { open:'Abierta', assigned:'Asignada', expired:'Expirada', bought_back:'Recomprada' };
+const OPTIONS_CHAIN_STATE = { ticker:'', loading:false, error:'', chain:null, expiration:'' };
 const BLOCKED_OPTION_STRATEGIES = {
   protective_put: 'Bloqueada: el permiso actual de IBKR Nivel 1 de Loren no permite puts protectoras.',
   spread: 'Bloqueada: el permiso actual de IBKR Nivel 1 de Loren no permite spreads.',
@@ -1573,8 +1585,13 @@ function optionDateDiffDays(expiration){
 }
 function optionMoney(value, digits=2){ return value==null || !isFinite(value) ? 'no disponible' : `${f(value,digits)}€`; }
 function optionPct(value){ return value==null || !isFinite(value) ? 'no disponible' : `${(value>=0?'+':'')}${f(value*100,2)}%`; }
+function optionNumber(value, digits=2){ return value==null || !isFinite(Number(value)) ? 'no disponible' : f(Number(value), digits); }
 function optionInput(id){ return (document.getElementById(id)?.value || '').trim(); }
 function escHtml(value){ return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+function setInputValue(id, value){
+  const el = document.getElementById(id);
+  if(el) el.value = value == null ? '' : String(value);
+}
 function currentOptionMode(){ return document.getElementById('opt-mode-sim')?.classList.contains('on') ? 'simulate' : 'real'; }
 function setOptionMode(mode){
   const simulate = mode === 'simulate';
@@ -1764,6 +1781,86 @@ function deleteCoveredCall(id){
   rOpciones();
   toast('Registro eliminado');
 }
+async function fetchOptionsChainFromCboe(){
+  const ticker = optionTicker(optionInput('opt-chain-ticker'));
+  const expiration = optionInput('opt-chain-expiration');
+  if(!ticker){ toast('Introduce un ticker'); return; }
+  const headers = persistenceHeaders();
+  if(!headers){ toast('Configura el token de persistencia antes de traer la cadena'); return; }
+  OPTIONS_CHAIN_STATE.ticker = ticker;
+  OPTIONS_CHAIN_STATE.expiration = expiration;
+  OPTIONS_CHAIN_STATE.loading = true;
+  OPTIONS_CHAIN_STATE.error = '';
+  rOpciones();
+  try {
+    const q = expiration ? `?expiration=${encodeURIComponent(expiration)}` : '';
+    const data = await backendFetch(`/api/options/chain/${encodeURIComponent(ticker)}${q}`, { headers });
+    OPTIONS_CHAIN_STATE.chain = data.chain || null;
+    OPTIONS_CHAIN_STATE.expiration = expiration || OPTIONS_CHAIN_STATE.chain?.expirations?.[0] || '';
+    OPTIONS_CHAIN_STATE.error = '';
+    toast(`✅ Cadena CBOE cargada: ${OPTIONS_CHAIN_STATE.chain?.calls?.length || 0} calls`);
+  } catch(err){
+    OPTIONS_CHAIN_STATE.chain = null;
+    OPTIONS_CHAIN_STATE.error = err.message || 'Cadena no disponible';
+    toast('❌ '+OPTIONS_CHAIN_STATE.error);
+  } finally {
+    OPTIONS_CHAIN_STATE.loading = false;
+    rOpciones();
+  }
+}
+function changeOptionsChainExpiration(value){
+  OPTIONS_CHAIN_STATE.expiration = value || '';
+  rOpciones();
+}
+function applyOptionChainRow(contractSymbol){
+  const row = (OPTIONS_CHAIN_STATE.chain?.calls || []).find(item => item.contractSymbol === contractSymbol);
+  if(!row) return;
+  setOptionMode('simulate');
+  setInputValue('opt-ticker', row.underlying || OPTIONS_CHAIN_STATE.chain?.symbol || OPTIONS_CHAIN_STATE.ticker);
+  setInputValue('opt-expiration', row.expiration);
+  setInputValue('opt-strike', row.strike);
+  setInputValue('opt-premium', row.bid);
+  setInputValue('opt-underlying-price', OPTIONS_CHAIN_STATE.chain?.underlyingPrice);
+  setInputValue('opt-query-date', new Date().toISOString().slice(0,10));
+  setInputValue('opt-bid', row.bid);
+  setInputValue('opt-ask', row.ask);
+  setInputValue('opt-volume', row.volume);
+  setInputValue('opt-open-interest', row.openInterest);
+  setInputValue('opt-iv', row.impliedVolatility);
+  setInputValue('opt-delta', row.delta);
+  updateCoveredCallPreview();
+  toast('Fila CBOE aplicada a la simulación. Confirma bid/ask en IBKR antes de operar.');
+}
+function optionsChainHtml(){
+  const chain = OPTIONS_CHAIN_STATE.chain;
+  const expirationOptions = (chain?.expirations || []).map(exp => `<option value="${exp}" ${exp===OPTIONS_CHAIN_STATE.expiration?'selected':''}>${exp}</option>`).join('');
+  const visibleCalls = (chain?.calls || []).filter(row => !OPTIONS_CHAIN_STATE.expiration || row.expiration === OPTIONS_CHAIN_STATE.expiration);
+  const rows = visibleCalls.slice(0, 80).map((row, idx)=>`<tr>
+    <td>${escHtml(row.expiration)}</td>
+    <td>${optionNumber(row.strike)}</td>
+    <td>${optionNumber(row.bid)}</td>
+    <td>${optionNumber(row.ask)}</td>
+    <td>${optionNumber(row.last)}</td>
+    <td>${optionNumber(row.volume,0)}</td>
+    <td>${optionNumber(row.openInterest,0)}</td>
+    <td>${optionNumber(row.impliedVolatility,4)}</td>
+    <td>${optionNumber(row.delta,4)}</td>
+    <td><button onclick="applyOptionChainRow('${escHtml(row.contractSymbol)}')">Usar</button></td>
+  </tr>`).join('');
+  return `<div class="card"><div class="card-t">📡 Cadena CBOE</div>
+    <div class="opt-alert">⚠️ Datos RETRASADOS (CBOE). Antes de lanzar cualquier orden, confirma el bid/ask actual en IBKR.</div>
+    <div class="opt-chain-tools">
+      <div class="opt-field" style="margin-bottom:0"><label>Ticker</label><input id="opt-chain-ticker" value="${escHtml(OPTIONS_CHAIN_STATE.ticker)}" placeholder="META" style="text-transform:uppercase"></div>
+      <button onclick="fetchOptionsChainFromCboe()" style="padding:13px 16px;border:1.5px solid var(--blue);border-radius:12px;background:var(--blue-light);font-family:var(--sans);font-size:13px;font-weight:900;color:var(--blue);cursor:pointer">Traer cadena</button>
+    </div>
+    ${OPTIONS_CHAIN_STATE.loading ? '<div class="loader-wrap" style="padding:24px"><div class="loader"></div><div class="loader-txt">Cargando CBOE...</div></div>' : ''}
+    ${OPTIONS_CHAIN_STATE.error ? `<div class="opt-msg err">${escHtml(OPTIONS_CHAIN_STATE.error)}</div>` : ''}
+    ${chain ? `<div class="opt-chain-meta">Fuente: CBOE delayed · Subyacente: ${optionNumber(chain.underlyingPrice)} · Timestamp CBOE: ${escHtml(chain.cboeTimestamp || 'no disponible')} · Cache: ${chain.cache?.hit?'hit':'nuevo'} · Calls: ${visibleCalls.length}</div>
+      <div class="opt-field"><label>Vencimiento</label><select id="opt-chain-expiration" onchange="changeOptionsChainExpiration(this.value)">${expirationOptions}</select></div>
+      <div class="opt-chain-scroll"><table class="opt-chain-table"><thead><tr><th>Vto.</th><th>Strike</th><th>Bid</th><th>Ask</th><th>Último</th><th>Vol.</th><th>OI</th><th>IV</th><th>Delta</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+      ${visibleCalls.length > 80 ? '<div class="opt-chain-meta">Mostrando 80 primeras calls del vencimiento para mantener la vista manejable.</div>' : ''}` : '<div class="opt-chain-meta">Introduce un ticker de mercado US/CA y trae la cadena. Si CBOE falla, la app mostrará cadena no disponible.</div>'}
+  </div>`;
+}
 function rOpciones(){
   const calls = loadCoveredCalls();
   const tickerOptions = (D.c||[]).map(e=>`<option value="${e.tk}">${e.tk} · ${e.qty || 0} acc. · ${e.ex || '—'}</option>`).join('');
@@ -1786,7 +1883,8 @@ function rOpciones(){
   }).join('') : '<div style="font-size:13px;color:var(--ink3);font-weight:700">Sin calls cubiertas registradas.</div>';
 
   document.getElementById('v-opciones').innerHTML=`<h2 style="font-size:22px;font-weight:900;color:var(--blue);margin-bottom:14px">Opciones</h2>
-    <div class="opt-alert">La app solo calcula y registra calls cubiertas manuales. Loren consulta la cadena en IBKR/Yahoo y ejecuta las órdenes personalmente en IBKR. No hay conexión con IBKR, no hay cotizaciones automáticas de opciones y esto no es asesoramiento financiero.</div>
+    <div class="opt-alert">La app calcula y registra calls cubiertas. La cadena viene de CBOE con datos retrasados; Loren ejecuta las órdenes personalmente en IBKR. Esto no es asesoramiento financiero.</div>
+    ${optionsChainHtml()}
     <div class="card opt-panel sim" id="opt-panel"><div class="card-t">🛡️ Call cubierta manual</div>
       <div class="opt-mode">
         <button id="opt-mode-sim" class="on sim" onclick="setOptionMode('simulate')">Simular<br><span style="font-size:11px;font-weight:700">aprender, no operar</span></button>
