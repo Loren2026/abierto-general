@@ -69,7 +69,13 @@ function validateCoveredCalls(snapshot) {
 
     const ticker = normalizeOptionTicker(call?.ticker);
     const status = String(call?.status || 'open').trim();
+    const simulated = call?.simulated === true;
     if (!ticker) return 'Call cubierta rechazada: falta ticker.';
+
+    if (simulated) {
+      if (!portfolioByTicker.has(ticker)) return `Simulación rechazada: ${ticker} no está en la cartera.`;
+      continue;
+    }
 
     if (status === 'open') {
       const position = portfolioByTicker.get(ticker);
@@ -83,7 +89,7 @@ function validateCoveredCalls(snapshot) {
       const shares = Number(position.qty || position.quantity || 0);
       const contracts = Number(call?.contracts || 0);
       const maxContracts = Math.floor(shares / OPTIONS_PERMISSION_CONFIG.contractMultiplier);
-      if (!Number.isFinite(contracts) || contracts < 1) return `Call cubierta rechazada: contratos inválidos para ${ticker}.`;
+      if (!Number.isFinite(contracts) || contracts < 1 || !Number.isInteger(contracts)) return `Call cubierta rechazada: contratos inválidos para ${ticker}.`;
       if (contracts > maxContracts) {
         return `Call cubierta rechazada: necesitas al menos ${OPTIONS_PERMISSION_CONFIG.contractMultiplier} acciones por contrato de ${ticker}. Tienes ${shares}.`;
       }
