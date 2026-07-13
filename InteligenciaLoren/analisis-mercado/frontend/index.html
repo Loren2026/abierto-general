@@ -2903,12 +2903,13 @@ function printReport(tk){
    EXPORTAR / IMPORTAR DATOS
    ════════════════════════════════════════════════ */
 function exportData(){
+  const portfolioSnapshot = JSON.stringify(D || {c:JSON.parse(JSON.stringify(IC)),p:JSON.parse(JSON.stringify(IP))});
   const backup = {
     _version: 'analisis-loren-v1',
     _date: new Date().toISOString(),
-    idc7: localStorage.getItem('idc7'),
+    idc7: portfolioSnapshot,
     brokerTariffs: localStorage.getItem('brokerTariffs'),
-    fxRates: localStorage.getItem('fxRates'),
+    fxRates: JSON.stringify(FX_RATES),
   };
   // También exportar datos de valoración IDC por empresa
   for(let i=0; i<localStorage.length; i++){
@@ -2945,10 +2946,18 @@ function importData(event){
         return;
       }
       let count = 0;
-      for(const [k,v] of Object.entries(backup)){
-        if(k.startsWith('_')) continue; // skip metadata
+      const knownKeys = ['idc7','brokerTariffs','fxRates'];
+      knownKeys.forEach(k=>{
+        const v = backup[k];
         if(v != null){
-          localStorage.setItem(k, v);
+          localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
+          count++;
+        }
+      });
+      for(const [k,v] of Object.entries(backup)){
+        if(k.startsWith('_') || knownKeys.includes(k)) continue; // skip metadata and handled keys
+        if(v != null && (k.startsWith('idc_inputs_') || k.startsWith('val_data_'))){
+          localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
           count++;
         }
       }
