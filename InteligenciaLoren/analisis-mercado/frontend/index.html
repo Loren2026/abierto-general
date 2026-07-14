@@ -181,6 +181,41 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 .upload-zone:active{transform:scale(.97);background:#dde8f2}
 .upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
 .upload-zone.processing{border-color:var(--acc);background:#fff8ee;color:var(--acc)}
+
+/* ══ CONFIG DATOS ══ */
+.data-stack{display:grid;gap:14px}
+.data-panel{background:#fff;border:2px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 3px 12px rgba(0,0,0,.05)}
+.data-panel.server{border-color:rgba(13,148,72,.45)}
+.data-panel.file{border-color:rgba(20,46,76,.35)}
+.data-eyebrow{font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+.data-panel.server .data-eyebrow{color:var(--green)}
+.data-panel.file .data-eyebrow{color:var(--blue)}
+.data-title{font-size:20px;font-weight:900;color:var(--ink);line-height:1.1;margin-bottom:8px}
+.data-copy{font-size:13px;font-weight:600;color:var(--ink3);line-height:1.45;margin-bottom:14px}
+.data-auth,.data-state,.data-note{border-radius:14px;padding:14px;margin-bottom:12px}
+.data-auth{border:1.5px solid rgba(13,148,72,.24);background:var(--green-light)}
+.data-auth.missing{border-color:rgba(180,83,9,.28);background:var(--yellow-bg)}
+.data-auth-head{display:flex;gap:9px;align-items:center;font-size:15px;font-weight:900;color:var(--ink);margin-bottom:5px}
+.data-dot{width:10px;height:10px;border-radius:50%;background:var(--green);flex:0 0 auto}
+.data-auth.missing .data-dot{background:var(--yellow)}
+.data-auth p,.data-state p,.data-note p{font-size:12.5px;font-weight:600;color:var(--ink3);line-height:1.45;margin:0}
+.data-token-row{display:flex;gap:8px;align-items:center;margin-top:12px}
+.data-token-row input{flex:1;min-width:0;padding:12px;border:1px solid var(--border);border-radius:10px;font-family:var(--sans);font-size:13px;background:#fff;color:var(--ink)}
+.data-small-btn{padding:12px;border:1px solid var(--border);border-radius:10px;background:#fff;font-family:var(--sans);font-size:12px;font-weight:800;color:var(--ink);cursor:pointer}
+.data-state{border:1.5px solid rgba(13,148,72,.2);background:var(--green-light)}
+.data-state strong{display:block;font-size:14px;font-weight:900;color:var(--green);margin-bottom:4px}
+.data-actions{display:grid;gap:10px}
+.data-btn{width:100%;padding:15px 16px;border-radius:14px;font-family:var(--sans);cursor:pointer;text-align:left;transition:opacity .15s,transform .15s}
+.data-btn:active{transform:scale(.99)}
+.data-btn-title{display:block;font-size:15px;font-weight:900;line-height:1.15}
+.data-btn-sub{display:block;font-size:12px;font-weight:650;line-height:1.35;margin-top:5px}
+.data-btn.primary{border:1.5px solid var(--green);background:var(--green);color:#fff}
+.data-btn.secondary{border:1.5px solid rgba(13,148,72,.22);background:var(--green-light);color:var(--green)}
+.data-btn.file{border:1.5px solid rgba(20,46,76,.22);background:#eef6ff;color:var(--blue)}
+.data-btn:disabled{opacity:.55;cursor:not-allowed;transform:none;filter:saturate(.7)}
+.data-note{border:1.5px dashed var(--border2);background:#f7fafc;margin:2px 0 0}
+.data-note strong{display:block;font-size:13px;font-weight:900;color:var(--ink);margin-bottom:7px}
+@media(max-width:420px){.data-panel{padding:16px}.data-title{font-size:19px}.data-token-row{display:grid;grid-template-columns:1fr auto}.data-small-btn{padding:11px 10px}}
 .comm-attach{margin-top:6px}
 .comm-attach-btn{display:flex;align-items:center;gap:8px;padding:10px 14px;border:1.5px dashed var(--border2);border-radius:10px;background:#f8fafc;cursor:pointer;font-size:12px;font-weight:700;color:var(--ink3);transition:all .15s;position:relative}
 .comm-attach-btn:active{background:#eef3f8}
@@ -504,12 +539,12 @@ function hasPersistenceToken(){ return !!(window.ANALISIS_PERSISTENCE_TOKEN || l
 function savePersistenceToken(){
   const input = document.getElementById('persistence-token-input');
   const value = (input?.value || '').trim();
-  if(!value){ toast('Introduce el token de persistencia'); return; }
+  if(!value){ toast('Introduce la contraseña'); return; }
   localStorage.setItem('analisis_persistence_token', value);
   window.ANALISIS_PERSISTENCE_TOKEN = value;
   if(input) input.value = '';
   rConfig();
-  toast('✅ Token guardado en este navegador');
+  toast('✅ Contraseña guardada en este navegador');
 }
 function togglePersistenceTokenVisibility(){
   const input = document.getElementById('persistence-token-input');
@@ -2136,9 +2171,24 @@ function rOpciones(){
   updateCoveredCallPreview();
 }
 
+function getConfigDataStatus(){
+  const positions = Array.isArray(D?.c) ? D.c.length : 0;
+  const value = Array.isArray(D?.c)
+    ? D.c.reduce((sum, item)=> sum + (Number(METRICS[item.tk]?.valMerc ?? item.val ?? 0) || 0), 0)
+    : 0;
+  const savedAt = formatSyncTime(localStorage.getItem('idc7_syncedAt'));
+  return {
+    positions,
+    value: f(value, 2),
+    savedAt: savedAt || 'sin fecha de guardado conocida'
+  };
+}
+
 function rConfig(){
   const brokerData = getBrokerTariffs();
   const hasBroker = brokerData && Object.keys(brokerData).length > 0;
+  const hasToken = hasPersistenceToken();
+  const dataStatus = getConfigDataStatus();
 
   let brokerHtml = '';
   if(hasBroker){
@@ -2183,26 +2233,65 @@ function rConfig(){
     <div id="ibkr-status"></div>
   </div>
 
-  <div class="card"><div class="card-t">💾 Tus datos</div>
-    <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;line-height:1.5">Exporta una copia local de toda tu información y guárdala en OneDrive. Importar reemplaza la cartera actual solo tras confirmación.</div>
-    <div style="border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;background:#fff">
-      <div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:6px">Token de persistencia</div>
-      <div style="font-size:12px;color:var(--ink3);margin-bottom:8px;line-height:1.4">${hasPersistenceToken() ? '✅ Token configurado en este navegador.' : 'Introduce el token una vez para guardar/cargar en servidor.'}</div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <input id="persistence-token-input" type="password" autocomplete="off" placeholder="Pega aquí el token" style="flex:1;min-width:0;padding:12px;border:1px solid var(--line);border-radius:10px;font-family:var(--sans);font-size:13px">
-        <button id="persistence-token-toggle" onclick="togglePersistenceTokenVisibility()" style="padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;font-family:var(--sans);font-size:12px;font-weight:800;color:var(--ink);cursor:pointer">Mostrar</button>
+  <div class="data-stack">
+    <section class="data-panel server">
+      <div class="data-eyebrow">EN INTERNET</div>
+      <div class="data-title">Tu cartera en el servidor</div>
+      <div class="data-copy">Es la copia principal. Está en un ordenador que funciona siempre, no en este móvil. Si cambias de teléfono o borras el navegador, tus datos siguen aquí.</div>
+
+      <div class="data-auth ${hasToken ? '' : 'missing'}">
+        <div class="data-auth-head"><span class="data-dot"></span><span>${hasToken ? 'Contraseña puesta en este móvil' : 'Falta la contraseña'}</span></div>
+        <p>${hasToken ? 'Es lo que autoriza a este teléfono a hablar con el servidor. Sin ella los dos botones de abajo no funcionan.' : 'Este móvil no está autorizado a hablar con el servidor. Pon la contraseña y los botones de abajo se activarán.'}</p>
+        <div class="data-token-row">
+          <input id="persistence-token-input" type="password" autocomplete="off" placeholder="Escribe la contraseña">
+          <button id="persistence-token-toggle" class="data-small-btn" onclick="togglePersistenceTokenVisibility()">Mostrar</button>
+        </div>
+        <button class="data-btn secondary" onclick="savePersistenceToken()" style="margin-top:10px">
+          <span class="data-btn-title">${hasToken ? 'Cambiar la contraseña' : 'Poner la contraseña'}</span>
+        </button>
       </div>
-      <button onclick="savePersistenceToken()" style="width:100%;padding:12px;border:1.5px solid var(--blue);border-radius:12px;background:var(--blue-light);font-family:var(--sans);font-size:13px;font-weight:800;color:var(--blue);cursor:pointer;margin-top:8px">Guardar token</button>
-    </div>
-    <button onclick="exportData()" style="width:100%;padding:16px;border:1.5px solid var(--green);border-radius:14px;background:var(--green-light);font-family:var(--sans);font-size:15px;font-weight:800;color:var(--green);cursor:pointer;margin-bottom:8px">📥 Exportar información</button>
-    <button onclick="syncSnapshotToServer().catch(err=>toast('❌ '+err.message))" style="width:100%;padding:16px;border:1.5px solid var(--blue);border-radius:14px;background:var(--blue-light);font-family:var(--sans);font-size:15px;font-weight:800;color:var(--blue);cursor:pointer;margin-bottom:8px">☁️ Guardar en servidor</button>
-    <button onclick="loadSnapshotFromServer().catch(err=>toast('❌ '+err.message))" style="width:100%;padding:16px;border:1.5px solid var(--line);border-radius:14px;background:#fff;font-family:var(--sans);font-size:15px;font-weight:800;color:var(--ink);cursor:pointer;margin-bottom:8px">🔄 Cargar desde servidor</button>
-    <div style="position:relative">
-      <button onclick="document.getElementById('import-file').click()" style="width:100%;padding:16px;border:1.5px solid var(--blue);border-radius:14px;background:#eef6ff;font-family:var(--sans);font-size:15px;font-weight:800;color:var(--blue);cursor:pointer">📤 Importar información</button>
-      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
-    </div>
-  </div>
-  <div class="card"><button onclick="if(confirm('¿Borrar todos los datos y restaurar la app a su estado inicial?')){localStorage.removeItem('idc7');location.reload()}" style="width:100%;padding:16px;border:1.5px solid var(--red-bg);border-radius:14px;background:var(--red-bg);font-family:var(--sans);font-size:15px;font-weight:700;color:var(--red);cursor:pointer">🔄 Restaurar datos originales</button></div>`;
+
+      <div class="data-state">
+        <strong>✓ Lo que ves en pantalla está guardado</strong>
+        <p>${dataStatus.positions} posiciones · ${dataStatus.value} € · guardado ${dataStatus.savedAt}</p>
+      </div>
+
+      <div class="data-actions">
+        <button class="data-btn primary" ${hasToken ? '' : 'disabled'} onclick="syncSnapshotToServer().catch(err=>toast('❌ '+err.message))">
+          <span class="data-btn-title">Guardar en el servidor</span>
+          <span class="data-btn-sub">${hasToken ? 'Sube lo que ves ahora en pantalla. Púlsalo siempre que cambies algo.' : 'Necesita la contraseña.'}</span>
+        </button>
+        <button class="data-btn secondary" ${hasToken ? '' : 'disabled'} onclick="loadSnapshotFromServer().catch(err=>toast('❌ '+err.message))">
+          <span class="data-btn-title">Traer del servidor</span>
+          <span class="data-btn-sub">${hasToken ? 'Descarta lo que hay en pantalla y pone lo último que guardaste.' : 'Necesita la contraseña.'}</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="data-panel file">
+      <div class="data-eyebrow">EN UN FICHERO</div>
+      <div class="data-title">Copia de seguridad</div>
+      <div class="data-copy">Además del servidor, puedes guardarte un fichero tuyo. Es tu red por si algún día el servidor no está.</div>
+      <div class="data-actions">
+        <button class="data-btn file" onclick="exportData()">
+          <span class="data-btn-title">Exportar datos</span>
+          <span class="data-btn-sub">Crea un fichero con todo y te deja elegir la carpeta donde guardarlo.</span>
+        </button>
+        <div style="position:relative">
+          <button class="data-btn file" onclick="document.getElementById('import-file').click()">
+            <span class="data-btn-title">Importar datos</span>
+            <span class="data-btn-sub">Lee un fichero que exportaste antes y reemplaza lo que hay ahora.</span>
+          </button>
+          <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+        </div>
+      </div>
+      <div class="data-note">
+        <strong>El fichero se llama backup-2026-07-14-1207.json</strong>
+        <p>Lleva la fecha y la hora, así sabes cuál es el más reciente.</p>
+        <p style="margin-top:8px">Contiene todo: las acciones que tienes, las valoraciones, las opciones, los tipos de cambio y la configuración. Con este fichero se puede reconstruir la app entera.</p>
+      </div>
+    </section>
+  </div>`;
 }
 
 // ═══ DETAIL VIEW (Cartera) — sin cambios ═══
