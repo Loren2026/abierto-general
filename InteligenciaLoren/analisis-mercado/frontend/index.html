@@ -547,16 +547,20 @@ function markSnapshotSynced(updatedAt){
 }
 function formatSyncTime(value){
   const d = value ? new Date(value) : null;
-  if(!d || isNaN(d.getTime())) return 'hora desconocida';
+  if(!d || isNaN(d.getTime())) return null;
   return d.toLocaleString('es-ES', { hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit' });
+}
+function isSyncConflictVisible(){
+  return !!document.getElementById('sync-conflict')?.classList.contains('open');
 }
 function refreshUnsavedBar(){
   const bar = document.getElementById('unsaved-bar');
-  if(bar) bar.classList.toggle('open', hasLocalUnsavedChanges());
+  if(bar) bar.classList.toggle('open', hasLocalUnsavedChanges() && !isSyncConflictVisible());
 }
 function hideSyncConflict(){
   const el = document.getElementById('sync-conflict');
   if(el){ el.classList.remove('open'); el.innerHTML=''; }
+  refreshUnsavedBar();
 }
 
 function countPortfolioPositionsFromIdc7(idc7){
@@ -607,6 +611,7 @@ function applySnapshotToLocal(snapshot, options={}){
     localStorage.setItem('idc7_updatedAt', snapshot.updatedAt);
     if(options.markSynced !== false) localStorage.setItem('idc7_syncedAt', snapshot.updatedAt);
   }
+  refreshUnsavedBar();
   return true;
 }
 function showSyncConflict(snapshot){
@@ -614,14 +619,20 @@ function showSyncConflict(snapshot){
   if(!el) return;
   const localTime = localStorage.getItem('idc7_updatedAt');
   const serverTime = snapshot?.updatedAt || null;
+  const localText = formatSyncTime(localTime);
+  const serverText = formatSyncTime(serverTime) || 'hora desconocida';
+  const message = localText
+    ? `Tienes cambios sin guardar de las ${localText}. El servidor tiene una copia de las ${serverText}. ¿Qué quieres hacer?`
+    : `Tienes cambios en este navegador, sin fecha conocida. El servidor tiene una copia de las ${serverText}. ¿Qué quieres hacer?`;
   window.pendingServerSnapshot = snapshot;
-  el.innerHTML = `Tienes cambios sin guardar de las ${formatSyncTime(localTime)}. El servidor tiene una copia de las ${formatSyncTime(serverTime)}. ¿Qué quieres hacer?
+  el.innerHTML = `${message}
     <div class="sync-actions">
       <button class="primary" onclick="syncSnapshotToServer({skipConfirm:true}).catch(err=>toast('❌ '+err.message))">Subir mis cambios</button>
       <button onclick="bringServerSnapshot()">Traer la del servidor</button>
       <button onclick="hideSyncConflict()">Decidir luego</button>
     </div>`;
   el.classList.add('open');
+  refreshUnsavedBar();
 }
 function bringServerSnapshot(){
   const snapshot = window.pendingServerSnapshot;
