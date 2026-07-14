@@ -329,6 +329,14 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 .opt-analysis ul{padding-left:18px}
 .opt-chain-actions{display:flex;gap:6px;justify-content:flex-end}
 .opt-chain-actions button:last-child{border-color:var(--yellow);background:var(--yellow-bg);color:var(--yellow)}
+.sync-conflict,.unsaved-bar{display:none;margin:0 12px 10px;padding:12px;border-radius:12px;font-family:var(--sans);font-size:13px;font-weight:800;line-height:1.35}
+.sync-conflict{border:1.5px solid rgba(180,83,9,.35);background:var(--yellow-bg);color:var(--yellow)}
+.unsaved-bar{align-items:center;justify-content:space-between;gap:10px;border:1.5px solid rgba(180,83,9,.35);background:var(--yellow-bg);color:var(--yellow)}
+.sync-conflict.open{display:block}
+.unsaved-bar.open{display:flex}
+.sync-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.sync-actions button,.unsaved-bar button{padding:9px 12px;border-radius:10px;border:1px solid rgba(180,83,9,.35);background:#fff;color:var(--yellow);font-family:var(--sans);font-size:12px;font-weight:900;cursor:pointer}
+.sync-actions button.primary,.unsaved-bar button{background:var(--yellow);color:#fff;border-color:var(--yellow)}
 </style>
 </head>
 <body>
@@ -336,6 +344,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 <!-- ══ TOP BAR ══ -->
 <div class="top-bar">
   <div class="hdr"><div class="hdr-title">App análisis <span>Loren</span></div><div class="hdr-sub">Mi cartera de inversión</div></div>
+  <div class="sync-conflict" id="sync-conflict"></div>
+  <div class="unsaved-bar" id="unsaved-bar"><span>Tienes cambios sin guardar</span><button onclick="syncSnapshotToServer({skipConfirm:true}).catch(err=>toast('❌ '+err.message))">Guardar ahora</button></div>
   <div class="tabs">
     <button class="tab on" data-v="resumen" onclick="go('resumen')">📊 Cartera <span class="tcnt" id="nc1">6</span></button>
     <button class="tab" data-v="valoracion" onclick="go('valoracion')">🎯 Valorar <span class="tcnt" id="nc2">13</span></button>
@@ -514,6 +524,41 @@ function livePortfolioSnapshot(){
   return JSON.stringify(D || {c:JSON.parse(JSON.stringify(IC)),p:JSON.parse(JSON.stringify(IP))});
 }
 
+function parseStoredTime(key){
+  const value = localStorage.getItem(key);
+  const time = value ? Date.parse(value) : NaN;
+  return Number.isFinite(time) ? time : null;
+}
+function hasLocalUnsavedChanges(){
+  if(!localStorage.getItem('idc7')) return false;
+  const updatedAt = parseStoredTime('idc7_updatedAt');
+  const syncedAt = parseStoredTime('idc7_syncedAt');
+  if(updatedAt == null) return syncedAt == null;
+  return updatedAt != null && (syncedAt == null || updatedAt > syncedAt);
+}
+function markLocalPortfolioUpdated(){
+  localStorage.setItem('idc7_updatedAt', new Date().toISOString());
+  refreshUnsavedBar();
+}
+function markSnapshotSynced(updatedAt){
+  if(!updatedAt) return;
+  localStorage.setItem('idc7_syncedAt', updatedAt);
+  refreshUnsavedBar();
+}
+function formatSyncTime(value){
+  const d = value ? new Date(value) : null;
+  if(!d || isNaN(d.getTime())) return 'hora desconocida';
+  return d.toLocaleString('es-ES', { hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit' });
+}
+function refreshUnsavedBar(){
+  const bar = document.getElementById('unsaved-bar');
+  if(bar) bar.classList.toggle('open', hasLocalUnsavedChanges());
+}
+function hideSyncConflict(){
+  const el = document.getElementById('sync-conflict');
+  if(el){ el.classList.remove('open'); el.innerHTML=''; }
+}
+
 function countPortfolioPositionsFromIdc7(idc7){
   let parsed = idc7;
   if(typeof parsed === 'string'){
@@ -547,14 +592,62 @@ function buildPersistenceSnapshot(){
   };
 }
 
-async function syncSnapshotToServer(){
+function applySnapshotToLocal(snapshot, options={}){
+  if(!snapshot || countPortfolioPositionsFromIdc7(snapshot.idc7) < 1) return false;
+  localStorage.setItem('idc7', snapshot.idc7);
+  if(snapshot.brokerTariffs != null) localStorage.setItem('brokerTariffs', snapshot.brokerTariffs);
+  else localStorage.removeItem('brokerTariffs');
+  if(snapshot.fxRates != null) localStorage.setItem('fxRates', snapshot.fxRates);
+  else localStorage.removeItem('fxRates');
+  if(Array.isArray(snapshot.coveredCalls)) localStorage.setItem('coveredCalls', JSON.stringify(snapshot.coveredCalls));
+  else localStorage.removeItem('coveredCalls');
+  clearLocalValuationStores();
+  Object.entries(snapshot.valuations || {}).forEach(([k,v])=> localStorage.setItem(k, v));
+  if(snapshot.updatedAt){
+    localStorage.setItem('idc7_updatedAt', snapshot.updatedAt);
+    if(options.markSynced !== false) localStorage.setItem('idc7_syncedAt', snapshot.updatedAt);
+  }
+  return true;
+}
+function showSyncConflict(snapshot){
+  const el = document.getElementById('sync-conflict');
+  if(!el) return;
+  const localTime = localStorage.getItem('idc7_updatedAt');
+  const serverTime = snapshot?.updatedAt || null;
+  window.pendingServerSnapshot = snapshot;
+  el.innerHTML = `Tienes cambios sin guardar de las ${formatSyncTime(localTime)}. El servidor tiene una copia de las ${formatSyncTime(serverTime)}. ¿Qué quieres hacer?
+    <div class="sync-actions">
+      <button class="primary" onclick="syncSnapshotToServer({skipConfirm:true}).catch(err=>toast('❌ '+err.message))">Subir mis cambios</button>
+      <button onclick="bringServerSnapshot()">Traer la del servidor</button>
+      <button onclick="hideSyncConflict()">Decidir luego</button>
+    </div>`;
+  el.classList.add('open');
+}
+function bringServerSnapshot(){
+  const snapshot = window.pendingServerSnapshot;
+  if(!snapshot){ hideSyncConflict(); return; }
+  if(!applySnapshotToLocal(snapshot, {markSynced:true})){ toast('❌ El servidor no tiene cartera válida para cargar'); return; }
+  hideSyncConflict();
+  loadFxRates();
+  load();
+  updC();
+  go(cur);
+  toast('✅ Copia del servidor cargada');
+}
+
+async function syncSnapshotToServer(options={}){
   const headers = persistenceHeaders();
   if(!headers){ toast('Configura el token de persistencia antes de sincronizar'); return; }
   const snapshot = buildPersistenceSnapshot();
   const positionCount = countPortfolioPositionsFromIdc7(snapshot.idc7);
   if(positionCount < 1){ toast('❌ No se puede guardar una cartera vacía'); return; }
-  if(!confirm('Esto reemplazará la cartera guardada en el servidor por la que tienes ahora en pantalla. ¿Continuar?')) return;
-  await backendFetch('/api/persistence/snapshot', { method:'PUT', headers, body: JSON.stringify({ snapshot }) });
+  if(!options.skipConfirm && !confirm('Esto reemplazará la cartera guardada en el servidor por la que tienes ahora en pantalla. ¿Continuar?')) return;
+  const data = await backendFetch('/api/persistence/snapshot', { method:'PUT', headers, body: JSON.stringify({ snapshot }) });
+  const saved = data?.snapshot || {};
+  const savedCount = countPortfolioPositionsFromIdc7(saved.idc7);
+  if(data?.status !== 'ok' || !saved.updatedAt || savedCount < 1) throw new Error('El servidor no confirmó el guardado');
+  markSnapshotSynced(saved.updatedAt);
+  hideSyncConflict();
   toast(`✅ ${positionCount} posiciones guardadas en servidor`);
 }
 
@@ -566,15 +659,7 @@ async function loadSnapshotFromServer(){
   const snapshot = data.snapshot || {};
   const positionCount = countPortfolioPositionsFromIdc7(snapshot.idc7);
   if(positionCount < 1){ toast('❌ El servidor no tiene cartera válida para cargar'); return; }
-  localStorage.setItem('idc7', snapshot.idc7);
-  if(snapshot.brokerTariffs != null) localStorage.setItem('brokerTariffs', snapshot.brokerTariffs);
-  else localStorage.removeItem('brokerTariffs');
-  if(snapshot.fxRates != null) localStorage.setItem('fxRates', snapshot.fxRates);
-  else localStorage.removeItem('fxRates');
-  if(Array.isArray(snapshot.coveredCalls)) localStorage.setItem('coveredCalls', JSON.stringify(snapshot.coveredCalls));
-  else localStorage.removeItem('coveredCalls');
-  clearLocalValuationStores();
-  Object.entries(snapshot.valuations || {}).forEach(([k,v])=> localStorage.setItem(k, v));
+  applySnapshotToLocal(snapshot, {markSynced:true});
   toast(`✅ ${positionCount} posiciones cargadas del servidor — recargando...`);
   setTimeout(()=>location.reload(), 1000);
 }
@@ -1445,7 +1530,7 @@ function renderCharts(v){
    ════════════════════════════════════════════════ */
 let D;
 function load(){const s=localStorage.getItem('idc7');if(s)try{D=JSON.parse(s);return}catch(e){}D={c:JSON.parse(JSON.stringify(IC)),p:JSON.parse(JSON.stringify(IP))};}
-function save(){localStorage.setItem('idc7',JSON.stringify(D));}
+function save(){localStorage.setItem('idc7',JSON.stringify(D));markLocalPortfolioUpdated();}
 function f(n,d){return n==null?'—':Number(n).toLocaleString('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d})}
 function roundMoney(n){ return Math.round((Number(n) + Number.EPSILON) * 100) / 100; }
 
@@ -3514,8 +3599,11 @@ function exportData(){
     _version: 'analisis-loren-v1',
     _date: new Date().toISOString(),
     idc7: portfolioSnapshot,
+    idc7_updatedAt: localStorage.getItem('idc7_updatedAt'),
+    idc7_syncedAt: localStorage.getItem('idc7_syncedAt'),
     brokerTariffs: localStorage.getItem('brokerTariffs'),
     fxRates: JSON.stringify(FX_RATES),
+    idc_valuation_config: localStorage.getItem('idc_valuation_config'),
     coveredCalls: loadCoveredCalls(),
   };
   // También exportar datos de valoración IDC por empresa
@@ -3527,9 +3615,11 @@ function exportData(){
   const blob = new Blob([json], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const date = new Date().toISOString().slice(0,10);
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const date = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
   a.href = url;
-  a.download = 'analisis-loren-cartera-'+date+'.json';
+  a.download = 'backup-'+date+'.json';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -3553,7 +3643,7 @@ function importData(event){
         return;
       }
       let count = 0;
-      const knownKeys = ['idc7','brokerTariffs','fxRates','coveredCalls'];
+      const knownKeys = ['idc7','idc7_updatedAt','idc7_syncedAt','brokerTariffs','fxRates','idc_valuation_config','coveredCalls'];
       knownKeys.forEach(k=>{
         const v = backup[k];
         if(v != null){
@@ -3561,6 +3651,7 @@ function importData(event){
           count++;
         }
       });
+      if(backup.idc7 != null && backup.idc7_updatedAt == null) localStorage.setItem('idc7_updatedAt', new Date().toISOString());
       for(const [k,v] of Object.entries(backup)){
         if(k.startsWith('_') || knownKeys.includes(k)) continue; // skip metadata and handled keys
         if(v != null && (k.startsWith('idc_inputs_') || k.startsWith('val_data_'))){
@@ -3578,9 +3669,42 @@ function importData(event){
   event.target.value = '';
 }
 
-loadFxRates();
-load();updC();rResumen();
-refreshFxRates().then(()=>{ if(cur==='resumen') rResumen(); });
+function renderInitialView(){
+  updC();
+  rResumen();
+  refreshUnsavedBar();
+  refreshFxRates().then(()=>{ if(cur==='resumen') rResumen(); });
+}
+async function bootApp(){
+  loadFxRates();
+  if(!hasPersistenceToken()){
+    load();
+    renderInitialView();
+    return;
+  }
+  const hasLocalIdc7 = !!localStorage.getItem('idc7');
+  const hasUnsaved = hasLocalUnsavedChanges();
+  try {
+    const data = await backendFetch('/api/persistence/snapshot', { headers: persistenceHeaders() });
+    const snapshot = data.snapshot || {};
+    const serverHasPortfolio = countPortfolioPositionsFromIdc7(snapshot.idc7) > 0;
+    if(serverHasPortfolio && (!hasLocalIdc7 || !hasUnsaved)){
+      applySnapshotToLocal(snapshot, {markSynced:true});
+      loadFxRates();
+      load();
+      renderInitialView();
+      return;
+    }
+    load();
+    renderInitialView();
+    if(serverHasPortfolio && hasUnsaved) showSyncConflict(snapshot);
+  } catch(e){
+    load();
+    renderInitialView();
+    toast('No se pudo contactar con el servidor');
+  }
+}
+bootApp();
 </script>
 </body>
 </html>
