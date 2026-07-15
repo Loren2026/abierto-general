@@ -327,6 +327,12 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 .opt-msg{padding:12px;border-radius:12px;font-size:13px;font-weight:800;line-height:1.4;margin-top:10px}
 .opt-msg.err{background:var(--red-bg);color:var(--red);border:1px solid rgba(224,36,36,.2)}
 .opt-msg.warn{background:var(--yellow-bg);color:var(--yellow);border:1px solid rgba(180,83,9,.2)}
+.opt-msg-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.opt-msg-chevron{font-size:16px;line-height:1;transition:transform .16s ease}
+.opt-msg.open .opt-msg-chevron{transform:rotate(180deg)}
+.opt-msg-help{margin-top:10px;padding-top:10px;border-top:1px solid rgba(224,36,36,.18);color:var(--ink2);font-size:12px;font-weight:700;line-height:1.45}
+.opt-msg-help p{margin:0 0 6px}.opt-msg-help p:last-child{margin-bottom:0}
+.opt-msg-help b{color:var(--red);font-weight:900}
 .opt-call{padding:14px 0;border-bottom:1px solid var(--border)}.opt-call:last-child{border-bottom:none}
 .opt-call-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
 .opt-call-title{font-family:var(--mono);font-size:17px;font-weight:800;color:var(--ink)}
@@ -1698,6 +1704,7 @@ const OPTIONS_PERMISSION_CONFIG = {
 };
 const OPTIONS_STATUS_LABELS = { open:'Abierta', assigned:'Asignada', expired:'Expirada', bought_back:'Recomprada' };
 const OPTIONS_CHAIN_STATE = { ticker:'', loading:false, error:'', chain:null, expiration:'' };
+const OPTION_HELP_OPEN = new Set();
 const BLOCKED_OPTION_STRATEGIES = {
   protective_put: 'Bloqueada: el permiso actual de IBKR Nivel 1 de Loren no permite puts protectoras.',
   spread: 'Bloqueada: el permiso actual de IBKR Nivel 1 de Loren no permite spreads.',
@@ -1728,6 +1735,153 @@ function optionNumber(value, digits=2){ return value==null || !isFinite(Number(v
 function optionNative(value, cur, digits=2){ return value==null || !isFinite(Number(value)) ? 'no disponible' : `${f(Number(value), digits)} ${cur || ''}`.trim(); }
 function optionInput(id){ return (document.getElementById(id)?.value || '').trim(); }
 function escHtml(value){ return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+function optionFiniteValues(values){
+  return values.map(Number).filter(v => Number.isFinite(v));
+}
+function optionRangeText(values, digits=2, suffix=''){
+  const nums = optionFiniteValues(values).filter(v => v > 0).sort((a,b)=>a-b);
+  if(!nums.length) return '';
+  return `${f(nums[0], digits)}${suffix}-${f(nums[nums.length-1], digits)}${suffix}`;
+}
+function currentOptionExpirationCalls(){
+  const exp = OPTIONS_CHAIN_STATE.expiration;
+  if(!OPTIONS_CHAIN_STATE.chain || !exp) return [];
+  return (OPTIONS_CHAIN_STATE.chain.calls || []).filter(row => row.expiration === exp);
+}
+function optionCboeRangeText(key){
+  const chain = OPTIONS_CHAIN_STATE.chain;
+  const calls = currentOptionExpirationCalls();
+  if(!chain || !calls.length) return '';
+  const exp = OPTIONS_CHAIN_STATE.expiration;
+  if(key === 'expiration'){
+    const expirations = (chain.expirations || []).filter(Boolean).sort();
+    if(!expirations.length) return '';
+    return `Rango CBOE cargado: vencimientos desde ${expirations[0]} hasta ${expirations[expirations.length-1]}. Vencimiento seleccionado: ${exp}.`;
+  }
+  if(key === 'strike'){
+    const range = optionRangeText(calls.map(row=>row.strike), 2);
+    return range ? `Rango CBOE del vencimiento ${exp}: strikes ${range}.` : '';
+  }
+  if(key === 'premium'){
+    const bidRange = optionRangeText(calls.map(row=>row.bid), 2);
+    const askRange = optionRangeText(calls.map(row=>row.ask), 2);
+    const parts = [];
+    if(bidRange) parts.push(`bid ${bidRange}`);
+    if(askRange) parts.push(`ask ${askRange}`);
+    return parts.length ? `Rango CBOE del vencimiento ${exp}: ${parts.join(' · ')}.` : '';
+  }
+  if(key === 'underlying'){
+    return Number.isFinite(Number(chain.underlyingPrice)) ? `Referencia CBOE cargada: subyacente ${optionNumber(chain.underlyingPrice)}.` : '';
+  }
+  if(key === 'query-date'){
+    return chain.cboeTimestamp ? `Timestamp CBOE cargado: ${chain.cboeTimestamp}.` : '';
+  }
+  if(key === 'iv'){
+    const range = optionRangeText(calls.map(row=>row.impliedVolatility).filter(v=>Number.isFinite(Number(v)) && Number(v) > 0 && Number(v) <= 1.5), 4);
+    return range ? `Rango CBOE del vencimiento ${exp}, excluyendo IV fuera de rango razonable: ${range}.` : '';
+  }
+  return '';
+}
+function optionGuidanceForMessage(message){
+  const msg = String(message || '');
+  const guidance = {
+    strategy: {
+      title:'Estrategia',
+      what:'Es el tipo de operación que se está registrando o simulando.',
+      effect:'Cambiarla cambia la mecánica que calcula la pantalla. En esta vista solo está activa la call cubierta.'
+    },
+    ticker: {
+      title:'Ticker en cartera',
+      what:'Es la acción sobre la que haces la simulación o el registro.',
+      effect:'Cambiarlo cambia el mercado, la moneda, las acciones disponibles y la cadena CBOE que se aplica.'
+    },
+    size: {
+      title:'Acciones o contratos simulados',
+      what:'Es cuántas acciones pones en juego en la simulación. 1 contrato equivale a 100 acciones.',
+      effect:'Subirlo aumenta la prima total y el capital cubierto; bajarlo reduce ambos. Es solo simulación y no mueve la cartera real.'
+    },
+    contracts: {
+      title:'Contratos',
+      what:'Es el número de contratos de call cubierta. Cada contrato representa 100 acciones.',
+      effect:'Subirlo aumenta el tamaño de la operación; bajarlo lo reduce.'
+    },
+    shares: {
+      title:'Acciones simuladas',
+      what:'Es el número de acciones que usas para entender el mecanismo sin registrar una operación real.',
+      effect:'Subirlo aumenta la prima total simulada; bajarlo la reduce.'
+    },
+    expiration: {
+      title:'Vencimiento',
+      what:'Es la fecha en que expira la opción.',
+      effect:'Más lejos suele implicar más prima y más tiempo con las acciones comprometidas; más cerca concentra el cálculo en menos días.'
+    },
+    strike: {
+      title:'Strike',
+      what:'Es el precio al que te comprometerías a vender las acciones si te asignan.',
+      effect:'Más alto deja más margen de subida antes de la asignación y suele bajar la prima; más bajo acerca la asignación y suele subir la prima.'
+    },
+    premium: {
+      title:'Prima por acción',
+      what:'Es lo que cobras por vender la call por cada acción. Sale del bid/ask de la cadena.',
+      effect:'Subirla aumenta la prima total; bajarla la reduce.'
+    },
+    commission: {
+      title:'Comisión',
+      what:'Es lo que cobra el broker por la operación.',
+      effect:'Subirla reduce la prima neta y las rentabilidades netas; bajarla las aumenta. Si no la sabes, 0 deja el cálculo sin coste de broker.'
+    },
+    underlying: {
+      title:'Precio actual subyacente',
+      what:'Es el precio actual de la acción usada como referencia.',
+      effect:'Subirlo o bajarlo cambia la distancia al strike y los escenarios calculados.'
+    },
+    'query-date': {
+      title:'Fecha de consulta',
+      what:'Es el día al que corresponden los datos que estás usando.',
+      effect:'Cambiarla solo deja constancia temporal; no cambia los precios ni la cadena cargada.'
+    },
+    iv: {
+      title:'IV',
+      what:'Es una medida de cuánto movimiento futuro está incorporando el precio de la opción.',
+      effect:'Una IV más alta suele ir asociada a primas más altas; una IV más baja suele ir asociada a primas más bajas.'
+    }
+  };
+  if(msg.includes('Estrategia bloqueada') || msg.includes('Bloqueada:')) return { key:'strategy', ...guidance.strategy };
+  if(msg.includes('Ticker bloqueado') || msg.includes('cotiza en')) return { key:'ticker', ...guidance.ticker };
+  if(msg.includes('acciones simuladas o contratos simulados')) return { key:'size', ...guidance.size };
+  if(msg.includes('número entero de contratos') || msg.includes('contratos simulados') || msg.includes('Necesitas al menos') || msg.includes('Contratos bloqueados')) return { key:'contracts', ...guidance.contracts };
+  if(msg.includes('acciones simuladas válidas')) return { key:'shares', ...guidance.shares };
+  if(msg.includes('vencimiento')) return { key:'expiration', ...guidance.expiration };
+  if(msg.includes('strike')) return { key:'strike', ...guidance.strike };
+  if(msg.includes('prima por acción')) return { key:'premium', ...guidance.premium };
+  if(msg.includes('comisión')) return { key:'commission', ...guidance.commission };
+  if(msg.includes('precio actual del subyacente')) return { key:'underlying', ...guidance.underlying };
+  if(msg.includes('fecha de consulta')) return { key:'query-date', ...guidance['query-date'] };
+  if(msg.includes('IV')) return { key:'iv', ...guidance.iv };
+  return null;
+}
+function toggleOptionHelp(key){
+  if(OPTION_HELP_OPEN.has(key)) OPTION_HELP_OPEN.delete(key);
+  else OPTION_HELP_OPEN.add(key);
+  updateCoveredCallPreview();
+}
+function optionValidationMessageHtml(message, type='err'){
+  const guidance = type === 'err' ? optionGuidanceForMessage(message) : null;
+  if(!guidance) return `<div class="opt-msg ${type}">${escHtml(message)}</div>`;
+  const open = OPTION_HELP_OPEN.has(guidance.key);
+  const range = optionCboeRangeText(guidance.key);
+  const help = open ? `<div class="opt-msg-help">
+    <p><b>Qué es:</b> ${escHtml(guidance.what)}</p>
+    <p><b>Efecto:</b> ${escHtml(guidance.effect)}</p>
+    ${range ? `<p><b>Cadena CBOE:</b> ${escHtml(range)}</p>` : ''}
+  </div>` : '';
+  return `<div class="opt-msg ${type} ${open?'open':''}">
+    <button type="button" class="opt-msg-btn" onclick="toggleOptionHelp('${escHtml(guidance.key)}')" aria-expanded="${open?'true':'false'}">
+      <span>${escHtml(message)}</span><span class="opt-msg-chevron">⌄</span>
+    </button>
+    ${help}
+  </div>`;
+}
 function setInputValue(id, value){
   const el = document.getElementById(id);
   if(el) el.value = value == null ? '' : String(value);
@@ -1857,9 +2011,9 @@ function updateCoveredCallPreview(){
   const calc = validation.errors.length ? {} : calculateCoveredCall(draft, position);
   const simWarnings = validation.errors.length ? [] : simulationWarnings(draft, position, calc);
   const msgs = [
-    ...validation.errors.map(e=>`<div class="opt-msg err">${e}</div>`),
-    ...validation.warnings.map(w=>`<div class="opt-msg warn">${w}</div>`),
-    ...simWarnings.map(w=>`<div class="opt-msg warn">${w}</div>`)
+    ...validation.errors.map(e=>optionValidationMessageHtml(e, 'err')),
+    ...validation.warnings.map(w=>optionValidationMessageHtml(w, 'warn')),
+    ...simWarnings.map(w=>optionValidationMessageHtml(w, 'warn'))
   ].join('');
   box.innerHTML = msgs + (validation.errors.length ? '' : coveredCallResultsHtml(calc));
 }
