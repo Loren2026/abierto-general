@@ -2,9 +2,9 @@
   "meta": {
     "titulo": "Mapa de Control",
     "version": "1.0",
-    "fecha": "2026-07-12",
-    "fuente": "historico 28-6-26 + planning v42 + cierres 12-7-26",
-    "main_produccion": "299d34c13ea19bf7c13256ee2757956fe4b053c8"
+    "fecha": "2026-07-16",
+    "fuente": "historico 28-6-26 + planning v42 + cierres 12-7-26 + cierre 16-7-26",
+    "main_produccion": "9034702e76a699a84a37030e76df7b0e9cf38a81"
   },
   "ecosistema": {
     "id": "root",
@@ -664,74 +664,152 @@
             "name": "Análisis Mercado",
             "tipo": "proyecto",
             "estado": "ambar",
-            "sub": "analisis.inteligencialoren.com · análisis de mercado y recomendación sobre la cartera",
+            "sub": "analisis.inteligencialoren.com · análisis de mercado, cartera IBKR y módulo de Opciones",
             "bloques": [
+              {
+                "nombre": "Cierre 16/07/2026",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Producción actualizada por Loren vía SSH: módulo de Opciones con acordeón de ayuda en avisos + comparador de strikes"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Rama integrada auditable: feature/opciones-integracion · fb790090 · integra 88613565 + 67a52f36"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "main sigue en 9034702e; las ramas de Opciones NO están mergeadas a main todavía"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "Comparador de strikes pensado para uso desde PC; en móvil resulta incómodo"
+                  }
+                ]
+              },
               {
                 "nombre": "Qué es",
                 "items": [
                   {
                     "estado": "verde",
-                    "t": "App de análisis de mercado con recomendación de opciones (comprar/vender/mantener) sobre la cartera"
+                    "t": "App de análisis de mercado y cartera personal de Loren con datos IBKR/FMP y cálculos locales"
                   },
                   {
                     "estado": "verde",
-                    "t": "Versión funcional verificada (2400+ líneas, FMP + Claude API reales, gráficos)"
+                    "t": "La app analiza y compara; no recomienda operaciones ni lanza órdenes"
                   },
                   {
                     "estado": "verde",
-                    "t": "Opción B decidida: backend propio con las claves en el servidor (nunca en el navegador)"
+                    "t": "Backend propio con claves en servidor; frontend de Opciones usa lectura de cadena CBOE ya cargada"
                   }
                 ]
               },
               {
-                "nombre": "Construido (fases 1-3 y 5)",
+                "nombre": "Cartera IBKR verificada",
                 "items": [
                   {
                     "estado": "verde",
-                    "t": "Fases 1-3 de backend implementadas"
+                    "t": "7 posiciones verificadas al céntimo contra informe IBKR PortfolioAnalyst de 15/07/2026"
                   },
                   {
                     "estado": "verde",
-                    "t": "Fase 5: sección de recomendación de opciones integrada"
-                  }
-                ]
-              },
-              {
-                "nombre": "Cartera de referencia",
-                "items": [
-                  {
-                    "estado": "verde",
-                    "t": "ZEG · META · MSFT · CSU · AMZN · WKL · NAV 29.710 € (+40,4%)"
+                    "t": "NAV real IBKR: 29.779,39 € = acciones 26.116,28 € + cash 3.663,11 €"
                   },
                   {
                     "estado": "verde",
-                    "t": "Cuenta IBKR U18746527 · PRO · CASH · EUR"
-                  }
-                ]
-              },
-              {
-                "nombre": "Seguridad de claves",
-                "items": [
-                  {
-                    "estado": "rojo",
-                    "t": "FMP API key expuesta (corría en navegador) · rotar al desplegar con proxy backend"
+                    "t": "Cash, dividendos cobrados (1.170,54 €) y comisiones (-19,84 €) cargados como datos base"
                   },
                   {
                     "estado": "rojo",
-                    "t": "Claude API key también en navegador · proteger con el proxy backend"
+                    "t": "M5 prioritario: panel superior calcula mal pese a datos base correctos"
                   }
                 ]
               },
               {
-                "nombre": "Bloqueado / pendiente",
+                "nombre": "Módulo de Opciones",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Call cubierta manual operativa con datos CBOE retrasados y aviso de confirmación bid/ask en IBKR"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Acordeón de ayuda en avisos: explica qué es cada campo, efecto y rangos CBOE si hay cadena cargada"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Comparador de strikes: ordena por rentabilidad anualizada, prima bruta, margen hasta asignación y prima/riesgo"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Comparador muestra reverso visible: delta alta, spread ancho, IV alta/no fiable y liquidez"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "Pendiente rediseño móvil del comparador; ahora es usable principalmente desde PC"
+                  }
+                ]
+              },
+              {
+                "nombre": "Pendiente prioritario",
                 "items": [
                   {
                     "estado": "rojo",
-                    "t": "Fase 4 módulo de opciones · bloqueada: requiere activar permisos IBKR desde PC"
+                    "t": "M5 - cálculo del panel: NAV muestra 28.472 € porque ignora cash"
+                  },
+                  {
+                    "estado": "rojo",
+                    "t": "M5 - dividendos netos muestra 0 € aunque hay 1.170,54 € cargados"
+                  },
+                  {
+                    "estado": "rojo",
+                    "t": "M5 - porcentaje por posición sale +0,0%; revisar lógica de cálculo, no los datos base"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "Fix M5 pendiente para próxima jornada"
+                  }
+                ]
+              },
+              {
+                "nombre": "Mejoras Opciones pendientes",
+                "items": [
+                  {
+                    "estado": "ambar",
+                    "t": "M7: IV disparatada debe mostrarse como n/d"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "M8: el selector no debe arrancar en ZEG/LSE"
                   },
                   {
                     "estado": "gris",
-                    "t": "Fase 6 despliegue en analisis.inteligencialoren.com (dominio no responde) · pendiente autorización con claves reales"
+                    "t": "Rediseño del comparador en móvil"
+                  },
+                  {
+                    "estado": "gris",
+                    "t": "Filtro de strikes ITM"
+                  }
+                ]
+              },
+              {
+                "nombre": "Rojos seguridad sin tocar",
+                "items": [
+                  {
+                    "estado": "rojo",
+                    "t": "Rotar ANALISIS_PERSISTENCE_TOKEN"
+                  },
+                  {
+                    "estado": "rojo",
+                    "t": "Crear PIN maestro para Credenciales"
+                  },
+                  {
+                    "estado": "rojo",
+                    "t": "Revocar key OpenAI antigua/expuesta"
+                  },
+                  {
+                    "estado": "rojo",
+                    "t": "Renovar token Turin-OpenClaw-v3 antes de su expiración el 24/07/2026"
                   }
                 ]
               },
