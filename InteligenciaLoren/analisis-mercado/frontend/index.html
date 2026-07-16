@@ -364,6 +364,19 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 .opt-analysis ul{padding-left:18px}
 .opt-chain-actions{display:flex;gap:6px;justify-content:flex-end}
 .opt-chain-actions button:last-child{border-color:var(--yellow);background:var(--yellow-bg);color:var(--yellow)}
+.opt-compare-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin:16px 0 10px;flex-wrap:wrap}
+.opt-compare-title{font-size:15px;font-weight:900;color:var(--blue)}
+.opt-compare-tools{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.opt-compare-tools button{padding:8px 10px;border:1px solid var(--border);border-radius:9px;background:#fff;color:var(--ink3);font-family:var(--sans);font-size:11px;font-weight:900;cursor:pointer}
+.opt-compare-tools button.on{border-color:var(--blue);background:var(--blue-light);color:var(--blue)}
+.opt-risk-tags{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.opt-risk-tag{display:inline-flex;align-items:center;padding:4px 7px;border-radius:999px;background:#eef2f7;color:var(--ink3);font-family:var(--sans);font-size:10px;font-weight:900;white-space:nowrap}
+.opt-risk-tag.warn{background:var(--yellow-bg);color:var(--yellow)}
+.opt-risk-tag.err{background:var(--red-bg);color:var(--red)}
+.opt-risk-tag.info{background:var(--blue-light);color:var(--blue)}
+.opt-chain-table .opt-nd{color:var(--ink4);font-family:var(--sans);font-weight:800}
+.opt-chain-table .opt-liq{font-family:var(--sans);font-size:11px;line-height:1.35;color:var(--ink2);font-weight:800;text-align:left}
+.opt-chain-table .opt-cell-note{display:block;font-family:var(--sans);font-size:10px;color:var(--ink4);font-weight:800;margin-top:2px}
 .sync-conflict,.unsaved-bar{display:none;margin:0 12px 10px;padding:12px;border-radius:12px;font-family:var(--sans);font-size:13px;font-weight:800;line-height:1.35}
 .sync-conflict{border:1.5px solid rgba(180,83,9,.35);background:var(--yellow-bg);color:var(--yellow)}
 .unsaved-bar{align-items:center;justify-content:space-between;gap:10px;border:1.5px solid rgba(180,83,9,.35);background:var(--yellow-bg);color:var(--yellow)}
@@ -1697,7 +1710,15 @@ const OPTIONS_PERMISSION_CONFIG = {
   permissionLevel: 'IBKR Nivel 1'
 };
 const OPTIONS_STATUS_LABELS = { open:'Abierta', assigned:'Asignada', expired:'Expirada', bought_back:'Recomprada' };
-const OPTIONS_CHAIN_STATE = { ticker:'', loading:false, error:'', chain:null, expiration:'' };
+const OPTIONS_COMPARATOR_LIMIT = 40;
+const OPTIONS_COMPARATOR_DEFAULT_RANGE = 0.10;
+const OPTIONS_COMPARATOR_SORT_LABELS = {
+  annualizedReturn: 'Rentabilidad anualizada',
+  premium: 'Prima bruta',
+  assignmentMargin: 'Margen hasta asignación',
+  premiumRisk: 'Prima/riesgo'
+};
+const OPTIONS_CHAIN_STATE = { ticker:'', loading:false, error:'', chain:null, expiration:'', comparatorSort:'annualizedReturn', comparatorShowAll:false };
 const BLOCKED_OPTION_STRATEGIES = {
   protective_put: 'Bloqueada: el permiso actual de IBKR Nivel 1 de Loren no permite puts protectoras.',
   spread: 'Bloqueada: el permiso actual de IBKR Nivel 1 de Loren no permite spreads.',
@@ -1727,6 +1748,10 @@ function optionPct(value){ return value==null || !isFinite(value) ? 'no disponib
 function optionNumber(value, digits=2){ return value==null || !isFinite(Number(value)) ? 'no disponible' : f(Number(value), digits); }
 function optionNative(value, cur, digits=2){ return value==null || !isFinite(Number(value)) ? 'no disponible' : `${f(Number(value), digits)} ${cur || ''}`.trim(); }
 function optionInput(id){ return (document.getElementById(id)?.value || '').trim(); }
+function optionNumeric(value){ if(value == null || value === '') return null; const n = Number(value); return Number.isFinite(n) ? n : null; }
+function optionNd(value, digits=2){ const n = optionNumeric(value); return n == null ? '<span class="opt-nd">n/d</span>' : f(n, digits); }
+function optionPctNd(value){ return value==null || !isFinite(value) ? '<span class="opt-nd">n/d</span>' : `${value>=0?'+':''}${f(value*100,2)}%`; }
+function reliableOptionIv(value){ const n = optionNumeric(value); return n != null && n > 0 && n <= 1.5 ? n : null; }
 function escHtml(value){ return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
 function setInputValue(id, value){
   const el = document.getElementById(id);
@@ -1950,6 +1975,16 @@ async function fetchOptionsChainFromCboe(){
 }
 function changeOptionsChainExpiration(value){
   OPTIONS_CHAIN_STATE.expiration = value || '';
+  OPTIONS_CHAIN_STATE.comparatorShowAll = false;
+  rOpciones();
+}
+function setOptionsComparatorSort(sortKey){
+  if(!OPTIONS_COMPARATOR_SORT_LABELS[sortKey]) return;
+  OPTIONS_CHAIN_STATE.comparatorSort = sortKey;
+  rOpciones();
+}
+function toggleOptionsComparatorRange(){
+  OPTIONS_CHAIN_STATE.comparatorShowAll = !OPTIONS_CHAIN_STATE.comparatorShowAll;
   rOpciones();
 }
 function applyOptionChainRow(contractSymbol){
@@ -2002,9 +2037,10 @@ function classifyMoneyness(row, underlyingPrice){
   return { label, distance };
 }
 function ivContext(row){
-  const values = chainCallsForCurrentExpiration().map(item=>item.impliedVolatility).filter(v=>Number.isFinite(v) && v > 0).sort((a,b)=>a-b);
-  if(!Number.isFinite(row?.impliedVolatility) || row.impliedVolatility <= 0 || values.length < 3) return { label:'no disponible', percentile:null };
-  const below = values.filter(v=>v < row.impliedVolatility).length;
+  const rowIv = reliableOptionIv(row?.impliedVolatility);
+  const values = chainCallsForCurrentExpiration().map(item=>reliableOptionIv(item.impliedVolatility)).filter(v=>v != null).sort((a,b)=>a-b);
+  if(rowIv == null || values.length < 3) return { label:'no disponible', percentile:null };
+  const below = values.filter(v=>v < rowIv).length;
   const percentile = values.length > 1 ? below / (values.length - 1) : null;
   const label = percentile == null ? 'no disponible' : (percentile >= 0.66 ? 'alta frente a esta cadena' : (percentile <= 0.33 ? 'baja frente a esta cadena' : 'media frente a esta cadena'));
   return { label, percentile };
@@ -2023,6 +2059,110 @@ function liquidityContext(row){
   if(Number.isFinite(oi) && oi < 50) risks.push(`Interés abierto bajo: ${f(oi,0)} contratos.`);
   if(Number.isFinite(volume) && Number.isFinite(oi) && volume === 0 && oi === 0) risks.push('Contrato muerto: volumen e interés abierto a 0.');
   return { spread, spreadPct, volume: Number.isFinite(volume) ? volume : null, openInterest: Number.isFinite(oi) ? oi : null, risks };
+}
+function optionComparatorIvStats(){
+  const values = chainCallsForCurrentExpiration().map(row=>reliableOptionIv(row.impliedVolatility)).filter(v=>v != null).sort((a,b)=>a-b);
+  return { values };
+}
+function optionComparatorIvPercentile(iv, stats){
+  const reliableIv = reliableOptionIv(iv);
+  const values = stats?.values || [];
+  if(reliableIv == null || values.length < 3) return null;
+  const below = values.filter(v=>v < reliableIv).length;
+  return values.length > 1 ? below / (values.length - 1) : null;
+}
+function optionComparatorRows(){
+  const chain = OPTIONS_CHAIN_STATE.chain;
+  const underlying = optionNumeric(chain?.underlyingPrice);
+  const expirationRows = chainCallsForCurrentExpiration();
+  const days = optionDateDiffDays(OPTIONS_CHAIN_STATE.expiration);
+  const ivStats = optionComparatorIvStats();
+  const withPremium = expirationRows.filter(row => [row.bid,row.ask,row.last].some(v => optionNumeric(v) != null));
+  const rangeFiltered = withPremium.filter(row => {
+    if(OPTIONS_CHAIN_STATE.comparatorShowAll || underlying == null || underlying <= 0) return true;
+    const strike = optionNumeric(row.strike);
+    return strike != null && Math.abs((strike - underlying) / underlying) <= OPTIONS_COMPARATOR_DEFAULT_RANGE;
+  });
+  const mapped = rangeFiltered.map(row => {
+    const strike = optionNumeric(row.strike);
+    const bid = optionNumeric(row.bid);
+    const ask = optionNumeric(row.ask);
+    const delta = optionNumeric(row.delta);
+    const absDelta = delta == null ? null : Math.abs(delta);
+    const spread = bid != null && ask != null ? ask - bid : null;
+    const volume = optionNumeric(row.volume);
+    const openInterest = optionNumeric(row.openInterest);
+    const assignmentMargin = strike != null && underlying != null && underlying > 0 ? (strike - underlying) / underlying : null;
+    /*
+      Rentabilidad anualizada del comparador:
+      (prima / precio subyacente) * (365 / días hasta vencimiento) * 100
+      En el objeto se guarda como ratio decimal para reutilizar optionPctNd().
+    */
+    const annualizedReturn = bid != null && underlying != null && underlying > 0 && days > 0 ? (bid / underlying) * (365 / days) : null;
+    const premiumRisk = bid != null && absDelta != null && absDelta > 0 ? bid / absDelta : null;
+    const ivPercentile = optionComparatorIvPercentile(row.impliedVolatility, ivStats);
+    return { row, strike, bid, ask, delta, absDelta, spread, volume, openInterest, assignmentMargin, annualizedReturn, premiumRisk, ivPercentile };
+  });
+  const sortKey = OPTIONS_CHAIN_STATE.comparatorSort || 'annualizedReturn';
+  mapped.sort((a,b) => {
+    const av = a[sortKey];
+    const bv = b[sortKey];
+    if(av == null && bv == null) return (a.strike ?? 0) - (b.strike ?? 0);
+    if(av == null) return 1;
+    if(bv == null) return -1;
+    return bv - av;
+  });
+  return { rows:mapped, total:withPremium.length, filtered:rangeFiltered.length, days, underlying };
+}
+function optionComparatorRiskTags(item){
+  const tags = [];
+  if(item.absDelta != null && item.absDelta > 0.70) tags.push({ cls:'err', text:'asignación probable' });
+  const spreadVsPremium = item.spread != null && item.bid != null && item.bid > 0 ? item.spread / item.bid : null;
+  if(spreadVsPremium != null && spreadVsPremium > 0.20) tags.push({ cls:'warn', text:'poca liquidez, entrar/salir puede costar caro' });
+  const rawIv = optionNumeric(item.row.impliedVolatility);
+  if(rawIv != null && rawIv > 1.5) tags.push({ cls:'warn', text:'IV >150% no fiable' });
+  else if(item.ivPercentile != null && item.ivPercentile >= 0.66 && item.bid != null && item.bid > 0) tags.push({ cls:'info', text:'prima influida por IV alta' });
+  return tags;
+}
+function optionsStrikeComparatorHtml(){
+  const chain = OPTIONS_CHAIN_STATE.chain;
+  if(!chain) return '';
+  const data = optionComparatorRows();
+  const visibleRows = data.rows.slice(0, OPTIONS_COMPARATOR_LIMIT);
+  const sortButtons = Object.entries(OPTIONS_COMPARATOR_SORT_LABELS).map(([key,label]) =>
+    `<button class="${OPTIONS_CHAIN_STATE.comparatorSort===key?'on':''}" onclick="setOptionsComparatorSort('${key}')">${label}</button>`
+  ).join('');
+  const rangeText = OPTIONS_CHAIN_STATE.comparatorShowAll ? 'todos los strikes' : 'rango ±10%';
+  const notices = [];
+  if(data.underlying == null || data.underlying <= 0) notices.push('Sin precio de subyacente fiable: no se aplica el filtro ±10%.');
+  if(data.filtered > OPTIONS_COMPARATOR_LIMIT) notices.push(`Mostrando ${OPTIONS_COMPARATOR_LIMIT} de ${data.filtered} strikes para no cargar la vista móvil de golpe.`);
+  if(!OPTIONS_CHAIN_STATE.comparatorShowAll && data.filtered < data.total) notices.push(`Filtro activo: ${data.filtered} de ${data.total} strikes con prima en ${rangeText}.`);
+  const rowsHtml = visibleRows.map(item => {
+    const tags = optionComparatorRiskTags(item);
+    const riskHtml = tags.length
+      ? tags.map(tag=>`<span class="opt-risk-tag ${tag.cls}">${escHtml(tag.text)}</span>`).join('')
+      : '<span class="opt-risk-tag">sin aviso mecánico destacado</span>';
+    const spreadText = item.spread == null ? '<span class="opt-nd">spread n/d</span>' : `spread ${f(item.spread,2)}`;
+    const deltaText = item.delta == null ? '<span class="opt-nd">n/d</span>' : `${f(item.delta,4)}<span class="opt-cell-note">${f(item.absDelta*100,1)}% mecánico</span>`;
+    const liquidity = `<div class="opt-liq">Vol. ${optionNd(item.volume,0)} · OI ${optionNd(item.openInterest,0)}<br>${spreadText}</div>`;
+    return `<tr>
+      <td>${optionNd(item.strike)}</td>
+      <td>${optionNd(item.bid)}</td>
+      <td>${optionPctNd(item.annualizedReturn)}</td>
+      <td>${optionPctNd(item.assignmentMargin)}</td>
+      <td>${deltaText}</td>
+      <td>${liquidity}</td>
+      <td>${optionNd(item.premiumRisk)}</td>
+      <td><div class="opt-risk-tags">${riskHtml}</div></td>
+      <td><div class="opt-chain-actions"><button onclick="applyOptionChainRow('${escHtml(item.row.contractSymbol)}')">Usar</button><button onclick="analyzeOptionChainRow('${escHtml(item.row.contractSymbol)}')">Analizar</button></div></td>
+    </tr>`;
+  }).join('');
+  return `<div class="opt-compare-head">
+      <div><div class="opt-compare-title">Comparador de strikes</div><div class="opt-chain-meta">Orden actual: ${escHtml(OPTIONS_COMPARATOR_SORT_LABELS[OPTIONS_CHAIN_STATE.comparatorSort] || '')} · ${rangeText}</div></div>
+      <div class="opt-compare-tools">${sortButtons}<button class="${OPTIONS_CHAIN_STATE.comparatorShowAll?'on':''}" onclick="toggleOptionsComparatorRange()">${OPTIONS_CHAIN_STATE.comparatorShowAll?'Ver rango ±10%':'Ver todos'}</button></div>
+    </div>
+    ${notices.map(n=>`<div class="opt-chain-meta">${escHtml(n)}</div>`).join('')}
+    <div class="opt-chain-scroll"><table class="opt-chain-table"><thead><tr><th>Strike</th><th>Prima bid</th><th>Rent. anual</th><th>Margen asign.</th><th>Delta</th><th>Liquidez</th><th>Prima/riesgo</th><th>Reverso visible</th><th></th></tr></thead><tbody>${rowsHtml || '<tr><td colspan="9">Sin strikes comparables para el vencimiento seleccionado.</td></tr>'}</tbody></table></div>`;
 }
 function analyzeOptionChainRow(contractSymbol){
   const row = (OPTIONS_CHAIN_STATE.chain?.calls || []).find(item => item.contractSymbol === contractSymbol);
@@ -2109,6 +2249,7 @@ function optionsChainHtml(){
     ${OPTIONS_CHAIN_STATE.error ? `<div class="opt-msg err">${escHtml(OPTIONS_CHAIN_STATE.error)}</div>` : ''}
     ${chain ? `<div class="opt-chain-meta">Fuente: CBOE delayed · Subyacente: ${optionNumber(chain.underlyingPrice)} · Timestamp CBOE: ${escHtml(chain.cboeTimestamp || 'no disponible')} · Cache: ${chain.cache?.hit?'hit':'nuevo'} · Calls: ${visibleCalls.length}</div>
       <div class="opt-field"><label>Vencimiento</label><select id="opt-chain-expiration" onchange="changeOptionsChainExpiration(this.value)">${expirationOptions}</select></div>
+      ${optionsStrikeComparatorHtml()}
       <div class="opt-chain-scroll"><table class="opt-chain-table"><thead><tr><th>Vto.</th><th>Strike</th><th>Bid</th><th>Ask</th><th>Último</th><th>Vol.</th><th>OI</th><th>IV</th><th>Delta</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
       <div id="opt-chain-analysis"></div>
       ${visibleCalls.length > 80 ? '<div class="opt-chain-meta">Mostrando 80 primeras calls del vencimiento para mantener la vista manejable.</div>' : ''}` : '<div class="opt-chain-meta">Introduce un ticker de mercado US/CA y trae la cadena. Si CBOE falla, la app mostrará cadena no disponible.</div>'}
