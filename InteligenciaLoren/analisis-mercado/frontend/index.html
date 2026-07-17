@@ -1603,16 +1603,19 @@ let cur='resumen';
 function go(v){cur=v;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.v===v));document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));document.getElementById(`v-${v}`).classList.add('on');({resumen:rResumen,valoracion:rValoracion,opciones:rOpciones,config:rConfig})[v]?.();window.scrollTo({top:0});}
 
 function rResumen(){
-  const tv=D.c.reduce((s,e)=>s+e.val,0),tp=D.c.reduce((s,e)=>s+e.pnl,0),td=D.c.reduce((s,e)=>s+(e.divs||0),0);
+  const tv=D.c.reduce((s,e)=>s+e.val,0),tp=D.c.reduce((s,e)=>s+e.pnl,0);
+  const cashEur = Number(D.cashTotalEur || 0);
+  const nav = tv + cashEur;
+  const td = Number(D.dividendsTotalEur || 0) || D.c.reduce((s,e)=>s+(e.divs||0),0);
   const retPct=34.99;const pnlCls=tp>=0?'up':'dn';
-  let h=`<div class="hero-card"><div class="big-l">Valor total cartera</div><div class="big" style="font-size:44px">€${f(tv+2356,0)}</div><div class="hero-sub"><span class="hero-pnl">${tp>=0?'+':''}${f(tp,0)}€</span><span class="hero-badge ${pnlCls}">${retPct>=0?'+':''}${f(retPct,2)}%</span></div><div class="hero-detail">Invertido: ${f(23786,0)}€ · Dividendos netos: ${f(td,0)}€</div></div>
+  let h=`<div class="hero-card"><div class="big-l">Valor total cartera</div><div class="big" style="font-size:44px">€${f(nav,0)}</div><div class="hero-sub"><span class="hero-pnl">${tp>=0?'+':''}${f(tp,0)}€</span><span class="hero-badge ${pnlCls}">${retPct>=0?'+':''}${f(retPct,2)}%</span></div><div class="hero-detail">Invertido: ${f(23786,0)}€ · Dividendos netos: ${f(td,0)}€</div></div>
   <div class="fx-bar"><span class="fx-icon">💱</span><span class="fx-pair">EUR/USD</span> <span class="fx-val">${getFx('USD').toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:4})}</span><span class="fx-pair">EUR/GBP</span> <span class="fx-val">${getFx('GBP').toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:4})}</span><span class="fx-pair">EUR/CAD</span> <span class="fx-val">${getFx('CAD').toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:4})}</span></div>`;
   const maxAbs=Math.max(...D.c.map(e=>{const m=METRICS[e.tk];return m?Math.abs(m.rent):0;}),1);
   h+=`<div class="card perf-card"><div class="card-t">Rendimiento por posición</div>`;
   D.c.sort((a,b)=>{const ma=METRICS[a.tk],mb=METRICS[b.tk];return(mb?mb.rent:0)-(ma?ma.rent:0);}).forEach(e=>{const m=METRICS[e.tk];if(!m)return;const pct=m.rent,d=pct>=0?'up':'dn',w=Math.max(Math.abs(pct)/maxAbs*100,3);h+=`<div class="perf-row"><span class="perf-tk ${d}">${e.tk}</span><div class="perf-bar-wrap"><div class="perf-bar ${d}" style="width:${w}%"></div></div><span class="perf-pct ${d}">${pct>=0?'+':''}${f(pct,1)}%</span></div>`;});
   h+=`</div>`;
   h+=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div class="card-t" style="margin-bottom:0">Posiciones</div><button style="padding:6px 14px;font-size:12px;font-weight:800;font-family:var(--sans);border-radius:8px;border:1.5px solid var(--acc);background:transparent;color:var(--acc);cursor:pointer" onclick="openM('c')">+ Añadir</button></div>`;
-  D.c.sort((a,b)=>b.val-a.val).forEach(e=>{const d=e.pnl>=0?'up':'dn',p=e.cost?((e.pnl/e.cost)*100):0;h+=`<div class="si" onclick="goDetail('${e.tk}','resumen')"><div class="si-row"><div class="si-left"><div class="si-tk">${e.tk} <span style="font-size:13px;color:var(--ink4);font-family:var(--sans);font-weight:700">${e.qty} acc.</span></div><div class="si-nm">${e.nm}</div></div><div class="si-right"><div class="si-price">€${f(e.val,0)}</div><div class="si-pnl ${d}">${e.pnl>=0?'+':''}${f(e.pnl,0)}€ (${p>=0?'+':''}${f(p,1)}%)</div></div><span class="si-arrow">›</span></div><div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"><button style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:800;font-family:var(--sans);border:1.5px solid rgba(224,36,36,.2);background:var(--red-light);color:var(--red);cursor:pointer" onclick="event.stopPropagation();openExitM('${e.tk}')">📤 Gestionar</button></div></div>`;});
+  D.c.sort((a,b)=>b.val-a.val).forEach(e=>{const m=METRICS[e.tk];const d=e.pnl>=0?'up':'dn',p=Number.isFinite(Number(m?.rent)) ? Number(m.rent) : (e.cost?((e.pnl/e.cost)*100):0);h+=`<div class="si" onclick="goDetail('${e.tk}','resumen')"><div class="si-row"><div class="si-left"><div class="si-tk">${e.tk} <span style="font-size:13px;color:var(--ink4);font-family:var(--sans);font-weight:700">${e.qty} acc.</span></div><div class="si-nm">${e.nm}</div></div><div class="si-right"><div class="si-price">€${f(e.val,0)}</div><div class="si-pnl ${d}">${e.pnl>=0?'+':''}${f(e.pnl,0)}€ (${p>=0?'+':''}${f(p,1)}%)</div></div><span class="si-arrow">›</span></div><div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"><button style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:800;font-family:var(--sans);border:1.5px solid rgba(224,36,36,.2);background:var(--red-light);color:var(--red);cursor:pointer" onclick="event.stopPropagation();openExitM('${e.tk}')">📤 Gestionar</button></div></div>`;});
   h+=`</div>`;document.getElementById('v-resumen').innerHTML=h;
 }
 
@@ -3733,6 +3736,9 @@ function renderIbkrReview(review){
 function cancelIbkrReview(){ window.pendingIbkrReview=null; document.getElementById('ibkr-status').innerHTML='<div style="padding:14px;text-align:center;color:var(--ink3);font-weight:700">Importación cancelada</div>'; }
 function applyIbkrReview(){
   const review=window.pendingIbkrReview; if(!review) return;
+  D.cash = Array.isArray(review.report?.cash) ? review.report.cash : [];
+  D.cashTotalEur = D.cash.reduce((s,c)=>s+toEur(Number(c.amount)||0, c.currency||'EUR'), 0);
+  D.dividendsTotalEur = Number(review.report?.dividends) || 0;
   let updated=0, added=0, ignored=0;
   for(const row of review.positions){
     const p=row.pos; let include=row.include;
