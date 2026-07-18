@@ -45,7 +45,7 @@ copy_json_preserving_metadata() {
 
   cp -- "$source_json" "$destination_tmp"
   chmod --reference="$reference_file" "$destination_tmp"
-  chown --reference="$reference_file" "$destination_tmp"
+  chown --reference="$reference_file" "$destination_tmp" 2>/dev/null || true
   jq empty "$destination_tmp"
 }
 
