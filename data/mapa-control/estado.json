@@ -2,9 +2,9 @@
   "meta": {
     "titulo": "Mapa de Control",
     "version": "1.0",
-    "fecha": "2026-07-12",
-    "fuente": "historico 28-6-26 + planning v42 + cierres 12-7-26",
-    "main_produccion": "299d34c13ea19bf7c13256ee2757956fe4b053c8"
+    "fecha": "2026-07-19",
+    "fuente": "actualización 19-7-26 · Recuerdos en producción IL + sw.js limpio + iconos nuevos",
+    "main_produccion": "0bfce3e34cb13af96b9a6bf21ff92d84ab0bf2c8"
   },
   "ecosistema": {
     "id": "root",
@@ -153,11 +153,19 @@
             "items": [
               {
                 "estado": "verde",
-                "t": "Dato troncal: main de producción = 299d34c13ea19bf7c13256ee2757956fe4b053c8"
+                "t": "Dato troncal: main de producción = 0bfce3e34cb13af96b9a6bf21ff92d84ab0bf2c8"
               },
               {
                 "estado": "verde",
                 "t": "Gestor de Credenciales al 100% · main 299d34c · fecha de creación editable, edición de filas persiste cifrada, copia de celdas/secreto y toolbar Editar pista/Buscar al 50/50 en móvil"
+              },
+              {
+                "estado": "verde",
+                "t": "Wrapper update-mapa-control-state.sh en producción — actualización del Mapa automatizada con backup + validación jq + escritura atómica + mirror a repo. Auditado por Claude y mergeado a main (0bfce3e3)."
+              },
+              {
+                "estado": "verde",
+                "t": "Ruta viva del Mapa fijada: /data/mapa-control/estado.json. Loren ya no copia ficheros por SSH."
               }
             ]
           },
@@ -230,6 +238,14 @@
               {
                 "estado": "gris",
                 "t": "Revocar tokens GitHub antiguos (v2/v3/v4)"
+              },
+              {
+                "estado": "gris",
+                "t": "Revisar ficheros antiguos de credenciales en /data/mapa-control (.bak y .disabled del 8-jul)."
+              },
+              {
+                "estado": "gris",
+                "t": "System restart required — 26 updates pendientes, 1 de seguridad."
               }
             ]
           }
@@ -523,7 +539,7 @@
             "name": "GestActas",
             "tipo": "proyecto",
             "estado": "ambar",
-            "sub": "gestactas.vercel.app · gestión de actas de comunidades · cliente real Carlos",
+            "sub": "gestactas.inteligencialoren.com · gestión de actas de comunidades · cliente Carlos (sin uso real todavía)",
             "bloques": [
               {
                 "nombre": "Qué es y estado",
@@ -533,8 +549,12 @@
                     "t": "App de gestión de actas de comunidades y juntas · bloques 1-6 completados"
                   },
                   {
+                    "estado": "verde",
+                    "t": "Vive en gestactas.inteligencialoren.com · versión buena en servidor IL"
+                  },
+                  {
                     "estado": "ambar",
-                    "t": "En comprobación por Carlos (prueba real de usuario)"
+                    "t": "Cliente Carlos previsto · sin uso real todavía"
                   },
                   {
                     "estado": "ambar",
@@ -547,11 +567,23 @@
                 "items": [
                   {
                     "estado": "verde",
-                    "t": "En producción · /opt/gestactas · Docker Compose unificado"
+                    "t": "En producción · contenedor Docker gestactas-app (nginx:alpine) · /opt/gestactas · Traefik+TLS"
                   },
                   {
                     "estado": "verde",
-                    "t": "Repo Loren2026/gestactas (privado)"
+                    "t": "Repo Loren2026/gestactas"
+                  },
+                  {
+                    "estado": "gris",
+                    "t": "Vercel duplicado (gestactas.vercel.app) · pendiente retirar tras consolidar fuente de verdad"
+                  },
+                  {
+                    "estado": "rojo",
+                    "t": "Contradicción de fuente de verdad sin resolver: agente dice main clonado en /opt/gestactas; auditoría vio producción coincidiendo con /data/.openclaw/workspace/gestactas y NO con origin/main. Resolver por SSH antes de tocar repo o apagar Vercel."
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Verificado que Vercel es prescindible: no tiene /api propio, solo sirve estático."
                   }
                 ]
               },
@@ -652,8 +684,322 @@
                     "t": "Loren · acceso propio"
                   },
                   {
+                    "estado": "gris",
+                    "t": "Carlos · cliente previsto · sin uso real todavía"
+                  }
+                ]
+              },
+              {
+                "nombre": "Seguridad antes de producción real",
+                "items": [
+                  {
+                    "estado": "rojo",
+                    "t": "RLS con políticas de acceso total · rediseñar antes de producción"
+                  },
+                  {
+                    "estado": "rojo",
+                    "t": "anon key Supabase expuesta en repo público · rotar antes de producción"
+                  },
+                  {
+                    "estado": "rojo",
+                    "t": "Gate de acceso solo en frontend"
+                  },
+                  {
+                    "estado": "rojo",
+                    "t": "Claves IA en localStorage texto plano · futuro proxy"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "recuerdos",
+            "name": "recuerdos",
+            "tipo": "proyecto",
+            "estado": "verde",
+            "sub": "recuerdos.inteligencialoren.com · bloc de notas · EN PRODUCCIÓN en servidor IL",
+            "bloques": [
+              {
+                "nombre": "Estado actual (servidor IL)",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "URL producción: recuerdos.inteligencialoren.com"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "EN PRODUCCIÓN en servidor IL"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "PWA operativa por primera vez"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Datos migrados por export/import JSON: 28 notas"
+                  },
+                  {
                     "estado": "ambar",
-                    "t": "Carlos · cliente · administrador de fincas · en pruebas reales"
+                    "t": "Vercel se mantiene unos dias como respaldo, pendiente de retirar"
+                  }
+                ]
+              },
+              {
+                "nombre": "Infraestructura",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Contenedor: recuerdos-app (nginx:alpine)"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Ruta host: /opt/recuerdos"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Red: openclaw-2ns9_default"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Traefik + TLS letsencrypt, certificado emitido y verificado"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "DNS: registro A recuerdos -> 145.223.116.194 (Hostinger)"
+                  }
+                ]
+              },
+              {
+                "nombre": "Repositorio",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Repo: Loren2026/recuerdos"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "main = 55a7c69"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Iconos actualizados"
+                  }
+                ]
+              },
+              {
+                "nombre": "Service worker",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "sw.js limpio desplegado (cache notas-loren-v6), sin el código de alarmas que nunca funcionó"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "En Vercel el sw.js nunca se sirvió: 404 porque el fichero del repo se llama sw-1.js y la app registra /sw.js"
+                  }
+                ]
+              },
+              {
+                "nombre": "Funcionalidad actual",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Notas con fecha"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Lista compras por categorías"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Backup/restore JSON"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "Datos solo en localStorage"
+                  }
+                ]
+              },
+              {
+                "nombre": "Recordatorios y alarmas (futuro)",
+                "items": [
+                  {
+                    "estado": "gris",
+                    "t": "Diseñar sistema"
+                  },
+                  {
+                    "estado": "gris",
+                    "t": "Decidir tipo (push/telegram/cron)"
+                  },
+                  {
+                    "estado": "gris",
+                    "t": "Implementar"
+                  }
+                ]
+              },
+              {
+                "nombre": "Mejoras futuras",
+                "items": [
+                  {
+                    "estado": "gris",
+                    "t": "Pestaña Restaurantes: foto a ticket y a carta, clasificación por lugares/restaurantes, búsqueda por zona al viajar, histórico de visitas y valoración."
+                  },
+                  {
+                    "estado": "gris",
+                    "t": "Cambiar el nombre de la app (recuerdos no describe su alcance real)."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "nutrisalud",
+            "name": "NutriSalud",
+            "tipo": "proyecto",
+            "estado": "ambar",
+            "sub": "nutrisalud-app.vercel.app · análisis nutricional por código de barras según analítica · pendiente migrar",
+            "bloques": [
+              {
+                "nombre": "Estado actual (Vercel)",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Desplegado"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Repo privado"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "Frontend + API propia Vercel"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "Perfil médico/analíticas en localStorage"
+                  }
+                ]
+              },
+              {
+                "nombre": "Funcionalidad actual",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Escáner código barras"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Análisis según analítica"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Lista compra casa/camión"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Dónde comprar + Maps"
+                  }
+                ]
+              },
+              {
+                "nombre": "Migración a servidor IL",
+                "items": [
+                  {
+                    "estado": "gris",
+                    "t": "Portar API"
+                  },
+                  {
+                    "estado": "rojo",
+                    "t": "Revisar secreto IA server-side"
+                  },
+                  {
+                    "estado": "gris",
+                    "t": "Definir subdominio"
+                  },
+                  {
+                    "estado": "gris",
+                    "t": "Tratar datos médicos como sensibles"
+                  },
+                  {
+                    "estado": "gris",
+                    "t": "Alta en Panel"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "historial-medico",
+            "name": "Historial Médico",
+            "tipo": "proyecto",
+            "estado": "ambar",
+            "sub": "historial-medico-liard.vercel.app · gestor de informes médicos, medicación y citas · DATOS SENSIBLES · pendiente migrar",
+            "bloques": [
+              {
+                "nombre": "Estado actual (Vercel)",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Desplegado"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Repo público HTML estático"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "Datos en IndexedDB+localStorage (local)"
+                  }
+                ]
+              },
+              {
+                "nombre": "Funcionalidad actual",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Subir/ver informes Excel"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Ordenar por especialidad/doctor"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Lista medicación"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Apartado citas"
+                  }
+                ]
+              },
+              {
+                "nombre": "Migración a servidor IL",
+                "items": [
+                  {
+                    "estado": "gris",
+                    "t": "Definir subdominio"
+                  },
+                  {
+                    "estado": "rojo",
+                    "t": "Decisión privacidad local vs centralizado"
+                  },
+                  {
+                    "estado": "gris",
+                    "t": "Si centraliza: cifrado+auth+backups"
+                  },
+                  {
+                    "estado": "gris",
+                    "t": "Alta en Panel"
+                  }
+                ]
+              },
+              {
+                "nombre": "Seguridad",
+                "items": [
+                  {
+                    "estado": "rojo",
+                    "t": "Repo público con app de datos médicos · revisar pasar a privado"
                   }
                 ]
               }
@@ -663,7 +1009,7 @@
             "id": "analisis",
             "name": "Análisis Mercado",
             "tipo": "proyecto",
-            "estado": "ambar",
+            "estado": "verde",
             "sub": "analisis.inteligencialoren.com · análisis de mercado y recomendación sobre la cartera",
             "bloques": [
               {
@@ -742,6 +1088,31 @@
                   {
                     "estado": "verde",
                     "t": "Loren · uso propio (cartera personal)"
+                  }
+                ]
+              },
+              {
+                "nombre": "Cartera · M5 cerrado",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Panel superior de Cartera corregido y desplegado · main = 0330827b"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "NAV real acciones + cash verificado en producción: 29.784 €"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Dividendos netos IBKR conectados al panel: 1.171 €"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "% por posición usa métricas reales · fichas muestran porcentajes correctos"
+                  },
+                  {
+                    "estado": "gris",
+                    "t": "Hardcodes retPct/Invertido del panel · pendiente aparte, fuera del M5 por decisión de Loren"
                   }
                 ]
               }
