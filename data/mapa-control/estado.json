@@ -2,8 +2,8 @@
   "meta": {
     "titulo": "Mapa de Control",
     "version": "1.0",
-    "fecha": "2026-07-19",
-    "fuente": "actualización 19-7-26 · Recuerdos en producción IL + sw.js limpio + iconos nuevos",
+    "fecha": "2026-07-20",
+    "fuente": "actualización 20-7-26 · Notas Loren visible + repo recuerdos sincronizado con producción + sw.js commiteado",
     "main_produccion": "0bfce3e34cb13af96b9a6bf21ff92d84ab0bf2c8"
   },
   "ecosistema": {
@@ -714,10 +714,10 @@
           },
           {
             "id": "recuerdos",
-            "name": "recuerdos",
+            "name": "Notas Loren",
             "tipo": "proyecto",
             "estado": "verde",
-            "sub": "recuerdos.inteligencialoren.com · bloc de notas · EN PRODUCCIÓN en servidor IL",
+            "sub": "recuerdos.inteligencialoren.com · bloc de notas · EN PRODUCCIÓN en servidor IL · repo y ruta: recuerdos",
             "bloques": [
               {
                 "nombre": "Estado actual (servidor IL)",
@@ -740,7 +740,7 @@
                   },
                   {
                     "estado": "ambar",
-                    "t": "Vercel se mantiene unos dias como respaldo, pendiente de retirar"
+                    "t": "Vercel se mantiene unos días como respaldo, pendiente de retirar"
                   }
                 ]
               },
@@ -778,7 +778,11 @@
                   },
                   {
                     "estado": "verde",
-                    "t": "main = 55a7c69"
+                    "t": "main = 171b966c3bc40d037090615d177146d6d4c60f9e"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Repo y producción sincronizados hash a hash (auditado 20-7-26)"
                   },
                   {
                     "estado": "verde",
@@ -791,11 +795,11 @@
                 "items": [
                   {
                     "estado": "verde",
-                    "t": "sw.js limpio desplegado (cache notas-loren-v6), sin el código de alarmas que nunca funcionó"
+                    "t": "sw.js limpio desplegado y commiteado al repo (586 bytes, cache notas-loren-v6), sin el código de alarmas que nunca funcionó"
                   },
                   {
-                    "estado": "ambar",
-                    "t": "En Vercel el sw.js nunca se sirvió: 404 porque el fichero del repo se llama sw-1.js y la app registra /sw.js"
+                    "estado": "verde",
+                    "t": "sw-1.js eliminado del repo; producción y main ya apuntan al service worker usado por la PWA"
                   }
                 ]
               },
@@ -846,7 +850,7 @@
                   },
                   {
                     "estado": "gris",
-                    "t": "Cambiar el nombre de la app (recuerdos no describe su alcance real)."
+                    "t": "Renombre interno pendiente si se decide tocar identificador, repo, subdominio o ruta; de momento solo cambia el nombre visible."
                   }
                 ]
               }
