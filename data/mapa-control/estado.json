@@ -3,8 +3,8 @@
     "titulo": "Mapa de Control",
     "version": "1.0",
     "fecha": "2026-07-20",
-    "fuente": "actualización 20-7-26 · Notas Loren visible + repo recuerdos sincronizado con producción + sw.js commiteado",
-    "main_produccion": "0bfce3e34cb13af96b9a6bf21ff92d84ab0bf2c8"
+    "fuente": "cierre 20-7-26 · Notas Loren backend en repo sin desplegar · Análisis Mercado verificado · backups servidor auditados",
+    "main_produccion": "be1ff54223c05b4d89518ba7b4fac13af2f134d9"
   },
   "ecosistema": {
     "id": "root",
@@ -153,7 +153,7 @@
             "items": [
               {
                 "estado": "verde",
-                "t": "Dato troncal: main de producción = 0bfce3e34cb13af96b9a6bf21ff92d84ab0bf2c8"
+                "t": "Dato troncal: main de producción = be1ff54223c05b4d89518ba7b4fac13af2f134d9"
               },
               {
                 "estado": "verde",
@@ -285,6 +285,22 @@
               {
                 "estado": "verde",
                 "t": "Orden de perfiles fijado oauth→apikey, sin round-robin · aviso de permisos de plugins uid=1000 ya no bloquea"
+              },
+              {
+                "estado": "verde",
+                "t": "backup_server.sh actualizado: cubre /docker, /data y /opt, con volcados consistentes de SQLite mediante sqlite3 .backup."
+              },
+              {
+                "estado": "verde",
+                "t": "Backup servidor verificado de extremo a extremo: 4 volcados SQLite dentro del tar.gz remoto, 0 ficheros .sqlite crudos, 110 ficheros de opt/ y 18 de data/."
+              },
+              {
+                "estado": "verde",
+                "t": "Ambos scripts de backup versionados en abierto-general/scripts/."
+              },
+              {
+                "estado": "ambar",
+                "t": "PENDIENTE: scripts/backup_openclaw.sh del repo NO coincide con el real del servidor (hash real 3e1652cf47f3fac3074540a79394244c95216450260b253d8bc60b3c7c727b36)."
               }
             ]
           },
@@ -778,7 +794,7 @@
                   },
                   {
                     "estado": "verde",
-                    "t": "main = 171b966c3bc40d037090615d177146d6d4c60f9e"
+                    "t": "main = d00e44124f4a15c10a54770cb3306ed75d778ea4"
                   },
                   {
                     "estado": "verde",
@@ -787,6 +803,14 @@
                   {
                     "estado": "verde",
                     "t": "Iconos actualizados"
+                  },
+                  {
+                    "estado": "ambar",
+                    "t": "Backend Node.js + SQLite construido y auditado, EN REPO PERO SIN DESPLEGAR."
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "La app en producción sigue siendo la PWA estática."
                   }
                 ]
               },
@@ -795,11 +819,11 @@
                 "items": [
                   {
                     "estado": "verde",
-                    "t": "sw.js limpio desplegado y commiteado al repo (586 bytes, cache notas-loren-v6), sin el código de alarmas que nunca funcionó"
+                    "t": "sw.js limpio commiteado al repo (586 bytes, cache notas-loren-v6), sin el código de alarmas que nunca funcionó."
                   },
                   {
                     "estado": "verde",
-                    "t": "sw-1.js eliminado del repo; producción y main ya apuntan al service worker usado por la PWA"
+                    "t": "sw-1.js eliminado del repo; producción y main ya apuntan al service worker usado por la PWA."
                   }
                 ]
               },
@@ -1014,7 +1038,7 @@
             "name": "Análisis Mercado",
             "tipo": "proyecto",
             "estado": "verde",
-            "sub": "analisis.inteligencialoren.com · análisis de mercado y recomendación sobre la cartera",
+            "sub": "analisis.inteligencialoren.com · EN PRODUCCIÓN · 7 posiciones · 26.116 EUR",
             "bloques": [
               {
                 "nombre": "Qué es",
@@ -1030,6 +1054,10 @@
                   {
                     "estado": "verde",
                     "t": "Opción B decidida: backend propio con las claves en el servidor (nunca en el navegador)"
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "EN PRODUCCIÓN, verificado 20-7-26: 7 posiciones, 26.116 EUR."
                   }
                 ]
               },
@@ -1051,7 +1079,7 @@
                 "items": [
                   {
                     "estado": "verde",
-                    "t": "ZEG · META · MSFT · CSU · AMZN · WKL · NAV 29.710 € (+40,4%)"
+                    "t": "7 posiciones verificadas hoy · valor total 26.116 EUR."
                   },
                   {
                     "estado": "verde",
@@ -1080,8 +1108,8 @@
                     "t": "Fase 4 módulo de opciones · bloqueada: requiere activar permisos IBKR desde PC"
                   },
                   {
-                    "estado": "gris",
-                    "t": "Fase 6 despliegue en analisis.inteligencialoren.com (dominio no responde) · pendiente autorización con claves reales"
+                    "estado": "verde",
+                    "t": "Producción verificada en analisis.inteligencialoren.com."
                   }
                 ]
               },
@@ -1104,7 +1132,7 @@
                   },
                   {
                     "estado": "verde",
-                    "t": "NAV real acciones + cash verificado en producción: 29.784 €"
+                    "t": "Valor de cartera verificado en producción: 26.116 EUR."
                   },
                   {
                     "estado": "verde",
@@ -1117,6 +1145,19 @@
                   {
                     "estado": "gris",
                     "t": "Hardcodes retPct/Invertido del panel · pendiente aparte, fuera del M5 por decisión de Loren"
+                  }
+                ]
+              },
+              {
+                "nombre": "Despliegue",
+                "items": [
+                  {
+                    "estado": "verde",
+                    "t": "Se despliega desde /docker/panel-inteligencialoren/InteligenciaLoren/analisis-mercado/deploy."
+                  },
+                  {
+                    "estado": "verde",
+                    "t": "Nombre de proyecto Compose: analisis-mercado; usar siempre -p analisis-mercado."
                   }
                 ]
               }
