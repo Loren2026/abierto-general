@@ -10,7 +10,9 @@ BACKUP_NAME="backup-servidor-$(date +%Y%m%d-%H%M%S).tar.gz"
 TMP_FILE="/tmp/${BACKUP_NAME}"
 SQLITE_DUMP_ROOT="$(mktemp -d /tmp/backup-servidor-sqlite.XXXXXX)"
 SQLITE_DUMP_DIR="${SQLITE_DUMP_ROOT}/sqlite-dumps"
-MIN_SIZE_BYTES=25000000
+# Umbral anti-catástrofe: el backup real medido ronda 25 MB tras exclusiones;
+# 10 MB permite variaciones legítimas a la baja sin aceptar un tar vacío.
+MIN_SIZE_BYTES=10000000
 KEEP_COPIES=7
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"; }
@@ -56,7 +58,7 @@ dump_sqlite_databases() {
    log "ERROR: fallo al volcar SQLite: $db_path. Se continúa con el resto."
    rm -f "$dump_path"
   fi
- done < <(find "${roots[@]}" -type f -name '*.sqlite' -print0 2>>"$LOG_FILE" || true)
+ done < <(find "${roots[@]}" -type f \( -name '*.sqlite' -o -name '*.sqlite3' -o -name '*.db' \) -print0 2>>"$LOG_FILE" || true)
 
  log "SQLite localizados: ${found}; volcados OK: ${ok}; fallidos: ${failed}"
 }
@@ -77,9 +79,16 @@ TAR_SOURCES=(-C /docker .)
 [ -d /opt ] && TAR_SOURCES+=(-C / opt)
 [ -d "$SQLITE_DUMP_DIR" ] && TAR_SOURCES+=(-C "$SQLITE_DUMP_ROOT" sqlite-dumps)
 
+# Las exclusiones SQLite van prefijadas por ruta real de origen. No usar patrones
+# globales aquí: sqlite-dumps debe entrar siempre aunque contenga volcados de DB.
 tar -czf "$TMP_FILE" \
  --exclude='./openclaw-2ns9' --exclude='openclaw-2ns9' --exclude='docker/openclaw-2ns9' \
- --exclude='*.sqlite' --exclude='*.sqlite-wal' --exclude='*.sqlite-shm' \
+ --exclude='./*.sqlite' --exclude='./*.sqlite3' --exclude='./*.db' \
+ --exclude='./*.sqlite-wal' --exclude='./*.sqlite-shm' --exclude='./*.sqlite3-wal' --exclude='./*.sqlite3-shm' --exclude='./*.db-wal' --exclude='./*.db-shm' \
+ --exclude='data/*.sqlite' --exclude='data/*.sqlite3' --exclude='data/*.db' \
+ --exclude='data/*.sqlite-wal' --exclude='data/*.sqlite-shm' --exclude='data/*.sqlite3-wal' --exclude='data/*.sqlite3-shm' --exclude='data/*.db-wal' --exclude='data/*.db-shm' \
+ --exclude='opt/*.sqlite' --exclude='opt/*.sqlite3' --exclude='opt/*.db' \
+ --exclude='opt/*.sqlite-wal' --exclude='opt/*.sqlite-shm' --exclude='opt/*.sqlite3-wal' --exclude='opt/*.sqlite3-shm' --exclude='opt/*.db-wal' --exclude='opt/*.db-shm' \
  --exclude='./*/.git' --exclude='./*/*/.git' --exclude='./*/*/*/.git' --exclude='*/.git' \
  --exclude='./*/node_modules' --exclude='./*/*/node_modules' --exclude='./*/*/*/node_modules' --exclude='*/node_modules' \
  --exclude='./*/build' --exclude='./*/*/build' --exclude='./*/*/*/build' --exclude='*/build' \
