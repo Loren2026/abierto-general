@@ -8,8 +8,11 @@ LOG_FILE="/var/log/backup_server.log"
 REMOTE="gdrive:Servidor-Backups"
 BACKUP_NAME="backup-servidor-$(date +%Y%m%d-%H%M%S).tar.gz"
 TMP_FILE="/tmp/${BACKUP_NAME}"
+TMP_TAR="/tmp/${BACKUP_NAME%.gz}"
 SQLITE_DUMP_ROOT="$(mktemp -d /tmp/backup-servidor-sqlite.XXXXXX)"
 SQLITE_DUMP_DIR="${SQLITE_DUMP_ROOT}/sqlite-dumps"
+DOCKER_TAR_LIST="$(mktemp /tmp/backup-servidor-docker-list.XXXXXX)"
+ROOT_TAR_LIST="$(mktemp /tmp/backup-servidor-root-list.XXXXXX)"
 # Umbral anti-catástrofe: el backup real medido ronda 25 MB tras exclusiones;
 # 10 MB permite variaciones legítimas a la baja sin aceptar un tar vacío.
 MIN_SIZE_BYTES=10000000
@@ -19,24 +22,40 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"; }
 
 cleanup() {
  rm -f "$TMP_FILE"
+ rm -f "$TMP_TAR"
+ rm -f "$DOCKER_TAR_LIST" "$ROOT_TAR_LIST"
  if [ -n "${SQLITE_DUMP_ROOT:-}" ] && [ -d "$SQLITE_DUMP_ROOT" ]; then rm -rf "$SQLITE_DUMP_ROOT"; fi
 }
 
 trap cleanup EXIT
 
+find_pruned() {
+ local root="$1"
+ find "$root" \
+  \( -path '/docker/openclaw-2ns9' -o -path '/docker/openclaw-2ns9/*' \
+     -o -name '.git' -o -name 'node_modules' -o -name 'build' \
+     -o -name '.dart_tool' -o -name '.flutter-plugins' -o -name '.flutter-plugins-dependencies' \) -prune \
+  -o \( -type f \( -name '*.sqlite' -o -name '*.sqlite3' -o -name '*.db' \
+     -o -name '*.sqlite-wal' -o -name '*.sqlite-shm' \
+     -o -name '*.sqlite3-wal' -o -name '*.sqlite3-shm' \
+     -o -name '*.db-wal' -o -name '*.db-shm' \) \) -prune \
+  -o -print0
+}
+
 dump_sqlite_databases() {
  mkdir -p "$SQLITE_DUMP_DIR"
 
  local roots=()
+ [ -d /docker ] && roots+=(/docker)
  [ -d /data ] && roots+=(/data)
  [ -d /opt ] && roots+=(/opt)
 
  if [ "${#roots[@]}" -eq 0 ]; then
-  log "AVISO: no existen /data ni /opt; no hay búsqueda de SQLite"
+  log "AVISO: no existen /docker, /data ni /opt; no hay búsqueda de SQLite"
   return 0
  fi
 
- log "Localizando bases SQLite bajo /data y /opt"
+ log "Localizando bases SQLite bajo /docker, /data y /opt"
 
  local found=0
  local ok=0
@@ -58,9 +77,33 @@ dump_sqlite_databases() {
    log "ERROR: fallo al volcar SQLite: $db_path. Se continúa con el resto."
    rm -f "$dump_path"
   fi
- done < <(find "${roots[@]}" -type f \( -name '*.sqlite' -o -name '*.sqlite3' -o -name '*.db' \) -print0 2>>"$LOG_FILE" || true)
+ done < <(find "${roots[@]}" \
+  \( -path '/docker/openclaw-2ns9' -o -path '/docker/openclaw-2ns9/*' \
+     -o -name '.git' -o -name 'node_modules' -o -name 'build' \
+     -o -name '.dart_tool' -o -name '.flutter-plugins' -o -name '.flutter-plugins-dependencies' \) -prune \
+  -o \( -type f \( -name '*.sqlite' -o -name '*.sqlite3' -o -name '*.db' \) -print0 \) 2>>"$LOG_FILE" || true)
 
  log "SQLite localizados: ${found}; volcados OK: ${ok}; fallidos: ${failed}"
+}
+
+build_tar_lists() {
+ : > "$DOCKER_TAR_LIST"
+ : > "$ROOT_TAR_LIST"
+
+ local entry
+ while IFS= read -r -d '' entry; do
+  if [ "$entry" != /docker ]; then
+   printf '%s\0' "${entry#/docker/}" >> "$DOCKER_TAR_LIST"
+  fi
+ done < <(find_pruned /docker 2>>"$LOG_FILE" || true)
+
+ for root in /data /opt; do
+  if [ -d "$root" ]; then
+   while IFS= read -r -d '' entry; do
+    printf '%s\0' "${entry#/}" >> "$ROOT_TAR_LIST"
+   done < <(find_pruned "$root" 2>>"$LOG_FILE" || true)
+  fi
+ done
 }
 
 log "=== INICIO Backup Servidor B ==="
@@ -72,30 +115,24 @@ if [ ! -d /opt ]; then log "AVISO: /opt no existe; no se incluirá en el backup"
 
 dump_sqlite_databases
 
+log "Preparando lista explícita de ficheros para /docker, /data y /opt"
+build_tar_lists
+
 log "Creando tar.gz de /docker excluyendo OpenClaw y artefactos; incluyendo /data, /opt y volcados SQLite"
 
-TAR_SOURCES=(-C /docker .)
-[ -d /data ] && TAR_SOURCES+=(-C / data)
-[ -d /opt ] && TAR_SOURCES+=(-C / opt)
-[ -d "$SQLITE_DUMP_DIR" ] && TAR_SOURCES+=(-C "$SQLITE_DUMP_ROOT" sqlite-dumps)
+if [ ! -s "$DOCKER_TAR_LIST" ]; then log "ERROR: lista de /docker vacía. Abortando."; exit 1; fi
 
-# Las exclusiones SQLite van prefijadas por ruta real de origen. No usar patrones
-# globales aquí: sqlite-dumps debe entrar siempre aunque contenga volcados de DB.
-tar -czf "$TMP_FILE" \
- --exclude='./openclaw-2ns9' --exclude='openclaw-2ns9' --exclude='docker/openclaw-2ns9' \
- --exclude='./*.sqlite' --exclude='./*.sqlite3' --exclude='./*.db' \
- --exclude='./*.sqlite-wal' --exclude='./*.sqlite-shm' --exclude='./*.sqlite3-wal' --exclude='./*.sqlite3-shm' --exclude='./*.db-wal' --exclude='./*.db-shm' \
- --exclude='data/*.sqlite' --exclude='data/*.sqlite3' --exclude='data/*.db' \
- --exclude='data/*.sqlite-wal' --exclude='data/*.sqlite-shm' --exclude='data/*.sqlite3-wal' --exclude='data/*.sqlite3-shm' --exclude='data/*.db-wal' --exclude='data/*.db-shm' \
- --exclude='opt/*.sqlite' --exclude='opt/*.sqlite3' --exclude='opt/*.db' \
- --exclude='opt/*.sqlite-wal' --exclude='opt/*.sqlite-shm' --exclude='opt/*.sqlite3-wal' --exclude='opt/*.sqlite3-shm' --exclude='opt/*.db-wal' --exclude='opt/*.db-shm' \
- --exclude='./*/.git' --exclude='./*/*/.git' --exclude='./*/*/*/.git' --exclude='*/.git' \
- --exclude='./*/node_modules' --exclude='./*/*/node_modules' --exclude='./*/*/*/node_modules' --exclude='*/node_modules' \
- --exclude='./*/build' --exclude='./*/*/build' --exclude='./*/*/*/build' --exclude='*/build' \
- --exclude='./*/.dart_tool' --exclude='./*/*/.dart_tool' --exclude='./*/*/*/.dart_tool' --exclude='*/.dart_tool' \
- --exclude='./*/.flutter-plugins' --exclude='./*/*/.flutter-plugins' --exclude='./*/*/*/.flutter-plugins' --exclude='*/.flutter-plugins' \
- --exclude='./*/.flutter-plugins-dependencies' --exclude='./*/*/.flutter-plugins-dependencies' --exclude='./*/*/*/.flutter-plugins-dependencies' --exclude='*/.flutter-plugins-dependencies' \
- "${TAR_SOURCES[@]}"
+tar -cf "$TMP_TAR" -C /docker --no-recursion --null -T "$DOCKER_TAR_LIST"
+
+if [ -s "$ROOT_TAR_LIST" ]; then
+ tar -rf "$TMP_TAR" -C / --no-recursion --null -T "$ROOT_TAR_LIST"
+fi
+
+if [ -d "$SQLITE_DUMP_DIR" ]; then
+ tar -rf "$TMP_TAR" -C "$SQLITE_DUMP_ROOT" sqlite-dumps
+fi
+
+gzip -f "$TMP_TAR"
 
 SIZE_BYTES=$(stat -c%s "$TMP_FILE")
 log "Tamaño generado: ${SIZE_BYTES} bytes"
